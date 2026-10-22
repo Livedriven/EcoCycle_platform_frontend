@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard | EcoCycle</title>
+  <link href="css/style.css" rel="stylesheet">
+  <link href="css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+  <!-- topo e menu lateral são preenchidos pelo layout.js -->
+  <div id="app-topo"></div>
+  <div class="app-corpo">
+    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+    <main class="conteudo-pagina">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 m-0">Dashboard</h1>
+        <button id="btn-atualizar" class="btn btn-eco btn-sm">Atualizar</button>
+      </div>
+
+      <!-- Cards de indicadores. Todo bloco tem .estado (carregando/erro/vazio) e .conteudo (dados) -->
+      <section id="bloco-indicadores" class="mb-4">
+        <div class="estado"></div><div class="conteudo row g-3 d-none"></div>
+      </section>
+
+      <!-- Gráficos de produção diária e mensal, lado a lado -->
+      <div class="row g-3 mb-4">
+        <div class="col-lg-6"><div class="card h-100 shadow-sm" id="bloco-diaria">
+          <div class="card-header">Produção diária (últimos 7 dias)</div>
+          <div class="card-body"><div class="estado"></div>
+            <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-diaria"></canvas></div></div></div>
+        </div></div>
+        <div class="col-lg-6"><div class="card h-100 shadow-sm" id="bloco-mensal">
+          <div class="card-header">Produção mensal (últimos 6 meses)</div>
+          <div class="card-body"><div class="estado"></div>
+            <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-mensal"></canvas></div></div></div>
+        </div></div>
+      </div>
+
+      <!-- CO₂ evitado: total à esquerda e gráfico por material à direita -->
+      <div class="card shadow-sm mb-4" id="bloco-co2">
+        <div class="card-header">CO₂ evitado (estimativa)</div>
+        <div class="card-body"><div class="estado"></div>
+          <div class="conteudo d-none"><div class="row align-items-center g-3">
+            <div class="col-md-4 text-center">
+              <div class="valor-grande" id="co2-total"></div>
+              <div style="color:var(--eco-texto-suave)">toneladas de CO₂e evitadas</div>
+              <div class="small mt-2" style="color:var(--eco-texto-suave)">Cálculo com fatores provisórios por material.</div>
+            </div>
+            <div class="col-md-8"><div class="grafico"><canvas id="grafico-co2"></canvas></div></div>
+          </div></div></div>
+      </div>
+
+      <!-- Status da esteira e lista de alertas ativos -->
+      <div class="row g-3">
+        <div class="col-lg-5"><div class="card h-100 shadow-sm" id="bloco-esteira">
+          <div class="card-header">Status da esteira</div>
+          <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
+        </div></div>
+        <div class="col-lg-7"><div class="card h-100 shadow-sm" id="bloco-alertas">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            Alertas ativos <span id="contador-alertas" class="badge b-suave">–</span></div>
+          <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
+        </div></div>
+      </div>
+
+      <!-- Links para testar os estados com os dados simulados (lidos pelo api.js) -->
+      <p class="text-center small mt-4" style="color:var(--eco-texto-suave)">
+        Testar estados (dados simulados): <a href="?">normal</a> · <a href="?simular=vazio">vazio</a> · <a href="?simular=erro">erro</a></p>
+    </main>
+  </div>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

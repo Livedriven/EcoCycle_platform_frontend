@@ -1,0 +1,11 @@
+/* Tela de login */
+/* fundo em degradê azul, com o card centralizado na tela */
+body.login { min-height: 100vh; display: flex; align-items: center; justify-content: center;
+             padding: 1rem; background: linear-gradient(135deg, var(--eco-azul), var(--eco-azul-escuro)); }
+/* card do formulário: ocupa a largura toda até o limite de 380px */
+.login-card { width: 100%; max-width: 380px; padding: 2rem; }
+/* logo centralizada acima do formulário */
+.login-card .logo { display: block; width: 100%; max-width: 240px; margin: 0 auto 1.25rem; }
+/* botão "Entrar" em verde; no hover escurece um pouco */
+.btn-entrar { background: var(--eco-verde-escuro); border-color: var(--eco-verde-escuro); color: #fff; }
+.btn-entrar:hover { filter: brightness(.9); color: #fff; }

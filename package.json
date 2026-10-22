@@ -1,0 +1,43 @@
+{
+  "name": "front-end",
+  "version": "1.0.0",
+  "description": "3# Arquitetura do Front-end — EcoCycle",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "mock": "json-server --watch mocks/db.json --routes mocks/routes.json --port 3000",
+    "test": "vitest",
+    "lint": "eslint .",
+    "mock:api": "json-server-auth mocks/db.json -r mocks/routes.json -m mocks/rbac.cjs -p 3000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Livedriven/EcoCycle_platform_frontend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Livedriven/EcoCycle_platform_frontend/issues"
+  },
+  "homepage": "https://github.com/Livedriven/EcoCycle_platform_frontend#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.2",
+    "chart.js": "^4.5.1",
+    "dayjs": "^1.11.23",
+    "gridjs": "^6.2.0",
+    "json-server": "^0.17.4",
+    "json-server-auth": "^2.1.0",
+    "sweetalert2": "^11.26.25"
+  }
+}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Materiais | EcoCycle</title>
+  <link href="css/style.css" rel="stylesheet">
+  <link href="css/materiais.css" rel="stylesheet">
+</head>
+<body>
+  <!-- topo e menu lateral são preenchidos pelo layout.js -->
+  <div id="app-topo"></div>
+  <div class="app-corpo">
+    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+    <main class="conteudo-pagina">
+      <h1 class="h4 mb-3">Materiais separados</h1>
+      <!-- A página inteira é um bloco: .estado e .conteudo ficam no mesmo nível -->
+      <div id="bloco-materiais">
+        <div class="estado"></div>
+        <div class="conteudo d-none">
+          <!-- Totais de plástico e metal (RF09) -->
+          <div class="row g-3 mb-3">
+            <div class="col-6"><div class="card card-material acento-plastico shadow-sm"><div class="card-body">
+              <div class="small" style="color:var(--eco-texto-suave)">Plástico</div><div class="valor" id="total-plastico"></div></div></div></div>
+            <div class="col-6"><div class="card card-material acento-metal shadow-sm"><div class="card-body">
+              <div class="small" style="color:var(--eco-texto-suave)">Metal</div><div class="valor" id="total-metal"></div></div></div></div>
+          </div>
+          <!-- Gráfico de pizza à esquerda e tabela de materiais (RF08) à direita -->
+          <div class="row g-3">
+            <div class="col-lg-4"><div class="card h-100 shadow-sm"><div class="card-header">Plástico x metal</div>
+              <div class="card-body"><div class="grafico"><canvas id="grafico-materiais"></canvas></div></div></div></div>
+            <div class="col-lg-8"><div class="card h-100 shadow-sm"><div class="card-header">Lista de materiais</div>
+              <div class="card-body" id="tabela-materiais"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="materials.js"></script>
+</body>
+</html>

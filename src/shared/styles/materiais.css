@@ -1,0 +1,10 @@
+/* Cor extra usada só nesta página: azul-acinzentado do metal */
+:root { --eco-metal: #5B7B8A; }
+/* faixa lateral nos cards de total: verde para plástico, azul-acinzentado para metal */
+.acento-plastico { border-left: 4px solid var(--eco-verde); }
+.acento-metal { border-left: 4px solid var(--eco-metal); }
+/* o número de cada card usa a cor do seu material */
+.acento-plastico .valor { color: var(--eco-verde-escuro); }
+.acento-metal .valor { color: var(--eco-metal); }
+/* tamanho do número dos totais */
+.card-material .valor { font-size: 1.75rem; font-weight: 700; }

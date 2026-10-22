@@ -1,0 +1,75 @@
+/* Paleta da Equipe 1 (retirada da logo) */
+/* variáveis de cor usadas no projeto todo; --bs-* troca as cores padrão do Bootstrap */
+:root {
+  --eco-azul: #084B60; --eco-azul-escuro: #05384A;
+  --eco-verde: #63A53C; --eco-verde-escuro: #4A8A2A;
+  --eco-fundo: #F4F7F6; --eco-superficie: #FFFFFF; --eco-borda: #D5DEDB;
+  --eco-texto: #1F2D33; --eco-texto-suave: #5A6B72;
+  --eco-sucesso: #2E7D32; --eco-aviso: #B26A00; --eco-perigo: #C62828; --eco-info: #0B6E8A;
+  --bs-primary: var(--eco-azul); --bs-success: var(--eco-verde-escuro);
+  --bs-danger: var(--eco-perigo); --bs-warning: var(--eco-aviso);
+}
+
+
+
+/* fundo, cor do texto e dos títulos */
+body { background: var(--eco-fundo); color: var(--eco-texto); }
+h1, h2, h3 { color: var(--eco-azul); }
+
+/* Layout: topo + menu lateral + conteúdo */
+/* barra do topo: logo à esquerda, usuário e "Sair" à direita */
+.topo { background: var(--eco-azul); color: #fff; padding: .5rem 1rem; display: flex;
+        align-items: center; justify-content: space-between; gap: 1rem; }
+/* fundo branco atrás da logo, para ela aparecer bem sobre o azul */
+.logo-pill { background: #fff; border-radius: .5rem; padding: .2rem .6rem; display: inline-flex; }
+.logo-pill img { height: 34px; }
+/* área abaixo do topo: menu na esquerda e conteúdo ao lado */
+.app-corpo { display: flex; min-height: calc(100vh - 56px); }
+.menu { background: var(--eco-azul-escuro); width: 220px; flex-shrink: 0; padding: 1rem .5rem; }
+/* itens do menu (links e páginas "Em breve") */
+.menu a, .menu span { display: block; color: #d7e6ec; padding: .55rem .85rem; border-radius: .4rem;
+                      text-decoration: none; margin-bottom: .15rem; }
+.menu a:hover { background: var(--eco-azul); color: #fff; }
+/* página atual destacada em verde */
+.menu a.ativo { background: var(--eco-verde-escuro); color: #fff; font-weight: 600; }
+/* páginas ainda não prontas: apagadas e sem clique */
+.menu span { opacity: .5; cursor: not-allowed; }
+/* min-width: 0 evita que tabelas largas estourem o layout */
+.conteudo-pagina { flex: 1; padding: 1.5rem; min-width: 0; }
+/* celular: o menu vai para cima do conteúdo e os itens ficam em linha */
+@media (max-width: 767px) {
+  .app-corpo { flex-direction: column; }
+  .menu { width: 100%; display: flex; flex-wrap: wrap; gap: .25rem; padding: .5rem; }
+  .menu a, .menu span { margin: 0; }
+}
+
+/* Componentes comuns */
+/* cards e cabeçalhos de card com a paleta do projeto */
+.card { background: var(--eco-superficie); border: 1px solid var(--eco-borda); border-radius: .6rem; }
+.card-header { background: var(--eco-superficie); border-bottom: 1px solid var(--eco-borda);
+               font-weight: 600; color: var(--eco-azul); }
+/* botão principal do sistema (azul) */
+.btn-eco { background: var(--eco-azul); border-color: var(--eco-azul); color: #fff; }
+.btn-eco:hover { background: var(--eco-azul-escuro); border-color: var(--eco-azul-escuro); color: #fff; }
+/* destaque azul nos campos de formulário quando selecionados */
+.form-control:focus { border-color: var(--eco-azul); box-shadow: 0 0 0 .2rem rgba(8, 75, 96, .2); }
+/* badges coloridos: texto branco e uma classe por cor (b-sucesso, b-aviso...) */
+.badge[class*="b-"] { color: #fff; }
+.b-sucesso { background: var(--eco-sucesso); } .b-aviso { background: var(--eco-aviso); }
+.b-perigo { background: var(--eco-perigo); }   .b-info { background: var(--eco-info); }
+.b-verde { background: var(--eco-verde-escuro); } .b-suave { background: var(--eco-texto-suave); }
+
+/* Estados de bloco: carregando, vazio, erro */
+/* área centralizada para spinner e mensagens */
+.estado { min-height: 120px; display: flex; flex-direction: column; align-items: center;
+          justify-content: center; text-align: center; color: var(--eco-texto-suave); gap: .5rem; }
+/* quando não há mensagem, a área some e não ocupa espaço */
+.estado:empty { display: none; }
+/* altura fixa para os gráficos (o Chart.js se ajusta a ela) */
+.grafico { position: relative; height: 280px; }
+
+/* Tabelas */
+/* fundo transparente para mostrar o branco do card */
+.table { --bs-table-bg: transparent; }
+.table thead th { color: var(--eco-azul); border-bottom: 2px solid var(--eco-borda); white-space: nowrap; }
+.table td { border-color: var(--eco-borda); }

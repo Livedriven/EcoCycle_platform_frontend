@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lotes | EcoCycle</title>
+  <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+  <!-- topo e menu lateral são preenchidos pelo layout.js -->
+  <div id="app-topo"></div>
+  <div class="app-corpo">
+    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+    <main class="conteudo-pagina">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 m-0">Lotes recebidos</h1>
+        <button id="btn-novo-lote" class="btn btn-eco btn-sm">Novo lote</button>
+      </div>
+      <!-- Formulário de cadastro (escondido até clicar em "Novo lote") -->
+      <div class="card shadow-sm mb-3 d-none" id="card-form-lote">
+        <div class="card-header">Cadastrar lote</div>
+        <div class="card-body">
+          <form id="form-lote" class="row g-3" novalidate>
+            <div id="erro-lote" class="alert alert-danger py-2 d-none" role="alert"></div>
+            <div class="col-md-6"><label class="form-label" for="origem">Origem</label>
+              <input id="origem" class="form-control" maxlength="80"></div>
+            <div class="col-md-3"><label class="form-label" for="peso">Peso de entrada (kg)</label>
+              <input id="peso" type="number" step="0.1" min="0" class="form-control"></div>
+            <div class="col-md-3 d-flex align-items-end"><button class="btn btn-eco w-100" type="submit">Salvar lote</button></div>
+          </form>
+        </div>
+      </div>
+      <!-- Tabela de lotes (.estado mostra carregando/erro/vazio; .conteudo recebe a tabela) -->
+      <div class="card shadow-sm mb-3" id="bloco-lotes">
+        <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
+      </div>
+      <!-- Detalhes do lote (aparece ao clicar em "Detalhes") -->
+      <div class="card shadow-sm d-none" id="card-detalhe">
+        <div class="card-header">Detalhes do lote</div>
+        <div class="card-body" id="detalhe-lote"></div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="batches.js"></script>
+</body>
+</html>
