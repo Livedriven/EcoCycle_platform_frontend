@@ -20,6 +20,11 @@ h1, h2, h3 { color: var(--eco-azul); }
 /* barra do topo: logo à esquerda, usuário e "Sair" à direita */
 .topo { background: var(--eco-azul); color: #fff; padding: .5rem 1rem; display: flex;
         align-items: center; justify-content: space-between; gap: 1rem; }
+/* nome do sistema à esquerda e bloco do usuário à direita */
+.topo-marca { color: #fff; font-size: 1.25rem; font-weight: 700; text-decoration: none; }
+.topo-marca:hover { color: #fff; }
+.topo-usuario { display: flex; align-items: center; gap: .35rem; font-size: .9rem; font-weight: 600; }
+.topo-perfil { color: #d7e6ec; font-weight: 400; }
 /* fundo branco atrás da logo, para ela aparecer bem sobre o azul */
 .logo-pill { background: #fff; border-radius: .5rem; padding: .2rem .6rem; display: inline-flex; }
 .logo-pill img { height: 34px; }

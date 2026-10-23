@@ -1,9 +1,11 @@
 // shared/layout.js
-// Menu lateral de todas as telas protegidas, escrito pelo JS a partir de MENU.
-// Para usar numa tela: o HTML tem <nav id="app-menu" class="menu">, e o JS da
-// tela importa este arquivo no lugar do setup.js e chama montarLayout().
+// Topo (nome do usuário + "Sair") e menu lateral de todas as telas protegidas.
+// Para usar numa tela (todas, exceto login e páginas de erro): o HTML tem
+// <div id="app-topo"></div> e <nav id="app-menu" class="menu">, e o JS da tela
+// importa este arquivo no lugar do setup.js e chama montarLayout().
 import './setup.js';
-import { getUser } from './session.js';
+import API from './api.js';
+import { requireLogin, logout, HOME_URL } from './session.js';
 
 const PAGINAS = '/src/features';
 
@@ -127,12 +129,71 @@ function criarItens(itens, nivel, perfil) {
         .flatMap((item) => (item.filhos ? criarGrupo(item, nivel, perfil) : [criarLink(item, nivel)]));
 }
 
-/** Escreve o menu lateral em #app-menu, de acordo com o perfil do usuário logado. */
-export function montarLayout() {
-    const menu = document.getElementById('app-menu');
-    if (!menu) {
-        return;
+/** "administrador" -> "Administrador" */
+function nomeDoPerfil(perfil) {
+    return perfil.charAt(0).toUpperCase() + perfil.slice(1);
+}
+
+/**
+ * Logout: avisa o mock/API para recusar o token daqui em diante e encerra a
+ * sessão local. Se a API não responder, sai do mesmo jeito.
+ */
+async function sair(botao) {
+    botao.disabled = true;
+    botao.textContent = 'Saindo...';
+    try {
+        await API.POST('/logout');
+    } catch {
+        // sem API, o token ainda vale até o exp, mas some do navegador
     }
+    logout();
+}
+
+function criarTopo(sessao) {
+    const topo = document.createElement('header');
+    topo.className = 'topo';
+    topo.classList.add('p-3')
+
+    const marca = document.createElement('a');
+    marca.className = 'topo-marca';
+    marca.href = HOME_URL;
+    marca.textContent = 'EcoCycle';
+
+    const usuario = document.createElement('div');
+    usuario.className = 'topo-usuario';
+    const nome = document.createElement('span');
+    nome.textContent = sessao.nome;
+    const perfil = document.createElement('span');
+    perfil.className = 'topo-perfil';
+    perfil.textContent = '· ' + nomeDoPerfil(sessao.perfil);
+
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.className = 'btn btn-outline-light btn-sm ms-2';
+    botao.textContent = 'Sair';
+    botao.addEventListener('click', () => sair(botao));
+
+    usuario.append(nome, perfil, botao);
+    topo.append(marca, usuario);
+    return topo;
+}
+
+function criarMenu(perfil) {
     contadorGrupos = 0;
-    menu.replaceChildren(...criarItens(MENU, 0, getUser()?.perfil));
+    return criarItens(MENU, 0, perfil);
+}
+
+/**
+ * Prepara uma tela protegida: confere a sessão (sem sessão válida, vai ao login)
+ * e escreve o topo em #app-topo e o menu lateral em #app-menu.
+ * Devolve a sessão { token, nome, perfil, exp }, ou null se redirecionou ao login.
+ */
+export function montarLayout() {
+    const sessao = requireLogin();
+    if (!sessao) {
+        return null;
+    }
+    document.getElementById('app-topo')?.replaceChildren(criarTopo(sessao));
+    document.getElementById('app-menu')?.replaceChildren(...criarMenu(sessao.perfil));
+    return sessao;
 }
