@@ -1,5 +1,5 @@
 // shared/layout.js
-// Topo (nome do usuário + "Sair") e menu lateral de todas as telas protegidas.
+// Topo (nome do usuário + "Sair"), menu lateral e rodapé de todas as telas protegidas.
 // Para usar numa tela (todas, exceto login e páginas de erro): o HTML tem
 // <div id="app-topo"></div> e <nav id="app-menu" class="menu">, e o JS da tela
 // importa este arquivo no lugar do setup.js e chama montarLayout().
@@ -52,6 +52,10 @@ export const MENU = [
 ];
 
 let contadorGrupos = 0;
+
+// Igual ao @media (max-width: 767.98px) do style.css e ao "md" do Bootstrap.
+const TELA_GRANDE = window.matchMedia('(min-width: 768px)');
+let ouvintesDoMenu = false;
 
 function ehPaginaAtual(item) {
     return item.filhos ? item.filhos.some(ehPaginaAtual) : item.href === location.pathname;
@@ -149,20 +153,136 @@ async function sair(botao) {
     logout();
 }
 
+/* ---------- Abrir e fechar o menu lateral ----------
+ * Tela grande: o menu fica ao lado do conteúdo e recolhe para a esquerda
+ *   (classe "menu-recolhido" no body). Começa aberto e lembra a escolha.
+ * Celular: o menu desliza por cima do conteúdo (classe "menu-aberto" no body).
+ *   Começa fechado a cada página.
+ */
+
+const CHAVE_RECOLHIDO = 'menu-recolhido';
+
+// localStorage pode estar bloqueado (aba anônima, cookies desligados): aí só não lembra.
+function lerRecolhido() {
+    try {
+        return localStorage.getItem(CHAVE_RECOLHIDO) === 'sim';
+    } catch {
+        return false;
+    }
+}
+
+function gravarRecolhido(recolhido) {
+    try {
+        localStorage.setItem(CHAVE_RECOLHIDO, recolhido ? 'sim' : 'nao');
+    } catch {
+        // sem armazenamento, o menu volta aberto na próxima página
+    }
+}
+
+function menuEstaAberto() {
+    return TELA_GRANDE.matches
+        ? !document.body.classList.contains('menu-recolhido')
+        : document.body.classList.contains('menu-aberto');
+}
+
+/** Deixa o botão do topo (ícone e leitores de tela) de acordo com o estado do menu. */
+function atualizarBotaoMenu() {
+    const botao = document.querySelector('.btn-menu');
+    if (!botao) {
+        return;
+    }
+    const aberto = menuEstaAberto();
+    botao.setAttribute('aria-expanded', String(aberto));
+    botao.setAttribute('aria-label', aberto ? 'Fechar menu' : 'Abrir menu');
+    botao.querySelector('.bi').className = 'bi bi-' + (aberto ? 'layout-sidebar-inset' : 'layout-sidebar');
+}
+
+/**
+ * Abre/fecha o menu no modo da tela atual. No celular, ao abrir, o foco vai para o
+ * primeiro item. Ao fechar, se o foco estava dentro do menu, volta para o botão
+ * (o menu fechado some e o foco se perderia).
+ */
+function definirMenu(aberto) {
+    const menu = document.getElementById('app-menu');
+    const focoNoMenu = menu?.contains(document.activeElement);
+
+    if (TELA_GRANDE.matches) {
+        document.body.classList.toggle('menu-recolhido', !aberto);
+        gravarRecolhido(!aberto);
+    } else {
+        document.body.classList.toggle('menu-aberto', aberto);
+        if (aberto) {
+            menu?.querySelector('.menu-link')?.focus();
+        }
+    }
+    atualizarBotaoMenu();
+
+    if (!aberto && focoNoMenu) {
+        document.querySelector('.btn-menu')?.focus();
+    }
+}
+
+function criarBotaoMenu() {
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.className = 'btn-menu';
+    botao.setAttribute('aria-controls', 'app-menu');
+    botao.append(icone('layout-sidebar'));
+    botao.addEventListener('click', () => definirMenu(!menuEstaAberto()));
+    return botao;
+}
+
+/** Fundo escuro atrás do menu aberto: clicar nele fecha o menu. */
+function criarFundoDoMenu() {
+    const fundo = document.createElement('div');
+    fundo.className = 'menu-fundo';
+    fundo.setAttribute('aria-hidden', 'true');
+    fundo.addEventListener('click', () => definirMenu(false));
+    return fundo;
+}
+
+/**
+ * Esc fecha o menu do celular (o da tela grande não cobre nada, então fica).
+ * Ao trocar de tamanho de tela, o menu do celular volta fechado e o botão
+ * passa a mostrar o estado do outro modo.
+ */
+function ouvirMenu() {
+    if (ouvintesDoMenu) {
+        return;
+    }
+    ouvintesDoMenu = true;
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !TELA_GRANDE.matches && menuEstaAberto()) {
+            definirMenu(false);
+        }
+    });
+    TELA_GRANDE.addEventListener('change', () => {
+        document.body.classList.remove('menu-aberto');
+        atualizarBotaoMenu();
+    });
+}
+
+/* ---------- Topo e rodapé ---------- */
+
 function criarTopo(sessao) {
     const topo = document.createElement('header');
     topo.className = 'topo';
-    topo.classList.add('p-3')
+    topo.classList.add('p-3');
 
+    const esquerda = document.createElement('div');
+    esquerda.className = 'topo-esquerda';
     const marca = document.createElement('a');
     marca.className = 'topo-marca';
     marca.href = HOME_URL;
     marca.textContent = 'EcoCycle';
+    esquerda.append(criarBotaoMenu(), marca);
 
     const usuario = document.createElement('div');
     usuario.className = 'topo-usuario';
     const nome = document.createElement('span');
+    nome.className = 'topo-nome';
     nome.textContent = sessao.nome;
+    nome.title = sessao.nome;
     const perfil = document.createElement('span');
     perfil.className = 'topo-perfil';
     perfil.textContent = '· ' + nomeDoPerfil(sessao.perfil);
@@ -174,8 +294,28 @@ function criarTopo(sessao) {
     botao.addEventListener('click', () => sair(botao));
 
     usuario.append(nome, perfil, botao);
-    topo.append(marca, usuario);
+    topo.append(esquerda, usuario);
     return topo;
+}
+
+function criarRodape() {
+    const rodape = document.createElement('footer');
+    rodape.className = 'rodape';
+
+    const marca = document.createElement('span');
+    const nome = document.createElement('strong');
+    nome.className = 'rodape-marca';
+    nome.textContent = 'EcoCycle';
+    marca.append(nome, ' © ' + new Date().getFullYear());
+
+    const descricao = document.createElement('span');
+    descricao.textContent = 'Gestão de reciclagem de plástico e metal';
+
+    const linha = document.createElement('div');
+    linha.className = 'rodape-linha';
+    linha.append(marca, descricao);
+    rodape.append(linha);
+    return rodape;
 }
 
 function criarMenu(perfil) {
@@ -185,7 +325,9 @@ function criarMenu(perfil) {
 
 /**
  * Prepara uma tela protegida: confere a sessão (sem sessão válida, vai ao login)
- * e escreve o topo em #app-topo e o menu lateral em #app-menu.
+ * e escreve o topo em #app-topo, o menu lateral em #app-menu e o rodapé no fim
+ * de .conteudo-pagina (o HTML não precisa de nada para o rodapé). O botão à
+ * esquerda do topo abre e fecha o menu em qualquer tamanho de tela.
  * Devolve a sessão { token, nome, perfil, exp }, ou null se redirecionou ao login.
  */
 export function montarLayout() {
@@ -195,5 +337,14 @@ export function montarLayout() {
     }
     document.getElementById('app-topo')?.replaceChildren(criarTopo(sessao));
     document.getElementById('app-menu')?.replaceChildren(...criarMenu(sessao.perfil));
+    document.querySelector('.menu-fundo')?.remove();
+    document.body.append(criarFundoDoMenu());
+    document.body.classList.remove('menu-aberto');
+    document.body.classList.toggle('menu-recolhido', lerRecolhido());
+    atualizarBotaoMenu();
+    ouvirMenu();
+    const conteudo = document.querySelector('.conteudo-pagina');
+    conteudo?.querySelector(':scope > .rodape')?.remove();
+    conteudo?.append(criarRodape());
     return sessao;
 }

@@ -8,6 +8,10 @@
   --eco-sucesso: #2E7D32; --eco-aviso: #B26A00; --eco-perigo: #C62828; --eco-info: #0B6E8A;
   --bs-primary: var(--eco-azul); --bs-success: var(--eco-verde-escuro);
   --bs-danger: var(--eco-perigo); --bs-warning: var(--eco-aviso);
+  /* altura do topo (p-3 + botão "Sair"): o menu do celular começa logo abaixo dele */
+  --altura-topo: 64px;
+  /* largura do menu lateral em tela grande (também é quanto ele anda ao recolher) */
+  --largura-menu: 250px;
 }
 
 
@@ -17,20 +21,33 @@ body { background: var(--eco-fundo); color: var(--eco-texto); }
 h1, h2, h3 { color: var(--eco-azul); }
 
 /* Layout: topo + menu lateral + conteúdo */
-/* barra do topo: logo à esquerda, usuário e "Sair" à direita */
+/* barra do topo: logo à esquerda, usuário e "Sair" à direita; fica presa no alto ao rolar */
 .topo { background: var(--eco-azul); color: #fff; padding: .5rem 1rem; display: flex;
-        align-items: center; justify-content: space-between; gap: 1rem; }
-/* nome do sistema à esquerda e bloco do usuário à direita */
+        align-items: center; justify-content: space-between; gap: 1rem;
+        min-height: var(--altura-topo); position: sticky; top: 0; z-index: 1040; }
+/* botão do menu + nome do sistema */
+.topo-esquerda { display: flex; align-items: center; gap: .6rem; }
 .topo-marca { color: #fff; font-size: 1.25rem; font-weight: 700; text-decoration: none; }
 .topo-marca:hover { color: #fff; }
-.topo-usuario { display: flex; align-items: center; gap: .35rem; font-size: .9rem; font-weight: 600; }
-.topo-perfil { color: #d7e6ec; font-weight: 400; }
+/* min-width: 0 deixa o nome encolher com "..." em vez de empurrar o "Sair" para fora */
+.topo-usuario { display: flex; align-items: center; gap: .35rem; min-width: 0;
+                font-size: .9rem; font-weight: 600; }
+.topo-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topo-perfil { color: #d7e6ec; font-weight: 400; white-space: nowrap; }
+.topo-usuario .btn { flex-shrink: 0; }
+/* botão "janelinha" que abre e fecha o menu, em qualquer tamanho de tela */
+.btn-menu { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 34px;
+            padding: 0; font-size: 1.25rem; color: #fff; background: none;
+            border: 1px solid rgba(255, 255, 255, .35); border-radius: .4rem; }
+.btn-menu:hover { background: var(--eco-azul-escuro); }
+.btn-menu:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.menu-fundo { display: none; }
 /* fundo branco atrás da logo, para ela aparecer bem sobre o azul */
 .logo-pill { background: #fff; border-radius: .5rem; padding: .2rem .6rem; display: inline-flex; }
 .logo-pill img { height: 34px; }
 /* área abaixo do topo: menu na esquerda e conteúdo ao lado */
-.app-corpo { display: flex; min-height: calc(100vh - 56px); }
-.menu { background: var(--eco-azul-escuro); width: 250px; flex-shrink: 0; padding: 1rem .5rem; }
+.app-corpo { display: flex; min-height: calc(100vh - var(--altura-topo)); }
+.menu { background: var(--eco-azul-escuro); width: var(--largura-menu); flex-shrink: 0; padding: 1rem .5rem; }
 /* cada linha do menu (escrito pelo layout.js): link, página "Em breve" ou botão de submenu */
 .menu-link { display: flex; align-items: center; gap: .6rem; width: 100%; color: #d7e6ec;
              padding: .5rem .85rem; margin-bottom: .15rem; border: 0; border-radius: .4rem;
@@ -50,12 +67,48 @@ h1, h2, h3 { color: var(--eco-azul); }
 /* setinha do grupo: aponta para baixo aberto e para a direita fechado */
 .menu-grupo .seta { font-size: .65rem; transition: transform .2s; }
 .menu-grupo.collapsed .seta { transform: rotate(-90deg); }
-/* min-width: 0 evita que tabelas largas estourem o layout */
-.conteudo-pagina { flex: 1; padding: 1.5rem; min-width: 0; }
-/* celular: o menu vai para cima do conteúdo, ocupando a largura toda */
-@media (max-width: 767px) {
-  .app-corpo { flex-direction: column; }
-  .menu { width: 100%; padding: .5rem; }
+/* min-width: 0 evita que tabelas largas estourem o layout; em coluna para o rodapé ir ao fim */
+.conteudo-pagina { flex: 1; padding: 1.5rem; min-width: 0; display: flex; flex-direction: column; }
+/* rodapé (escrito pelo layout.js): vai ao fim da página mesmo com pouco conteúdo,
+   e o padding-top garante um respiro quando a página é longa */
+.rodape { margin-top: auto; padding-top: 2rem; }
+.rodape-linha { padding-top: 1rem; border-top: 1px solid var(--eco-borda); display: flex;
+                flex-wrap: wrap; justify-content: space-between; gap: .25rem 1rem;
+                font-size: .85rem; color: var(--eco-texto-suave); }
+.rodape-marca { color: var(--eco-azul); }
+/* tela grande: o menu recolhe para a esquerda e o conteúdo ocupa o espaço;
+   visibility: hidden (depois da animação) tira os links escondidos do Tab */
+@media (min-width: 768px) {
+  .menu { transition: margin-left .3s ease; }
+  .menu-recolhido .menu { margin-left: calc(-1 * var(--largura-menu)); visibility: hidden;
+                          transition: margin-left .3s ease, visibility 0s linear .3s; }
+}
+/* celular: o menu sai da tela e desliza da esquerda pelo botão do topo,
+   por cima do conteúdo e com um fundo escuro atrás */
+@media (max-width: 767.98px) {
+  .menu { position: fixed; top: var(--altura-topo); bottom: 0; left: 0; z-index: 1035;
+          width: 270px; max-width: 85vw; overflow-y: auto;
+          transform: translateX(-100%); visibility: hidden;
+          transition: transform .3s ease, visibility 0s linear .3s; }
+  .menu-aberto .menu { transform: none; visibility: visible; transition: transform .3s ease; }
+  .menu-fundo { display: block; position: fixed; inset: var(--altura-topo) 0 0 0; z-index: 1030;
+                background: rgba(5, 56, 74, .55); opacity: 0; visibility: hidden;
+                transition: opacity .3s ease, visibility 0s linear .3s; }
+  .menu-aberto .menu-fundo { opacity: 1; visibility: visible; transition: opacity .3s ease; }
+  /* com o menu aberto, a página atrás não rola */
+  body.menu-aberto { overflow: hidden; }
+  .conteudo-pagina { padding: 1rem; }
+  /* rodapé empilhado e centralizado */
+  .rodape-linha { flex-direction: column; align-items: center; text-align: center; }
+}
+/* telas bem estreitas: o perfil sai do topo para sobrar espaço para o nome */
+@media (max-width: 575.98px) {
+  .topo-perfil { display: none; }
+  .topo-marca { font-size: 1.1rem; }
+}
+/* quem pede menos movimento no sistema vê o menu abrir sem animação */
+@media (prefers-reduced-motion: reduce) {
+  .menu, .menu-fundo, .menu-grupo .seta { transition: none !important; }
 }
 
 /* Componentes comuns */
