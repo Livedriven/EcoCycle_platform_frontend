@@ -9,14 +9,5 @@
   "/api/leituras_sensor*": "/leituras_sensor$1",
   "/api/alertas*": "/alertas$1",
   "/api/logs_sistema*": "/logs_sistema$1",
-  "/api/*": "/$1",
-
-  "fornecedores": 660,
-  "lotes": 660,
-  "esteiras": 660,
-  "usuarios": 660,
-  "producao": 660,
-  "leituras_sensor": 660,
-  "alertas": 660,
-  "logs_sistema": 660
+  "/api/*": "/$1"
 }
