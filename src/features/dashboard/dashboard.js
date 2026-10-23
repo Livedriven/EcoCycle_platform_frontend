@@ -1,6 +1,7 @@
 import '../../shared/setup.js';
 import './dashboard.css';
-import { API } from '../../shared/api.js';
+import API from '../../shared/api.js';
+import { requireLogin } from '../../shared/session.js';
 import {
     MATERIAIS,
     totalRecebido,
@@ -27,6 +28,9 @@ const COR_STATUS_LOTE = {
     'Em processamento': CORES.aviso,
     'Finalizado': CORES.Metal
 };
+
+// Página protegida: sem sessão válida, requireLogin() já redireciona ao login.
+const SESSAO = requireLogin();
 
 // Links "Testar estados" do dashboard.html: ?simular=vazio ou ?simular=erro
 const SIMULAR = new URLSearchParams(window.location.search).get('simular');
@@ -292,5 +296,7 @@ async function carregarDashboard() {
     botao.disabled = false;
 }
 
-document.getElementById('btn-atualizar').addEventListener('click', carregarDashboard);
-carregarDashboard();
+if (SESSAO) {
+    document.getElementById('btn-atualizar').addEventListener('click', carregarDashboard);
+    carregarDashboard();
+}

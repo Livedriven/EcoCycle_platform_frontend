@@ -12,7 +12,7 @@ const bcrypt = require("bcryptjs");
 
 // Só para o mock. A API real tem o segredo dela, fora do código.
 const SEGREDO = process.env.JWT_SEGREDO ?? "ecocycle-segredo-de-desenvolvimento";
-// Para testar a queda de sessão: JWT_EXPIRA=15s npm run api
+// Para testar a queda de sessão: JWT_EXPIRA=15s npm run mock
 const EXPIRA_EM = process.env.JWT_EXPIRA ?? "8h";
 const ARQUIVO_DB = path.join(__dirname, "db.json"); // ajuste se o db.json estiver em outra pasta
 

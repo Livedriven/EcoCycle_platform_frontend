@@ -249,7 +249,7 @@ npm install -D vite vitest eslint json-server
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "mock": "json-server --watch mocks/db.json --routes mocks/routes.json --port 3000",
+    "mock": "json-server --watch mocks/db.json --routes mocks/routes.json --middlewares mocks/auth.cjs mocks/rbac.cjs --port 3000",
     "test": "vitest",
     "lint": "eslint ."
   }

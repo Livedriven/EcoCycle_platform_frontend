@@ -51,6 +51,10 @@ async function requisitar(metodo, url, corpo) {
             endSession("expirada");
         }
 
+        if (resp.status === 403) {
+            throw new Error('Você não tem permissão para acessar estes dados.');
+        }
+
         if (!resp.ok) {
             throw new Error('HTTP ' + resp.status);
         }

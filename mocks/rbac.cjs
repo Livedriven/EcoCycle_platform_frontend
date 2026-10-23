@@ -9,6 +9,14 @@ const permissoes = {
         leituras_sensor: ["GET"],
         fornecedores: ["GET"],
     },
+    consulta: {
+        lotes: ["GET"],
+        alertas: ["GET"],
+        producao: ["GET"],
+        esteiras: ["GET"],
+        leituras_sensor: ["GET"],
+        fornecedores: ["GET"],
+    },
     operador: {
         lotes: ["GET"],
         alertas: ["GET"],
