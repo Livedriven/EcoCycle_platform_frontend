@@ -5,7 +5,7 @@
 // importa este arquivo no lugar do setup.js e chama montarLayout().
 import './setup.js';
 import API from './api.js';
-import { requireLogin, logout, HOME_URL } from './session.js';
+import { requireLogin, logout, can, HOME_URL } from './session.js';
 
 const PAGINAS = '/src/features';
 
@@ -15,7 +15,7 @@ const PAGINAS = '/src/features';
  *  - icone: só no primeiro nível (nome do Bootstrap Icons sem o "bi-")
  *  - href: caminho da tela; null = tela ainda não pronta (aparece desativada)
  *  - filhos: submenu que abre e fecha (collapse do Bootstrap)
- *  - perfis: se informado, só esses perfis veem o item (mesmas regras do rbac.cjs)
+ *  - acao: se informada (chave de PERMISSOES, em session.js), só quem pode executá-la vê o item
  */
 export const MENU = [
     { rotulo: 'Dashboard', icone: 'grid-1x2-fill', href: `${PAGINAS}/dashboard/dashboard.html` },
@@ -36,19 +36,20 @@ export const MENU = [
             {
                 rotulo: 'Fornecedores', filhos: [
                     { rotulo: 'Consultar fornecedores', href: null },
-                    { rotulo: 'Cadastrar fornecedor', href: null, perfis: ['administrador'] }
+                    { rotulo: 'Cadastrar fornecedor', href: null, acao: 'fornecedor.cadastrar' }
                 ]
             },
             {
                 rotulo: 'Lotes', filhos: [
                     { rotulo: 'Consultar lotes', href: `${PAGINAS}/batches/batches.html` },
-                    { rotulo: 'Cadastrar lote', href: null, perfis: ['administrador'] }
+                    { rotulo: 'Cadastrar lote', href: null, acao: 'lote.registrar' }
                 ]
             },
-            { rotulo: 'Iniciar produção', href: null, perfis: ['administrador'] }
+            { rotulo: 'Iniciar produção', href: null, acao: 'producao.operar' }
         ]
     },
-    { rotulo: 'Usuários', icone: 'people-fill', href: `${PAGINAS}/users/users.html`, perfis: ['administrador', 'gerente'] }
+    // gerenciar usuários está fora do MVP: com a lista vazia em PERMISSOES, o item não aparece para ninguém
+    { rotulo: 'Usuários', icone: 'people-fill', href: `${PAGINAS}/users/users.html`, acao: 'usuarios.gerenciar' }
 ];
 
 let contadorGrupos = 0;
@@ -63,7 +64,7 @@ function ehPaginaAtual(item) {
 
 /** Grupo só aparece se o perfil puder ver ao menos um filho. */
 function podeVer(item, perfil) {
-    if (item.perfis && !item.perfis.includes(perfil)) {
+    if (item.acao && !can(item.acao, perfil)) {
         return false;
     }
     return item.filhos ? item.filhos.some((filho) => podeVer(filho, perfil)) : true;
@@ -328,10 +329,12 @@ function criarMenu(perfil) {
  * e escreve o topo em #app-topo, o menu lateral em #app-menu e o rodapé no fim
  * de .conteudo-pagina (o HTML não precisa de nada para o rodapé). O botão à
  * esquerda do topo abre e fecha o menu em qualquer tamanho de tela.
- * Devolve a sessão { token, nome, perfil, exp }, ou null se redirecionou ao login.
+ * Com { acao } (chave de PERMISSOES), a tela é só de quem pode executá-la: os
+ * outros perfis vão para a página 403.
+ * Devolve a sessão { token, nome, perfil, exp }, ou null se redirecionou.
  */
-export function montarLayout() {
-    const sessao = requireLogin();
+export function montarLayout({ acao } = {}) {
+    const sessao = requireLogin(acao);
     if (!sessao) {
         return null;
     }
