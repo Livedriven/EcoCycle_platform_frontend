@@ -1,0 +1,52 @@
+/* Tela de login */
+/* fundo em degradê azul, com o card centralizado na tela */
+body.login { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center;
+             justify-content: center; padding: 1rem;
+             background: linear-gradient(135deg, var(--eco-azul), var(--eco-azul-escuro)); }
+
+/* card branco sem borda, com faixa verde no topo (a mesma ideia dos cards do dashboard) */
+/* as duas variáveis --bs-* deixam bordas e fundo dos campos na paleta, sem brigar com o Bootstrap */
+.login-card { width: 100%; max-width: 400px; padding: 2rem; border: 0; border-radius: .75rem;
+              box-shadow: inset 0 4px 0 var(--eco-verde), 0 1.25rem 2.5rem rgba(0, 0, 0, .3);
+              --bs-border-color: var(--eco-borda); --bs-tertiary-bg: var(--eco-fundo); }
+
+/* logo pequena, centralizada, logo acima do título (largura fixa e altura proporcional) */
+.login-logo { display: block; width: 9.5rem; height: auto; margin: .25rem auto 1.25rem; }
+
+/* título e subtítulo centralizados (balance evita a última linha com uma palavra só) */
+.login-titulo { margin: 0 0 .25rem; font-size: 1.5rem; font-weight: 700; text-align: center; }
+.login-subtitulo { margin: 0 0 1.5rem; font-size: .95rem; text-align: center;
+                   text-wrap: balance; color: var(--eco-texto-suave); }
+
+/* rótulos dos campos */
+.login-card .form-label { font-size: .9rem; font-weight: 600; }
+/* ícone do campo em azul; ao digitar, o ícone acompanha o azul do campo */
+.login-card .input-group-text { color: var(--eco-azul); }
+.login-card .input-group:focus-within .input-group-text { border-color: var(--eco-azul); }
+/* campos um pouco mais altos, mais fáceis de tocar no celular */
+.login-card .form-control { padding: .6rem .75rem; }
+
+/* mensagem de erro mais compacta que o padrão do Bootstrap */
+.login-card .alert { padding: .6rem .9rem; font-size: .9rem; }
+
+/* botão "Entrar" em verde. As variáveis --bs-btn-* valem também no hover, no clique e no foco */
+.btn-entrar { --bs-btn-color: #fff; --bs-btn-bg: var(--eco-verde-escuro);
+              --bs-btn-border-color: var(--eco-verde-escuro);
+              --bs-btn-hover-color: #fff; --bs-btn-hover-bg: var(--eco-sucesso);
+              --bs-btn-hover-border-color: var(--eco-sucesso);
+              --bs-btn-active-color: #fff; --bs-btn-active-bg: var(--eco-sucesso);
+              --bs-btn-active-border-color: var(--eco-sucesso);
+              --bs-btn-focus-shadow-rgb: 74, 138, 42;
+              padding: .65rem 1rem; font-weight: 600; }
+
+/* usuários de teste: separados do formulário por uma linha e discretos (remover na versão final) */
+.login-teste { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--eco-borda);
+               font-size: .85rem; color: var(--eco-texto-suave); }
+.login-teste summary { cursor: pointer; }
+.login-teste ul { margin-top: .5rem; }
+.login-teste code { color: var(--eco-azul); font-weight: 600; }
+
+/* telas muito estreitas: menos espaço interno para o formulário não ficar apertado */
+@media (max-width: 400px) {
+  .login-card { padding: 1.5rem 1.25rem; }
+}

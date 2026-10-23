@@ -1,34 +1,75 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Entrar | EcoCycle</title>
-  <link href="css/style.css" rel="stylesheet">
-</head>
-<body class="login">
-  <main class="card login-card shadow">
-    <img class="logo" src="assets/logo.png" alt="EcoCycle Reciclagem Inteligente">
-    <!-- novalidate: a validação é feita pelo login.js, não pelo navegador -->
-    <form id="form-login" novalidate>
-      <!-- mensagem de erro (escondida até o login.js mostrar) -->
-      <div id="erro-login" class="alert alert-danger py-2 d-none" role="alert"></div>
-      <div class="mb-3">
-        <label for="usuario" class="form-label">Usuário</label>
-        <input id="usuario" class="form-control" autocomplete="username" autofocus>
-      </div>
-      <div class="mb-3">
-        <label for="senha" class="form-label">Senha</label>
-        <input id="senha" type="password" class="form-control" autocomplete="current-password">
-      </div>
-      <button class="btn btn-entrar w-100" type="submit">Entrar</button>
-    </form>
-    <!-- lista de logins de teste, recolhida por padrão -->
-    <details class="mt-3 small" style="color:var(--eco-texto-suave)">
-      <summary>Usuários de teste</summary>
-      admin / admin123 · gerente / gerente123<br>operador / operador123 · consulta / consulta123
-    </details>
-  </main>
-  <script type="module" src="login.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#084B60" />
+    <title>Entrar | EcoCycle</title>
+  </head>
+  <body class="login">
+    <main class="card login-card">
+      <img
+        class="login-logo"
+        src="../../../public/img/logo.png"
+        alt="EcoCycle Reciclagem Inteligente"
+      />
+      <h1 class="login-titulo">Acesse o portal</h1>
+      <p class="login-subtitulo">
+        Entre com seu usuário e senha para continuar.
+      </p>
+
+      <!-- novalidate: a validação é feita pelo login.js, não pelo navegador -->
+      <form id="form-login" novalidate>
+        <div class="mb-3">
+          <label for="usuario" class="form-label">Usuário</label>
+          <div class="input-group">
+            <span class="input-group-text" aria-hidden="true">
+              <i class="bi bi-person"></i>
+            </span>
+            <input
+              id="usuario"
+              class="form-control"
+              placeholder="Seu usuário"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              autofocus
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="senha" class="form-label">Senha</label>
+          <div class="input-group">
+            <span class="input-group-text" aria-hidden="true">
+              <i class="bi bi-lock"></i>
+            </span>
+            <input
+              id="senha"
+              type="password"
+              class="form-control"
+              placeholder="Sua senha"
+              autocomplete="current-password"
+            />
+          </div>
+        </div>
+
+        <!-- mensagem de erro (escondida até o login.js mostrar) -->
+        <div id="erro-login" class="alert alert-danger d-none" role="alert"></div>
+
+        <button class="btn btn-entrar w-100" type="submit">Entrar</button>
+      </form>
+
+      <!-- logins de teste, recolhidos por padrão (remover na versão final) -->
+      <details class="login-teste">
+        <summary>Usuários de teste</summary>
+        <ul class="list-unstyled mb-0">
+          <li><code>admin</code> / ecocycle123</li>
+          <li><code>gerente1</code> / gerente123</li>
+          <li><code>operador1</code> / ecocycle123</li>
+        </ul>
+      </details>
+    </main>
+    <script type="module" src="login.js"></script>
+  </body>
 </html>
