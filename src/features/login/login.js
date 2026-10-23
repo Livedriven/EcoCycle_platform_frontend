@@ -2,6 +2,7 @@
 // Login simulado com os usuários de teste. Na integração com a API real,
 // só a função autenticar() muda (POST em API.POST) e o mock-users.js é removido.
 import "../../shared/setup.js";
+import './login.css';
 import { saveSession, isLoggedIn, HOME_URL } from "../../shared/session.js";
 import API from "../../shared/api.js";
 
