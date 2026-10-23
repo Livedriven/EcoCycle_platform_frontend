@@ -12,6 +12,11 @@ export default defineConfig({
         index: resolve(__dirname, "index.html"),
         login: resolve(__dirname, "src/features/login/login.html"),
         dashboard: resolve(__dirname, "src/features/dashboard/dashboard.html"),
+        materials: resolve(__dirname,'src/features/materials/materials.html'),
+        production: resolve(__dirname,'src/features/production/production.html'),
+        alerts: resolve(__dirname, './src/features/alerts/alerts.html'),
+        conveyor: resolve(__dirname,'./src/features/conveyor/conveyor.html'),
+        batches: resolve(__dirname,'./src/features/batches/batches.html'),
         // uma linha por página
       },
     },

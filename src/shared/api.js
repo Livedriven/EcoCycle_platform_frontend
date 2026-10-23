@@ -1,4 +1,6 @@
 import { API_URL, API_TIMEOUT } from "./config";
+import { endSession } from "./session";
+
 
 /**
  * PADRONIZADORA
@@ -45,6 +47,10 @@ async function requisitar(metodo, url, corpo) {
     try {
         const resp = await fetch(req.url, { ...req.opcoes, signal: ctrl.signal });
 
+        if (resp.status === 401 && req.opcoes.headers.Authorization) {
+            endSession("expirada");
+        }
+
         if (!resp.ok) {
             throw new Error('HTTP ' + resp.status);
         }
@@ -71,10 +77,12 @@ async function requisitar(metodo, url, corpo) {
 /**
  * Interface pública da API
  */
-export const API = {
+const API = {
     GET: (url) => requisitar('GET', url),
     POST: (url, corpo) => requisitar('POST', url, corpo),
     PUT: (url, corpo) => requisitar('PUT', url, corpo),
     PATCH: (url, corpo) => requisitar('PATCH', url, corpo),
     DELETE: (url) => requisitar('DELETE', url)
 };
+
+export default API;
