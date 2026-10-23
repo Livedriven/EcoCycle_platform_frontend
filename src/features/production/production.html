@@ -12,17 +12,53 @@
     <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
     <main class="conteudo-pagina">
       <h1 class="h4 mb-3">Produção diária</h1>
-      <!-- Card da tabela: o cabeçalho tem o filtro por data; o corpo tem .estado e .conteudo -->
+      <!-- Os filtros atualizam a tabela automaticamente; não há botão de filtro. -->
       <div class="card shadow-sm" id="bloco-producao">
         <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
           <span>Registros de produção</span>
-          <div class="d-flex gap-2 align-items-center">
-            <label for="filtro-data" class="small mb-0">Data</label>
-            <input type="date" id="filtro-data" class="form-control form-control-sm w-auto">
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <div>
+              <label for="busca-producao" class="visually-hidden">Buscar produção</label>
+              <input type="search" id="busca-producao" class="form-control form-control-sm" placeholder="Buscar produção" autocomplete="off" aria-describedby="ajuda-filtros">
+            </div>
+            <div>
+              <label for="filtro-data" class="visually-hidden">Data</label>
+              <input type="date" id="filtro-data" class="form-control form-control-sm" aria-describedby="ajuda-filtros">
+            </div>
+            <div>
+              <label for="filtro-status" class="visually-hidden">Status</label>
+              <select id="filtro-status" class="form-select form-select-sm" aria-describedby="ajuda-filtros">
+                <option value="">Todos os status</option>
+              </select>
+            </div>
+            <div>
+              <label for="filtro-turno" class="visually-hidden">Turno</label>
+              <select id="filtro-turno" class="form-select form-select-sm" aria-describedby="ajuda-filtros">
+                <option value="">Todos os turnos</option>
+              </select>
+            </div>
             <button id="limpar-filtro" class="btn btn-outline-secondary btn-sm">Limpar</button>
           </div>
         </div>
+        <span id="ajuda-filtros" class="visually-hidden">Os filtros são aplicados automaticamente. A busca aceita termos aproximados.</span>
         <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
+        <div id="resultado-filtros" class="card-footer bg-transparent small text-body-secondary d-none" aria-live="polite"></div>
+      </div>
+
+      <!-- Preenchido por production-details.js ao escolher "Ver dados" na tabela. -->
+      <div class="modal fade" id="modal-detalhe-producao" tabindex="-1" aria-labelledby="titulo-detalhe-producao" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 class="modal-title fs-5" id="titulo-detalhe-producao">Dados da produção</h2>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="detalhe-producao"></div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
