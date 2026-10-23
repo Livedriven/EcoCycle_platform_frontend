@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acesso negado | EcoCycle</title>
+</head>
+<body>
+  <!-- Para onde o session.js manda quem está logado mas não tem permissão para a tela -->
+  <main class="min-vh-100 d-flex flex-column align-items-center justify-content-center text-center p-3 gap-2">
+    <i class="bi bi-shield-lock fs-1" style="color:var(--eco-azul)" aria-hidden="true"></i>
+    <h1 class="h4 m-0">Acesso negado</h1>
+    <p class="m-0" style="color:var(--eco-texto-suave)">Seu perfil não tem permissão para acessar esta tela.</p>
+    <a class="btn btn-eco mt-2" href="/src/features/dashboard/dashboard.html">Voltar ao dashboard</a>
+  </main>
+  <script type="module">
+    import '../../shared/setup.js';
+  </script>
+</body>
+</html>

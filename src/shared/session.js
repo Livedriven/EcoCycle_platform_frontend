@@ -4,7 +4,24 @@ const CHAVE_TOKEN = "token"; // não renomear: o api.js lê exatamente esta chav
 
 export const LOGIN_URL = "/src/features/login/login.html";
 export const HOME_URL = "/src/features/dashboard/dashboard.html";
+export const FORBIDDEN_URL = "/src/features/errors/403.html";
 export const PERFIS = ["administrador", "gerente", "operador", "consulta"];
+
+/**
+ * Matriz de permissões do MVP (Especificação MVP2, seção 3): quem pode executar
+ * cada ação. Consultar dashboard, lotes, fornecedores, alertas e estoque vale
+ * para os 4 perfis e não precisa de ação aqui. Lista vazia = ninguém.
+ * A interface só esconde e barra; quem garante a regra é a API (401 e 403).
+ */
+export const PERMISSOES = {
+    "fornecedor.cadastrar": ["administrador", "gerente"],
+    "lote.registrar": ["administrador", "gerente", "operador"],
+    // PENDENTE na especificação: confirmar se administrador e gerente também
+    // iniciam e finalizam produção. Até lá, só o operador (o único confirmado).
+    "producao.operar": ["operador"],
+    // Gerenciar usuários pela interface está fora do MVP.
+    "usuarios.gerenciar": [],
+};
 
 const INTERVALO_VIGIA = 30_000; // confere a validade a cada 30 s
 let vigia = null;
@@ -103,6 +120,14 @@ export function isLoggedIn() {
     return getSession() !== null;
 }
 
+/**
+ * true se o perfil pode executar a ação de PERMISSOES. Sem perfil informado,
+ * usa o do usuário logado. Sem sessão ou ação desconhecida: false.
+ */
+export function can(acao, perfil = getUser()?.perfil) {
+    return Boolean(perfil) && (PERMISSOES[acao]?.includes(perfil) ?? false);
+}
+
 /** Apaga a sessão, sem redirecionar. */
 export function clearSession() {
     sessionStorage.removeItem(CHAVE_TOKEN);
@@ -130,12 +155,18 @@ export function logout() {
 /**
  * Protege a página (chamar no começo de todo arquivo de tela protegida).
  * Sem sessão válida, redireciona ao login e devolve null.
- * Com sessão, devolve { token, nome, perfil, exp } e passa a vigiar a validade.
+ * Com "acao" (chave de PERMISSOES), a tela é só de quem pode executá-la:
+ * os outros perfis vão para a página 403 e recebem null.
+ * Com acesso, devolve { token, nome, perfil, exp } e passa a vigiar a validade.
  */
-export function requireLogin() {
+export function requireLogin(acao) {
     const { sessao, motivo } = verificar();
     if (!sessao) {
         derrubar(motivo);
+        return null;
+    }
+    if (acao !== undefined && !can(acao, sessao.perfil)) {
+        location.replace(FORBIDDEN_URL);
         return null;
     }
     iniciarVigia();

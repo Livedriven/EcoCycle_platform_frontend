@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   decodeToken, saveSession, getSession, getUser, isLoggedIn,
-  logout, requireLogin, LOGIN_URL,
+  logout, requireLogin, can, LOGIN_URL, FORBIDDEN_URL,
 } from "./session.js";
 
 // Monta um JWT de teste (a assinatura não importa: o front não a valida).
@@ -91,5 +91,47 @@ describe("requireLogin", () => {
     expect(requireLogin()).toBeNull();
     expect(destinos).toEqual([`${LOGIN_URL}?motivo=expirada`]);
     expect(sessionStorage.getItem("token")).toBeNull();
+  });
+});
+
+describe("can (matriz de permissões do MVP)", () => {
+  // [ação, administrador, gerente, operador, consulta]
+  const matriz = [
+    ["fornecedor.cadastrar", true, true, false, false],
+    ["lote.registrar", true, true, true, false],
+    ["producao.operar", false, false, true, false],
+    ["usuarios.gerenciar", false, false, false, false],
+  ];
+  const perfis = ["administrador", "gerente", "operador", "consulta"];
+
+  it.each(matriz)("%s segue a especificação", (acao, ...esperado) => {
+    expect(perfis.map((perfil) => can(acao, perfil))).toEqual(esperado);
+  });
+  it("sem perfil informado, usa o do usuário logado", () => {
+    saveSession(tokenValido({ perfil: "operador" }));
+    expect(can("producao.operar")).toBe(true);
+    expect(can("fornecedor.cadastrar")).toBe(false);
+  });
+  it("sem sessão ou com ação desconhecida, nega", () => {
+    expect(can("lote.registrar")).toBe(false);
+    expect(can("acao.que.nao.existe", "administrador")).toBe(false);
+  });
+});
+
+describe("requireLogin com ação", () => {
+  it("perfil sem permissão: vai para a página 403 e devolve null", () => {
+    saveSession(tokenValido({ perfil: "consulta" }));
+    expect(requireLogin("lote.registrar")).toBeNull();
+    expect(destinos).toEqual([FORBIDDEN_URL]);
+    expect(sessionStorage.getItem("token")).not.toBeNull(); // a sessão continua
+  });
+  it("perfil com permissão: devolve a sessão sem redirecionar", () => {
+    saveSession(tokenValido({ perfil: "gerente" }));
+    expect(requireLogin("fornecedor.cadastrar")?.perfil).toBe("gerente");
+    expect(destinos).toEqual([]);
+  });
+  it("sem sessão, o login vem antes da permissão", () => {
+    expect(requireLogin("lote.registrar")).toBeNull();
+    expect(destinos).toEqual([LOGIN_URL]);
   });
 });
