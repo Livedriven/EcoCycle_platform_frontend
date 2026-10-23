@@ -1,4 +1,4 @@
-import '../../shared/setup.js';
+import { montarLayout } from '../../shared/layout.js';
 import './dashboard.css';
 import API from '../../shared/api.js';
 import { requireLogin } from '../../shared/session.js';
@@ -297,6 +297,7 @@ async function carregarDashboard() {
 }
 
 if (SESSAO) {
+    montarLayout();
     document.getElementById('btn-atualizar').addEventListener('click', carregarDashboard);
     carregarDashboard();
 }

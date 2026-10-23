@@ -25,22 +25,32 @@ h1, h2, h3 { color: var(--eco-azul); }
 .logo-pill img { height: 34px; }
 /* área abaixo do topo: menu na esquerda e conteúdo ao lado */
 .app-corpo { display: flex; min-height: calc(100vh - 56px); }
-.menu { background: var(--eco-azul-escuro); width: 220px; flex-shrink: 0; padding: 1rem .5rem; }
-/* itens do menu (links e páginas "Em breve") */
-.menu a, .menu span { display: block; color: #d7e6ec; padding: .55rem .85rem; border-radius: .4rem;
-                      text-decoration: none; margin-bottom: .15rem; }
-.menu a:hover { background: var(--eco-azul); color: #fff; }
+.menu { background: var(--eco-azul-escuro); width: 250px; flex-shrink: 0; padding: 1rem .5rem; }
+/* cada linha do menu (escrito pelo layout.js): link, página "Em breve" ou botão de submenu */
+.menu-link { display: flex; align-items: center; gap: .6rem; width: 100%; color: #d7e6ec;
+             padding: .5rem .85rem; margin-bottom: .15rem; border: 0; border-radius: .4rem;
+             background: none; text-align: left; text-decoration: none; }
+.menu-link:hover { background: var(--eco-azul); color: #fff; }
+/* primeiro nível em destaque; segundo e terceiro menores */
+.menu-link.nivel-0 { color: #fff; font-weight: 600; }
+.menu-link.nivel-1 { font-size: .92rem; padding-block: .35rem; }
+.menu-link.nivel-2 { font-size: .88rem; padding-block: .3rem; color: #a9c2cc; }
 /* página atual destacada em verde */
-.menu a.ativo { background: var(--eco-verde-escuro); color: #fff; font-weight: 600; }
+.menu-link.ativo { background: var(--eco-verde); color: #fff; font-weight: 600; }
 /* páginas ainda não prontas: apagadas e sem clique */
-.menu span { opacity: .5; cursor: not-allowed; }
+.menu-link.desativado { opacity: .55; cursor: not-allowed; }
+.menu-link.desativado:hover { background: none; }
+/* submenu recuado, com uma linha à esquerda */
+.menu-sub { margin-left: 1rem; padding-left: .25rem; border-left: 1px solid rgba(215, 230, 236, .25); }
+/* setinha do grupo: aponta para baixo aberto e para a direita fechado */
+.menu-grupo .seta { font-size: .65rem; transition: transform .2s; }
+.menu-grupo.collapsed .seta { transform: rotate(-90deg); }
 /* min-width: 0 evita que tabelas largas estourem o layout */
 .conteudo-pagina { flex: 1; padding: 1.5rem; min-width: 0; }
-/* celular: o menu vai para cima do conteúdo e os itens ficam em linha */
+/* celular: o menu vai para cima do conteúdo, ocupando a largura toda */
 @media (max-width: 767px) {
   .app-corpo { flex-direction: column; }
-  .menu { width: 100%; display: flex; flex-wrap: wrap; gap: .25rem; padding: .5rem; }
-  .menu a, .menu span { margin: 0; }
+  .menu { width: 100%; padding: .5rem; }
 }
 
 /* Componentes comuns */
