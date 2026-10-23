@@ -8,5 +8,8 @@
 .ind-verde  { --faixa: var(--eco-verde);  --txt: var(--eco-verde-escuro); }
 .ind-info   { --faixa: var(--eco-info);   --txt: var(--eco-info); }
 .ind-perigo { --faixa: var(--eco-perigo); --txt: var(--eco-perigo); }
+/* cada esteira na lista do card "Status da esteira" */
+.esteira-item { padding: .5rem 0; border-bottom: 1px solid var(--eco-borda); }
+.esteira-item:last-child { border-bottom: 0; }
 /* número de destaque do card de CO₂ evitado */
 .valor-grande { font-size: 2.25rem; font-weight: 700; color: var(--eco-verde-escuro); }
