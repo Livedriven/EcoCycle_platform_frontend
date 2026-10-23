@@ -1,7 +1,6 @@
-import '../../shared/setup.js';
+import { montarLayout } from '../../shared/layout.js';
 import './dashboard.css';
 import API from '../../shared/api.js';
-import { requireLogin } from '../../shared/session.js';
 import {
     MATERIAIS,
     totalRecebido,
@@ -29,8 +28,8 @@ const COR_STATUS_LOTE = {
     'Finalizado': CORES.Metal
 };
 
-// Página protegida: sem sessão válida, requireLogin() já redireciona ao login.
-const SESSAO = requireLogin();
+// Página protegida: sem sessão válida, montarLayout() já redireciona ao login.
+const SESSAO = montarLayout();
 
 // Links "Testar estados" do dashboard.html: ?simular=vazio ou ?simular=erro
 const SIMULAR = new URLSearchParams(window.location.search).get('simular');

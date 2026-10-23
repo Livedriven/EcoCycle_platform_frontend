@@ -17,6 +17,7 @@ export default defineConfig({
         alerts: resolve(__dirname, './src/features/alerts/alerts.html'),
         conveyor: resolve(__dirname,'./src/features/conveyor/conveyor.html'),
         batches: resolve(__dirname,'./src/features/batches/batches.html'),
+        users: resolve(__dirname, './src/features/users/users.html'),
         // uma linha por página
       },
     },
