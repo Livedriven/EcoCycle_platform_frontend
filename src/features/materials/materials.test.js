@@ -15,8 +15,11 @@ function elemento() {
     const classes = new Set();
     const atributos = new Map();
     const eventos = new Map();
+    let texto = '';
     return {
-        value: '', textContent: '', disabled: false, children: [],
+        value: '', disabled: false, children: [],
+        get textContent() { return texto + this.children.map((filho) => filho.textContent ?? '').join(''); },
+        set textContent(valor) { texto = valor; this.children = []; },
         classList: {
             add: (valor) => classes.add(valor), remove: (valor) => classes.delete(valor),
             contains: (valor) => classes.has(valor),
@@ -24,7 +27,7 @@ function elemento() {
         },
         setAttribute: (chave, valor) => atributos.set(chave, valor),
         getAttribute: (chave) => atributos.get(chave),
-        replaceChildren(...filhos) { this.children = filhos; this.textContent = ''; },
+        replaceChildren(...filhos) { this.textContent = ''; this.children = filhos; },
         add(opcao) { this.children.push(opcao); },
         addEventListener: (tipo, ouvir) => eventos.set(tipo, ouvir),
         disparar: (tipo) => eventos.get(tipo)?.({ preventDefault: vi.fn() }),
@@ -55,7 +58,7 @@ beforeEach(() => {
     };
     obter('bloco-materiais').querySelector = (seletor) => seletor === '.estado' ? estado : conteudo;
     obter('filtros-materiais').elements = ['data-inicial', 'data-final', 'filtro-lote'].map(obter);
-    vi.stubGlobal('document', { getElementById: obter });
+    vi.stubGlobal('document', { getElementById: obter, createElement: elemento });
     vi.stubGlobal('Option', class {
         constructor(texto, valor) { this.text = texto; this.value = valor; }
     });
@@ -69,6 +72,26 @@ async function iniciar() {
 }
 
 describe('controlador do relatório de materiais', () => {
+    it('mostra spinner e bloqueia controles enquanto a API está pendente', async () => {
+        let concluir;
+        mocks.get.mockReturnValue(new Promise((resolve) => { concluir = resolve; }));
+        await iniciar();
+        expect(estado.children[0].className).toContain('spinner-border');
+        expect(estado.textContent).toContain('Carregando materiais');
+        expect(estado.getAttribute('role')).toBe('status');
+        expect(conteudo.classList.contains('d-none')).toBe(true);
+        expect(elementos.get('bloco-materiais').getAttribute('aria-busy')).toBe('true');
+        expect(elementos.get('atualizar-materiais').disabled).toBe(true);
+        expect(elementos.get('rotulo-atualizar').textContent).toBe('Atualizando...');
+        expect(elementos.get('data-inicial').disabled).toBe(true);
+        expect(mocks.criarTabela).not.toHaveBeenCalled();
+        concluir(producao);
+        await vi.waitFor(() => expect(elementos.get('bloco-materiais').getAttribute('aria-busy')).toBe('false'));
+        expect(estado.children).toHaveLength(0);
+        expect(elementos.get('rotulo-atualizar').textContent).toBe('Atualizar');
+        expect(elementos.get('atualizar-materiais').disabled).toBe(false);
+        expect(elementos.get('data-inicial').disabled).toBe(false);
+    });
     it('não consulta dados nem acessa o DOM do relatório sem sessão', async () => {
         mocks.layout.mockReturnValue(null);
         await iniciar();
@@ -121,13 +144,18 @@ describe('controlador do relatório de materiais', () => {
         expect(elementos.has('aviso-materiais')).toBe(false);
         expect(elementos.get('total-plastico').textContent).toBe('12,5 kg');
     });
-    it('trata histórico vazio com totais zero, tabela vazia e sem gráfico', async () => {
+    it('trata histórico vazio com totais zero e mensagens no lugar de tabela e gráfico', async () => {
         mocks.get.mockResolvedValue([]);
         await iniciar();
         expect(elementos.get('total-metal').textContent).toBe('0 kg');
-        expect(mocks.criarTabela.mock.calls[0][2]).toEqual([]);
+        expect(mocks.criarTabela).not.toHaveBeenCalled();
         expect(mocks.grafico).not.toHaveBeenCalled();
         expect(elementos.get('resumo-materiais').textContent).toContain('Nenhum material');
+        expect(elementos.get('tabela-vazia').classList.contains('d-none')).toBe(false);
+        expect(elementos.get('tabela-materiais').classList.contains('d-none')).toBe(true);
+        expect(elementos.get('grafico-vazio').classList.contains('d-none')).toBe(false);
+        expect(elementos.get('mensagem-tabela-vazia').textContent).toContain('Use Atualizar');
+        expect(elementos.get('limpar-filtros-vazio').classList.contains('d-none')).toBe(true);
     });
     it('remove o gráfico quando o filtro não encontra pesos e restaura ao limpar', async () => {
         await iniciar();
@@ -136,11 +164,33 @@ describe('controlador do relatório de materiais', () => {
         elementos.get('data-inicial').disparar('change');
         expect(grafico.destroy).toHaveBeenCalledOnce();
         expect(elementos.get('total-metal').textContent).toBe('0 kg');
+        expect(elementos.get('mensagem-tabela-vazia').textContent).toContain('filtros selecionados');
+        expect(elementos.get('limpar-filtros-vazio').classList.contains('d-none')).toBe(false);
+        expect(elementos.get('tabela-materiais').classList.contains('d-none')).toBe(true);
         elementos.get('filtros-materiais').disparar('reset');
         // Emula o reset nativo dos controles antes da microtask.
         elementos.get('data-inicial').value = '';
         await Promise.resolve();
         expect(elementos.get('total-metal').textContent).toBe('13 kg');
+        expect(elementos.get('tabela-vazia').classList.contains('d-none')).toBe(true);
+        expect(elementos.get('tabela-materiais').classList.contains('d-none')).toBe(false);
+    });
+    it('mantém registros com peso zero na tabela e mostra apenas o gráfico vazio', async () => {
+        mocks.get.mockResolvedValue([{ ...producao[0], peso_kg: 0 }]);
+        await iniciar();
+        expect(mocks.criarTabela).toHaveBeenCalledOnce();
+        expect(mocks.grafico).not.toHaveBeenCalled();
+        expect(elementos.get('tabela-vazia').classList.contains('d-none')).toBe(true);
+        expect(elementos.get('grafico-vazio').classList.contains('d-none')).toBe(false);
+    });
+    it('volta do histórico vazio para dados disponíveis ao atualizar', async () => {
+        mocks.get.mockResolvedValueOnce([]);
+        await iniciar();
+        expect(mocks.criarTabela).not.toHaveBeenCalled();
+        await elementos.get('atualizar-materiais').disparar('click');
+        expect(mocks.criarTabela).toHaveBeenCalledOnce();
+        expect(elementos.get('tabela-vazia').classList.contains('d-none')).toBe(true);
+        expect(elementos.get('tabela-materiais').classList.contains('d-none')).toBe(false);
     });
     it('sinaliza período invertido e permite corrigir mesmo depois de atualizar', async () => {
         await iniciar();
