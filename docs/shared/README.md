@@ -10,6 +10,7 @@ Código reaproveitado por todas as telas. Antes de escrever algo numa tela, conf
 | `permissions.js` | Visibilidade de elementos com `data-permissao`, usando a matriz existente | [permissions.md](permissions.md) |
 | `ui.js` | Classes de cor compartilhadas para alertas, contadores e situações | [estilos.md](estilos.md) |
 | `table.js` | Tabelas com busca, ordenação e paginação (Grid.js em português) | [table.md](table.md) |
+| `charts.js` | Gráficos Chart.js e cores compartilhados entre dashboard e materiais | [charts.md](charts.md) |
 | `calculations.js` | Totais e agrupamentos de produção, lotes, fornecedores, alertas e CO₂ | [calculations.md](calculations.md) |
 | `formatters.js` | Números, pesos e datas no padrão brasileiro | [formatters.md](formatters.md) |
 | `validators.js` | Contrato de validação para os formulários | [validators.md](validators.md) |
@@ -70,7 +71,8 @@ Login e páginas de erro não usam o layout: importam só `'../../shared/setup.j
 | `arredondar(valor, casas)` | calculations | Arredonda (2 casas por padrão). |
 | `totalRecebido(lotes)` | calculations | Peso total recebido nos lotes (kg). |
 | `totalProduzido(producao)` | calculations | Peso total produzido (kg). |
-| `totalPorMaterial(producao)` | calculations | `{ Plástico, Metal }` em kg. |
+| `totalPorMaterial(producao, materiais?)` | calculations | Totais em kg por categoria. O relatório usa `MATERIAIS_RELATORIO` para plástico, metal, alumínio e rejeito. |
+| `materiaisPorLoteDia(producao)` | calculations | Totais dos quatro materiais por lote e dia, com zero nas categorias ausentes. |
 | `producaoPorDia(producao, dias)` | calculations | Séries por dia e material, para gráficos. |
 | `producaoPorMes(producao, meses)` | calculations | Séries por mês e material, para gráficos. |
 | `recebidoPorFornecedor(lotes, fornecedores)` | calculations | Total recebido por fornecedor, do maior para o menor. |
@@ -79,6 +81,7 @@ Login e páginas de erro não usam o layout: importam só `'../../shared/setup.j
 | `co2Evitado(producao)` | calculations | CO₂ evitado em toneladas (total e por material). |
 | `formatNumber(valor, casas)` | formatters | `1234.5` → `"1.234,5"` |
 | `formatKg(valor)` | formatters | `1234.5` → `"1.234,5 kg"` |
+| `formatToneladas(valorKg)` | formatters | `1234.5` kg → `"1,2345 t"` |
 | `formatDate(data)` | formatters | → `"20/10/2026"` |
 | `formatDateTime(data)` | formatters | → `"20/10/2026 09:51"` |
 | `formatDayMonth(data)` | formatters | → `"20/10"` |
@@ -87,6 +90,6 @@ Login e páginas de erro não usam o layout: importam só `'../../shared/setup.j
 
 ---
 
-## Fora de `shared/`, mas reaproveitável
+## Gráficos compartilhados
 
-`src/features/dashboard/charts.js` cria os gráficos do Chart.js com a paleta da EcoCycle: `createBarChart`, `createLineChart`, `createDoughnutChart` e as cores em `CORES`. Hoje só o dashboard usa. Se outra tela precisar de gráfico, o caminho é mover o arquivo para `shared/`, porque uma tela não deve importar de outra.
+`src/shared/charts.js` cria os gráficos do Chart.js com a paleta da EcoCycle: `createBarChart`, `createLineChart`, `createDoughnutChart` e as cores em `CORES`. Dashboard e materiais importam esse módulo. O antigo `src/features/dashboard/charts.js` apenas reexporta as funções para compatibilidade; não mantém uma segunda implementação.

@@ -21,7 +21,7 @@ import {
     formatDayMonth,
     formatMonth
 } from '../../shared/formatters.js';
-import { createBarChart, createDoughnutChart, CORES } from './charts.js';
+import { createBarChart, createDoughnutChart, CORES } from '../../shared/charts.js';
 
 const COR_STATUS_LOTE = {
     'Recebido': CORES.info,

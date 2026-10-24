@@ -17,7 +17,8 @@ Testes: `src/shared/calculations.test.js`.
 | Constante | Valor | Para que serve |
 |---|---|---|
 | `CAMPOS` | `{ pesoProducao: 'peso_kg', materialProducao: 'tipo_material', ... }` | Nomes dos campos da API. **Se a API real usar outros nomes, só aqui muda.** |
-| `MATERIAIS` | `['Plástico', 'Metal']` | Materiais considerados nos totais e gráficos. |
+| `MATERIAIS` | `['Plástico', 'Metal']` | Padrão dos cálculos e gráficos existentes do dashboard. |
+| `MATERIAIS_RELATORIO` | `['Plástico', 'Metal', 'Alumínio', 'Rejeito']` | Categorias do relatório de materiais separados. Categorias sem registros recebem zero. |
 | `FATORES_CO2` | `{ Plástico: 1.5, Metal: 4.0 }` | kg de CO₂e evitados por kg reciclado. **Provisórios**, a confirmar com o professor. |
 
 ---
@@ -39,12 +40,21 @@ As somas internas não são arredondadas; o arredondamento é feito só no resul
 |---|---|---|
 | `totalRecebido(lotes)` | lotes | Soma de `pesoentrada_kg` (kg). |
 | `totalProduzido(producao)` | produção | Soma de `peso_kg` de todos os materiais (kg). |
-| `totalPorMaterial(producao)` | produção | `{ 'Plástico': 30.3, 'Metal': 9.5 }` (kg). Material sem registro vem com `0`. |
+| `totalPorMaterial(producao, materiais = MATERIAIS)` | produção e lista opcional de categorias | Totais em kg, com `0` nas categorias sem registros. O relatório passa `MATERIAIS_RELATORIO` para incluir os quatro materiais. |
+| `materiaisPorLoteDia(producao)` | produção validada | `[{ id_lote, data, plastico, metal, aluminio, rejeito }]`, em kg, agrupado por lote e dia. |
 | `co2Evitado(producao)` | produção | `{ total, porMaterial: { 'Plástico', 'Metal' } }` em **toneladas** de CO₂e. |
 
 ---
 
 ## Agrupamentos (para gráficos)
+
+### `materiaisPorLoteDia(producao)`
+
+Soma todos os turnos e esteiras do mesmo lote e dia usando `totalPorMaterial(registros, MATERIAIS_RELATORIO)`. Sempre inclui plástico, metal, alumínio e rejeito, com zero nas categorias ausentes. Os grupos são ordenados pelo dia mais recente e, no mesmo dia, pelo lote em ordem numérica. Cada grupo é arredondado somente depois da soma. O dia usa a parte `AAAA-MM-DD` de `CAMPOS.dataProducao`, sem conversão de fuso. `CAMPOS.idLoteProducao` centraliza o nome `id_lote`.
+
+Alumínio e rejeito não têm fatores de CO₂ definidos. Os cálculos de CO₂ existentes permanecem limitados a plástico e metal; não são inferidos fatores para as novas categorias.
+
+A tela de materiais valida os registros antes de chamar os cálculos; a função não altera a lista recebida. Como cartões e linhas arredondam em níveis diferentes, somar valores já arredondados de várias linhas pode diferir por centésimos do total calculado sobre os registros originais.
 
 ### `producaoPorDia(producao, dias = 7, hoje = new Date())`
 ### `producaoPorMes(producao, meses = 6, hoje = new Date())`

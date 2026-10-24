@@ -16,6 +16,7 @@ As funções só formatam para exibir. Para somar, use os números originais (e 
 |---|---|
 | `formatNumber(valor, casas = 2)` | `formatNumber(1234.5)` → `"1.234,5"` · `formatNumber(2.456, 1)` → `"2,5"` · `formatNumber(null)` → `"0"` |
 | `formatKg(valor)` | `formatKg(1234.5)` → `"1.234,5 kg"` |
+| `formatToneladas(valorKg)` | `formatToneladas(1234.5)` → `"1,2345 t"`. Recebe kg e converte para toneladas, com até cinco casas para preservar centésimos de kg. |
 
 `casas` é o **máximo** de casas decimais: zeros à direita não aparecem (`formatNumber(10)` → `"10"`).
 
