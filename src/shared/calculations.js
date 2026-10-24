@@ -7,6 +7,7 @@ export const CAMPOS = {
     pesoProducao: "peso_kg",
     materialProducao: "tipo_material",
     dataProducao: "data_hora",
+    idLoteProducao: "id_lote",
     pesoLote: "pesoentrada_kg",
     idFornecedorLote: "id_fornecedor",
     statusLote: "status",
@@ -16,6 +17,8 @@ export const CAMPOS = {
 };
 
 export const MATERIAIS = ["Plástico", "Metal"];
+// Relatório completo; os cálculos existentes do dashboard mantêm seu padrão atual.
+export const MATERIAIS_RELATORIO = [...MATERIAIS, "Alumínio", "Rejeito"];
 
 // Fatores PROVISÓRIOS (kg de CO₂e evitados por kg reciclado), a confirmar com o professor.
 export const FATORES_CO2 = { "Plástico": 1.5, "Metal": 4.0 };
@@ -57,14 +60,31 @@ export function totalProduzido(producao) {
     return arredondar(somar(producao, CAMPOS.pesoProducao));
 }
 
-/** { "Plástico": kg, "Metal": kg } */
-export function totalPorMaterial(producao) {
+/** Totais em kg para os materiais solicitados; categorias sem registros vêm com zero. */
+export function totalPorMaterial(producao, materiais = MATERIAIS) {
     const totais = {};
-    MATERIAIS.forEach((material) => {
+    materiais.forEach((material) => {
         const doMaterial = (producao ?? []).filter((r) => r[CAMPOS.materialProducao] === material);
         totais[material] = arredondar(somar(doMaterial, CAMPOS.pesoProducao));
     });
     return totais;
+}
+
+/** Uma linha por lote e dia, somando todos os turnos e esteiras. Recebe registros validados. */
+export function materiaisPorLoteDia(producao) {
+    const grupos = new Map();
+    (producao ?? []).forEach((registro) => {
+        const idLote = String(registro[CAMPOS.idLoteProducao]);
+        const data = chaveDia(registro[CAMPOS.dataProducao]);
+        const chave = JSON.stringify([idLote, data]);
+        if (!grupos.has(chave)) grupos.set(chave, { id_lote: idLote, data, registros: [] });
+        grupos.get(chave).registros.push(registro);
+    });
+
+    return [...grupos.values()].map(({ id_lote, data, registros }) => {
+        const totais = totalPorMaterial(registros, MATERIAIS_RELATORIO);
+        return { id_lote, data, plastico: totais['Plástico'], metal: totais.Metal, aluminio: totais['Alumínio'], rejeito: totais.Rejeito };
+    }).sort((a, b) => b.data.localeCompare(a.data) || a.id_lote.localeCompare(b.id_lote, 'pt-BR', { numeric: true }));
 }
 
 /** Agrupa a produção por chave (dia ou mês) e material, mantendo as chaves na ordem recebida. */
