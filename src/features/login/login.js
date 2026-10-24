@@ -15,9 +15,15 @@ const campoSenha = document.getElementById("senha");
 const caixaErro = document.getElementById("erro-login");
 const botao = form.querySelector("button[type=submit]");
 
-// Aviso vindo do guard / logout (ex.: ?motivo=expirada).
-if (new URLSearchParams(location.search).get("motivo") === "expirada") {
-  mostrarErro("Sua sessão expirou. Entre novamente.");
+// Aviso vindo do guard ao exigir autenticação para acessar uma página protegida.
+const mensagensPorMotivo = {
+  ausente: "Faça login para acessar esta página.",
+  invalida: "Sua sessão não é válida. Entre novamente.",
+  expirada: "Sua sessão expirou. Entre novamente.",
+};
+const motivo = new URLSearchParams(location.search).get("motivo");
+if (mensagensPorMotivo[motivo]) {
+  mostrarErro(mensagensPorMotivo[motivo]);
 }
 
 function mostrarErro(msg) {
