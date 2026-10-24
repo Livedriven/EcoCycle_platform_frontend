@@ -83,10 +83,22 @@ function correspondeBusca(producao, busca) {
 
 /** Aplica todos os filtros da tela sobre a lista já carregada. */
 export function filtrarProducoes(producoes, filtros) {
+    if (validarPeriodo(filtros.dataInicial, filtros.dataFinal)) return [];
+
     return producoes.filter((producao) =>
         (!filtros.data || String(producao.data_hora || '').slice(0, 10) === filtros.data) &&
+        (!filtros.dataInicial || String(producao.data_hora || '').slice(0, 10) >= filtros.dataInicial) &&
+        (!filtros.dataFinal || (String(producao.data_hora || '').slice(0, 10) !== '' && String(producao.data_hora || '').slice(0, 10) <= filtros.dataFinal)) &&
         (!filtros.status || producao.status === filtros.status) &&
         (!filtros.turno || producao.turno === filtros.turno) &&
         correspondeBusca(producao, filtros.busca)
     );
+}
+
+/** Datas ISO podem ser comparadas sem conversão de fuso horário. Vazio não limita o período. */
+export function validarPeriodo(dataInicial, dataFinal) {
+    if (dataInicial && dataFinal && dataInicial > dataFinal) {
+        return 'A data inicial não pode ser maior que a data final.';
+    }
+    return '';
 }
