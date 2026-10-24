@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Iniciar produção | EcoCycle</title>
+</head>
+<body>
+  <!-- topo, menu lateral e rodapé são preenchidos pelo layout.js -->
+  <div id="app-topo"></div>
+  <div class="app-corpo">
+    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+    <main class="conteudo-pagina">
+      <h1 class="h4 mb-1">Iniciar produção</h1>
+      <nav aria-label="Você está em" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+          <li class="breadcrumb-item">Início</li>
+          <li class="breadcrumb-item">Operações</li>
+          <li class="breadcrumb-item active" aria-current="page">Iniciar produção</li>
+        </ol>
+      </nav>
+
+      <div class="card shadow-sm" id="bloco-iniciar-producao">
+        <div class="card-body">
+          <!-- Carregando / erro ao buscar lotes e esteiras. -->
+          <div class="estado"></div>
+
+          <div class="conteudo d-none">
+            <!-- Resultado do envio (sucesso ou erro da API). -->
+            <div id="aviso-envio" class="d-none" role="alert" aria-live="polite"></div>
+
+            <form id="form-iniciar-producao" novalidate>
+              <div class="mb-3">
+                <label for="lote" class="form-label fw-semibold">Lote <span class="text-danger" aria-hidden="true">*</span></label>
+                <select id="lote" name="id_lote" class="form-select" required aria-describedby="ajuda-lote erro-lote">
+                  <option value="">Selecione o lote</option>
+                </select>
+                <div id="erro-lote" class="invalid-feedback"></div>
+                <div id="ajuda-lote" class="form-text">Apenas lotes com status "Disponível" aparecem listados para triagem e processamento.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="esteira" class="form-label fw-semibold">Esteira <span class="text-danger" aria-hidden="true">*</span></label>
+                <select id="esteira" name="id_esteira" class="form-select" required aria-describedby="erro-esteira">
+                  <option value="">Selecione a esteira</option>
+                </select>
+                <div id="erro-esteira" class="invalid-feedback"></div>
+              </div>
+
+              <div class="mb-4">
+                <label for="turno" class="form-label fw-semibold">Turno <span class="text-danger" aria-hidden="true">*</span></label>
+                <select id="turno" name="turno_producao" class="form-select" required aria-describedby="erro-turno">
+                  <option value="">Selecione o turno</option>
+                </select>
+                <div id="erro-turno" class="invalid-feedback"></div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2">
+                <button type="submit" id="btn-iniciar" class="btn btn-primary">Iniciar produção</button>
+                <button type="button" id="btn-cancelar" class="btn btn-outline-secondary">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="start-production.js"></script>
+</body>
+</html>

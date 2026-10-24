@@ -45,7 +45,7 @@ export const MENU = [
                     { rotulo: 'Cadastrar lote', href: null, acao: 'lote.registrar' }
                 ]
             },
-            { rotulo: 'Iniciar produção', href: null, acao: 'producao.operar' }
+            { rotulo: 'Iniciar produção', href: '/src/features/start-production/start-production.html', acao: 'producao.operar' }
         ]
     },
     // gerenciar usuários está fora do MVP: com a lista vazia em PERMISSOES, o item não aparece para ninguém
