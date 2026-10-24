@@ -5,6 +5,8 @@ import {
     totalRecebido,
     totalProduzido,
     totalPorMaterial,
+    MATERIAIS_RELATORIO,
+    materiaisPorLoteDia,
     producaoPorDia,
     producaoPorMes,
     recebidoPorFornecedor,
@@ -47,6 +49,50 @@ describe("totais por material", () => {
 
     it("lista vazia dá zero nos dois", () => {
         expect(totalPorMaterial([])).toEqual({ "Plástico": 0, "Metal": 0 });
+    });
+    it('inclui os quatro materiais do relatório, zerando categorias ainda sem registros', () => {
+        expect(totalPorMaterial(producao, MATERIAIS_RELATORIO)).toEqual({ 'Plástico': 30.3, Metal: 9.5, 'Alumínio': 0, Rejeito: 0 });
+    });
+    it('soma alumínio e rejeito separadamente quando a API passar a fornecê-los', () => {
+        const registros = [
+            { tipo_material: 'Alumínio', peso_kg: 10.1 },
+            { tipo_material: 'Alumínio', peso_kg: 20.2 },
+            { tipo_material: 'Rejeito', peso_kg: 5 },
+        ];
+        expect(totalPorMaterial(registros, MATERIAIS_RELATORIO)).toEqual({ 'Plástico': 0, Metal: 0, 'Alumínio': 30.3, Rejeito: 5 });
+        expect(co2Evitado(registros)).toEqual({ total: 0, porMaterial: { 'Plástico': 0, Metal: 0 } });
+    });
+});
+
+describe('materiais por lote e dia', () => {
+    it('soma turnos e esteiras do mesmo lote e dia, sem misturar outros lotes ou dias', () => {
+        const registros = [
+            { id_lote: 2, tipo_material: 'Plástico', peso_kg: 10.1, data_hora: '2026-10-20T08:00:00', id_esteira: 1 },
+            { id_lote: '2', tipo_material: 'Plástico', peso_kg: 20.2, data_hora: '2026-10-20T14:00:00', id_esteira: 2 },
+            { id_lote: 2, tipo_material: 'Metal', peso_kg: 5.5, data_hora: '2026-10-20' },
+            { id_lote: 10, tipo_material: 'Metal', peso_kg: 9, data_hora: '2026-10-20' },
+            { id_lote: 2, tipo_material: 'Metal', peso_kg: 3, data_hora: '2026-10-19' },
+        ];
+        expect(materiaisPorLoteDia(registros)).toEqual([
+            { id_lote: '2', data: '2026-10-20', plastico: 30.3, metal: 5.5, aluminio: 0, rejeito: 0 },
+            { id_lote: '10', data: '2026-10-20', plastico: 0, metal: 9, aluminio: 0, rejeito: 0 },
+            { id_lote: '2', data: '2026-10-19', plastico: 0, metal: 3, aluminio: 0, rejeito: 0 },
+        ]);
+        expect(registros[0].peso_kg).toBe(10.1);
+    });
+    it('aceita ausência de registros', () => {
+        expect(materiaisPorLoteDia()).toEqual([]);
+        expect(materiaisPorLoteDia(null)).toEqual([]);
+    });
+    it('arredonda só depois de somar os registros do grupo', () => {
+        const registros = Array.from({ length: 3 }, () => ({ id_lote: 1, tipo_material: 'Metal', peso_kg: 0.004, data_hora: '2026-10-20' }));
+        expect(materiaisPorLoteDia(registros)[0].metal).toBe(0.01);
+    });
+    it('agrupa alumínio e rejeito no lote e dia corretos', () => {
+        expect(materiaisPorLoteDia([
+            { id_lote: 1, data_hora: '2026-10-20', tipo_material: 'Alumínio', peso_kg: 10 },
+            { id_lote: 1, data_hora: '2026-10-20', tipo_material: 'Rejeito', peso_kg: 3 },
+        ])).toEqual([{ id_lote: '1', data: '2026-10-20', plastico: 0, metal: 0, aluminio: 10, rejeito: 3 }]);
     });
 });
 
