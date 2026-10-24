@@ -6,9 +6,7 @@
 const PERMISSOES = {
     "fornecedor.cadastrar": ["administrador", "gerente"],
     "lote.registrar": ["administrador", "gerente", "operador"],
-    // PENDENTE na especificação: confirmar se administrador e gerente também
-    // iniciam e finalizam produção. Até lá, só o operador (o único confirmado).
-    "producao.operar": ["operador"],
+    "producao.operar": ["administrador", "gerente", "operador"],
     // Gerenciar usuários pela interface está fora do MVP.
     "usuarios.gerenciar": [],
 };

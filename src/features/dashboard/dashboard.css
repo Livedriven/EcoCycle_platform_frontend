@@ -8,6 +8,7 @@
 .ind-verde  { --faixa: var(--eco-verde);  --txt: var(--eco-verde-escuro); }
 .ind-info   { --faixa: var(--eco-info);   --txt: var(--eco-info); }
 .ind-perigo { --faixa: var(--eco-perigo); --txt: var(--eco-perigo); }
+.ind-sucesso { --faixa: var(--eco-sucesso); --txt: var(--eco-sucesso); }
 /* cada esteira na lista do card "Status da esteira" */
 .esteira-item { padding: .5rem 0; border-bottom: 1px solid var(--eco-borda); }
 .esteira-item:last-child { border-bottom: 0; }

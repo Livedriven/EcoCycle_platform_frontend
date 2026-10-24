@@ -7,6 +7,7 @@
 import { montarLayout } from "../../shared/layout.js";
 import API from "../../shared/api.js";
 import { createTable, updateTable, escaparHtml } from "../../shared/table.js";
+import { classeStatus, classeAlerta, classeContadorAlertas } from "../../shared/ui.js";
 
 // Monta topo e menu e redireciona para o login se não houver sessão válida.
 const SESSAO = montarLayout();
@@ -14,10 +15,6 @@ const SESSAO = montarLayout();
 if (SESSAO) {
 
 const INTERVALO_ATUALIZACAO_MS = 30000; // atualiza sozinho a cada 30 segundos
-
-// Cor do badge (classes b-* do style.css) para cada valor vindo da API.
-const COR_STATUS_ESTEIRA = { Ativa: "b-sucesso", Parada: "b-perigo", Manutenção: "b-aviso" };
-const COR_STATUS_LEITURA = { Normal: "b-sucesso", Atenção: "b-aviso", Crítico: "b-perigo" };
 
 // ---------- Elementos da página ----------
 const blocos = {
@@ -130,7 +127,7 @@ function montarSeletor(esteiras) {
 }
 
 function desenharIndicadores(esteira, alertasAtivos) {
-    const corStatus = COR_STATUS_ESTEIRA[esteira.status_esteira];
+    const corStatus = classeStatus(esteira.status_esteira);
     const temAlerta = alertasAtivos.length > 0;
 
     blocos.indicadores.querySelector(".conteudo").innerHTML =
@@ -139,7 +136,7 @@ function desenharIndicadores(esteira, alertasAtivos) {
         cartaoIndicador("speedometer2", "Velocidade", formatarNumero(esteira.velocidade_esteira_kmh) + " km/h") +
         cartaoIndicador("thermometer-half", "Temperatura da esteira", formatarNumero(esteira.temperatura_esteira_c) + " °C") +
         cartaoIndicador("bell", "Alertas ativos",
-            '<span class="' + (temAlerta ? "text-danger" : "") + '">' + alertasAtivos.length + "</span>");
+            '<span class="' + (temAlerta ? "text-danger" : "text-success") + '">' + alertasAtivos.length + "</span>");
 
     mostrarConteudo(blocos.indicadores);
 }
@@ -153,7 +150,7 @@ function desenharUltimaLeitura(leituras) {
     const ultima = leituras[0]; // a lista já vem ordenada da mais nova para a mais antiga
 
     blocos.leitura.querySelector(".conteudo").innerHTML =
-        '<div class="mb-3">' + badge(ultima.status_leitura, COR_STATUS_LEITURA[ultima.status_leitura]) +
+        '<div class="mb-3">' + badge(ultima.status_leitura, classeStatus(ultima.status_leitura)) +
         ' <span class="small" style="color:var(--eco-texto-suave)">' + escaparHtml(formatarDataHora(ultima.datahora_leitura)) + "</span></div>" +
         '<div class="row g-3">' +
         campoLeitura("Temperatura", formatarNumero(ultima.temperatura_leitura_c) + " °C") +
@@ -166,7 +163,7 @@ function desenharUltimaLeitura(leituras) {
 
 function desenharAlertas(alertasAtivos, leituras) {
     contadorAlertas.textContent = String(alertasAtivos.length);
-    contadorAlertas.className = "badge " + (alertasAtivos.length > 0 ? "b-perigo" : "b-sucesso");
+    contadorAlertas.className = "badge " + classeContadorAlertas(alertasAtivos.length);
 
     if (alertasAtivos.length === 0) {
         mostrarEstado(blocos.alertas, "vazio", "Nenhum alerta ativo. A esteira está sem pendências.");
@@ -177,7 +174,6 @@ function desenharAlertas(alertasAtivos, leituras) {
 
     const itens = alertasAtivos.map((alerta) => {
         const leitura = leituraPorId.get(alerta.id_leitura);
-        const critico = String(alerta.tipo_alerta).toLowerCase().includes("crítica");
         const detalhe = leitura
             ? "Leitura " + leitura.id + " · " + formatarNumero(leitura.temperatura_leitura_c) + " °C · " +
               formatarNumero(leitura.peso_leitura_kg, 2) + " kg"
@@ -185,7 +181,7 @@ function desenharAlertas(alertasAtivos, leituras) {
 
         return (
             '<li class="list-group-item d-flex justify-content-between align-items-start gap-2">' +
-            "<div>" + badge(alerta.tipo_alerta, critico ? "b-perigo" : "b-aviso") +
+            "<div>" + badge(alerta.tipo_alerta, classeAlerta(alerta.tipo_alerta) + " badge-alerta") +
             '<div class="small mt-1" style="color:var(--eco-texto-suave)">' + escaparHtml(detalhe) + "</div></div>" +
             '<span class="small text-nowrap" style="color:var(--eco-texto-suave)">' +
             escaparHtml(formatarDataHora(alerta.datahora_alerta)) + "</span></li>"
@@ -219,7 +215,7 @@ function desenharHistorico(leituras) {
             {
                 id: "status_leitura",
                 label: "Status",
-                html: (valor) => badge(valor, COR_STATUS_LEITURA[valor])
+                html: (valor) => badge(valor, classeStatus(valor))
             },
             { id: "temperatura_leitura_c", label: "Temperatura (°C)", formatar: (valor) => formatarNumero(valor) },
             { id: "peso_leitura_kg", label: "Peso (kg)", formatar: (valor) => formatarNumero(valor, 2) },

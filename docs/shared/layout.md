@@ -31,6 +31,7 @@ O que faz, nesta ordem:
 3. Escreve o menu em `#app-menu`, só com os itens que o perfil do usuário pode ver.
 4. Acrescenta o rodapé no fim de `.conteudo-pagina`.
 5. Liga o botão que abre e fecha o menu.
+6. Aplica a visibilidade dos elementos com `data-permissao` usando [permissions.js](permissions.md).
 
 **Devolve** a sessão `{ token, nome, perfil, exp }`, ou `null` se redirecionou.
 

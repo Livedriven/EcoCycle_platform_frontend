@@ -1,6 +1,7 @@
 import { montarLayout } from '../../shared/layout.js';
 import './dashboard.css';
 import API from '../../shared/api.js';
+import { classeStatus, classeAlerta, classeContadorAlertas } from '../../shared/ui.js';
 import {
     MATERIAIS,
     totalRecebido,
@@ -67,7 +68,7 @@ function mostrarMensagem(id, texto, icone) {
     conteudo.classList.add('d-none');
     estado.innerHTML = '';
     const i = document.createElement('i');
-    i.className = 'bi bi-' + icone + ' fs-3';
+    i.className = 'bi bi-' + icone + ' fs-3' + (icone === 'exclamation-triangle' ? ' text-danger' : '');
     const p = document.createElement('span');
     p.textContent = texto;
     estado.append(i, p);
@@ -126,7 +127,7 @@ function prepararIndicadores(lotes, producao, alertas) {
             cardIndicador('ind-info', 'Total processado', formatKg(totalProduzido(producao))),
             cardIndicador('ind-azul', 'Plástico', formatKg(porMaterial['Plástico'])),
             cardIndicador('ind-verde', 'Metal', formatKg(porMaterial['Metal'])),
-            cardIndicador(ativos > 0 ? 'ind-perigo' : 'ind-verde', 'Alertas ativos', String(ativos))
+            cardIndicador(ativos > 0 ? 'ind-perigo' : 'ind-sucesso', 'Alertas ativos', String(ativos))
         ];
         document.querySelector('#bloco-indicadores .conteudo').replaceChildren(...cards);
     };
@@ -219,7 +220,7 @@ function linhaEsteira(esteira) {
     const nome = document.createElement('strong');
     nome.textContent = esteira.nome_esteira;
     const badge = document.createElement('span');
-    badge.className = 'badge ' + (esteira.status_esteira === 'Ativa' ? 'b-sucesso' : 'b-aviso');
+    badge.className = 'badge ' + classeStatus(esteira.status_esteira);
     badge.textContent = esteira.status_esteira;
     topo.append(nome, badge);
 
@@ -243,10 +244,12 @@ function prepararEsteira(esteiras) {
 
 function linhaAlerta(alerta) {
     const linha = document.createElement('li');
-    linha.className = 'list-group-item d-flex justify-content-between align-items-center';
+    linha.className = 'list-group-item d-flex justify-content-between align-items-start gap-2';
     const tipo = document.createElement('span');
+    tipo.className = 'badge badge-alerta ' + classeAlerta(alerta.tipo_alerta);
     tipo.textContent = alerta.tipo_alerta;
     const data = document.createElement('small');
+    data.className = 'text-nowrap';
     data.style.color = 'var(--eco-texto-suave)';
     data.textContent = formatDateTime(alerta.datahora_alerta);
     linha.append(tipo, data);
@@ -256,7 +259,9 @@ function linhaAlerta(alerta) {
 function prepararAlertas(alertas) {
     const ativos = alertasAtivos(alertas)
         .sort((a, b) => String(b.datahora_alerta).localeCompare(String(a.datahora_alerta)));
-    document.getElementById('contador-alertas').textContent = String(ativos.length);
+    const contador = document.getElementById('contador-alertas');
+    contador.textContent = String(ativos.length);
+    contador.className = 'badge ' + classeContadorAlertas(ativos.length);
     if (ativos.length === 0) {
         return null;
     }

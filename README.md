@@ -46,10 +46,8 @@ Há quatro perfis. Todos veem os mesmos dados; a diferença está nas ações qu
 | Login e consulta de dashboard, lotes, fornecedores, alertas e estoque | Sim | Sim | Sim | Sim |
 | Cadastrar fornecedor | Sim | Sim | Não | Não |
 | Registrar lote | Sim | Sim | Sim | Não |
-| Iniciar e finalizar produção | Pendente* | Pendente* | Sim | Não |
+| Iniciar e finalizar produção | Sim | Sim | Sim | Não |
 | Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
-
-\* A especificação ainda não decidiu se administrador e gerente também iniciam e finalizam produção. Até a confirmação, o portal libera só para o operador.
 
 No portal, o menu esconde e as telas barram (página "acesso negado") o que o perfil não pode fazer. Quem garante a regra é a API: token ausente, inválido ou expirado recebe `401`, e usuário sem permissão recebe `403`.
 

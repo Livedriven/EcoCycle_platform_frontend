@@ -99,7 +99,7 @@ describe("can (matriz de permissões do MVP)", () => {
   const matriz = [
     ["fornecedor.cadastrar", true, true, false, false],
     ["lote.registrar", true, true, true, false],
-    ["producao.operar", false, false, true, false],
+    ["producao.operar", true, true, true, false],
     ["usuarios.gerenciar", false, false, false, false],
   ];
   const perfis = ["administrador", "gerente", "operador", "consulta"];
@@ -119,6 +119,16 @@ describe("can (matriz de permissões do MVP)", () => {
 });
 
 describe("requireLogin com ação", () => {
+  it.each(["administrador", "gerente", "operador"])("%s pode acessar a operação de produção", (perfil) => {
+    saveSession(tokenValido({ perfil }));
+    expect(requireLogin("producao.operar")?.perfil).toBe(perfil);
+    expect(destinos).toEqual([]);
+  });
+  it("consulta continua sem acesso à operação de produção", () => {
+    saveSession(tokenValido({ perfil: "consulta" }));
+    expect(requireLogin("producao.operar")).toBeNull();
+    expect(destinos).toEqual([FORBIDDEN_URL]);
+  });
   it("perfil sem permissão: vai para a página 403 e devolve null", () => {
     saveSession(tokenValido({ perfil: "consulta" }));
     expect(requireLogin("lote.registrar")).toBeNull();

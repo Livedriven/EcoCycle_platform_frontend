@@ -23,6 +23,27 @@ Retirada da logo. Use as variáveis em vez de escrever as cores direto: `color: 
 
 As cores `primary`, `success`, `danger` e `warning` do Bootstrap também usam essa paleta.
 
+Os alertas seguem o padrão do conveyor em todas as telas: críticos em vermelho
+(`#C62828`), demais alertas ativos em laranja (`#B26A00`) e contador zerado em
+verde (`#2E7D32`). As mensagens `.alert-danger`, `.alert-warning`, `.alert-success`
+e `.alert-info`, além dos textos de situação, usam essa mesma paleta.
+
+As regras ficam em `shared/ui.js`:
+
+```js
+import { classeAlerta, classeStatus, classeContadorAlertas } from '../../shared/ui.js';
+
+badge.className = 'badge badge-alerta ' + classeAlerta(alerta.tipo_alerta);
+contador.className = 'badge ' + classeContadorAlertas(ativos.length);
+status.className = 'badge ' + classeStatus(leitura.status_leitura);
+```
+
+`classeAlerta` reconhece crítico/crítica com ou sem acento e sem diferenciar
+maiúsculas. `classeStatus` padroniza situações de leituras, esteiras e produção;
+valores desconhecidos usam o cinza `b-suave`. A classe `badge-alerta` permite
+quebra de linha em descrições longas. Mantenha o texto do alerta: a cor complementa
+a identificação da situação.
+
 | Variável de layout | Valor | Uso |
 |---|---|---|
 | `--altura-topo` | `64px` | Altura do topo; o menu do celular começa abaixo dele. |
