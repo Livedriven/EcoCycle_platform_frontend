@@ -30,6 +30,8 @@ const COR_STATUS_LOTE = {
 
 // Página protegida: sem sessão válida, montarLayout() já redireciona ao login.
 const SESSAO = montarLayout();
+const INTERVALO_ATUALIZACAO_MS = 5000;
+let carregando = false;
 
 // Links "Testar estados" do dashboard.html: ?simular=vazio ou ?simular=erro
 const SIMULAR = new URLSearchParams(window.location.search).get('simular');
@@ -85,7 +87,11 @@ function mostrarConteudo(id) {
  * preparar(...dados) devolve uma função de desenho, ou null quando não há dados.
  */
 async function montarBloco(id, fontes, preparar, textoVazio = 'Sem dados para mostrar.') {
-    mostrarCarregando(id);
+    // Nas próximas atualizações, mantém o bloco visível enquanto busca os dados.
+    const { estado, conteudo } = partesDoBloco(id);
+    if (conteudo.classList.contains('d-none') && !estado.hasChildNodes()) {
+        mostrarCarregando(id);
+    }
     try {
         const dados = await Promise.all(fontes);
         const desenhar = preparar(...dados);
@@ -271,31 +277,35 @@ function prepararAlertas(alertas) {
 /* ---------- Carga da página ---------- */
 
 async function carregarDashboard() {
-    const botao = document.getElementById('btn-atualizar');
-    botao.disabled = true;
+    if (carregando) return;
+    carregando = true;
 
-    // Cada endpoint é buscado uma vez e compartilhado entre os blocos que precisam dele.
-    const lotes = buscar('/lotes');
-    const producao = buscar('/producao');
-    const fornecedores = buscar('/fornecedores');
-    const alertas = buscar('/alertas');
-    const esteiras = buscar('/esteiras');
+    try {
+        // Cada endpoint é buscado uma vez e compartilhado entre os blocos que precisam dele.
+        const lotes = buscar('/lotes');
+        const producao = buscar('/producao');
+        const fornecedores = buscar('/fornecedores');
+        const alertas = buscar('/alertas');
+        const esteiras = buscar('/esteiras');
 
-    await Promise.all([
-        montarBloco('bloco-indicadores', [lotes, producao, alertas], prepararIndicadores),
-        montarBloco('bloco-diaria', [producao], prepararDiaria, 'Sem produção nos últimos 7 dias.'),
-        montarBloco('bloco-mensal', [producao], prepararMensal, 'Sem produção nos últimos 6 meses.'),
-        montarBloco('bloco-co2', [producao], prepararCo2),
-        montarBloco('bloco-fornecedores', [lotes, fornecedores], prepararFornecedores),
-        montarBloco('bloco-status-lotes', [lotes], prepararStatusLotes),
-        montarBloco('bloco-esteira', [esteiras], prepararEsteira, 'Nenhuma esteira cadastrada.'),
-        montarBloco('bloco-alertas', [alertas], prepararAlertas, 'Nenhum alerta ativo.')
-    ]);
-
-    botao.disabled = false;
+        await Promise.all([
+            montarBloco('bloco-indicadores', [lotes, producao, alertas], prepararIndicadores),
+            montarBloco('bloco-diaria', [producao], prepararDiaria, 'Sem produção nos últimos 7 dias.'),
+            montarBloco('bloco-mensal', [producao], prepararMensal, 'Sem produção nos últimos 6 meses.'),
+            montarBloco('bloco-co2', [producao], prepararCo2),
+            montarBloco('bloco-fornecedores', [lotes, fornecedores], prepararFornecedores),
+            montarBloco('bloco-status-lotes', [lotes], prepararStatusLotes),
+            montarBloco('bloco-esteira', [esteiras], prepararEsteira, 'Nenhuma esteira cadastrada.'),
+            montarBloco('bloco-alertas', [alertas], prepararAlertas, 'Nenhum alerta ativo.')
+        ]);
+    } finally {
+        carregando = false;
+    }
 }
 
 if (SESSAO) {
-    document.getElementById('btn-atualizar').addEventListener('click', carregarDashboard);
     carregarDashboard();
+    setInterval(() => {
+        if (!document.hidden) carregarDashboard();
+    }, INTERVALO_ATUALIZACAO_MS);
 }
