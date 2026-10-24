@@ -11,8 +11,64 @@
   <div class="app-corpo">
     <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
     <main class="conteudo-pagina">
-      <h1 class="h4 mb-3">Alertas</h1>
-      <p style="color:var(--eco-texto-suave)">Tela em construção.</p>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h1 class="h4 m-0">Alertas</h1>
+        <div class="d-flex align-items-center gap-2">
+          <span id="ultima-atualizacao" class="small" style="color:var(--eco-texto-suave)" aria-live="polite"></span>
+          <button id="btn-atualizar" class="btn btn-eco btn-sm">Atualizar</button>
+        </div>
+      </div>
+
+      <!-- Totais: ativos, histórico (resolvidos) e geral -->
+      <div class="row g-3 mb-4" id="indicadores-alertas">
+        <div class="col-4"><div class="card h-100 shadow-sm"><div class="card-body">
+          <div class="small" style="color:var(--eco-texto-suave)">Ativos</div>
+          <div class="fs-3 fw-bold" id="total-ativos">–</div></div></div></div>
+        <div class="col-4"><div class="card h-100 shadow-sm"><div class="card-body">
+          <div class="small" style="color:var(--eco-texto-suave)">Histórico</div>
+          <div class="fs-3 fw-bold" id="total-historico" style="color:var(--eco-azul)">–</div></div></div></div>
+        <div class="col-4"><div class="card h-100 shadow-sm"><div class="card-body">
+          <div class="small" style="color:var(--eco-texto-suave)">Total</div>
+          <div class="fs-3 fw-bold" id="total-geral" style="color:var(--eco-azul)">–</div></div></div></div>
+      </div>
+
+      <!-- Os filtros atualizam a tabela automaticamente; não há botão de filtro. -->
+      <div class="card shadow-sm" id="bloco-alertas">
+        <div class="card-header">
+          <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Situação dos alertas">
+              <input type="radio" class="btn-check" name="filtro-estado" id="estado-ativos" value="ativos" autocomplete="off" checked>
+              <label class="btn btn-outline-primary" for="estado-ativos">Ativos</label>
+              <input type="radio" class="btn-check" name="filtro-estado" id="estado-historico" value="historico" autocomplete="off">
+              <label class="btn btn-outline-primary" for="estado-historico">Histórico</label>
+              <input type="radio" class="btn-check" name="filtro-estado" id="estado-todos" value="todos" autocomplete="off">
+              <label class="btn btn-outline-primary" for="estado-todos">Todos</label>
+            </div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <div>
+                <label for="busca-alertas" class="visually-hidden">Buscar alerta</label>
+                <input type="search" id="busca-alertas" class="form-control form-control-sm" placeholder="Buscar alerta" autocomplete="off" aria-describedby="ajuda-filtros">
+              </div>
+              <div>
+                <label for="filtro-tipo" class="visually-hidden">Tipo de alerta</label>
+                <select id="filtro-tipo" class="form-select form-select-sm" aria-describedby="ajuda-filtros">
+                  <option value="">Todos os tipos</option>
+                </select>
+              </div>
+              <div class="d-flex align-items-center gap-1">
+                <label for="filtro-de" class="small" style="color:var(--eco-texto-suave)">De</label>
+                <input type="date" id="filtro-de" class="form-control form-control-sm" aria-describedby="ajuda-filtros">
+                <label for="filtro-ate" class="small" style="color:var(--eco-texto-suave)">até</label>
+                <input type="date" id="filtro-ate" class="form-control form-control-sm" aria-describedby="ajuda-filtros">
+              </div>
+              <button id="limpar-filtro" class="btn btn-outline-secondary btn-sm">Limpar</button>
+            </div>
+          </div>
+        </div>
+        <span id="ajuda-filtros" class="visually-hidden">Os filtros são aplicados automaticamente.</span>
+        <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
+        <div id="resultado-filtros" class="card-footer bg-transparent small text-body-secondary d-none" aria-live="polite"></div>
+      </div>
     </main>
   </div>
   <script type="module" src="alerts.js"></script>
