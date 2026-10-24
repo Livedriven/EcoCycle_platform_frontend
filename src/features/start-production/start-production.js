@@ -4,7 +4,7 @@ import { HOME_URL } from '../../shared/session.js';
 import { formatKg } from '../../shared/formatters.js';
 import { validarProducao } from '../../shared/validators.js';
 
-// Só o operador inicia produção (matriz PERMISSOES). Outros perfis vão para a página 403.
+// Os os perfis (admistrador, gerente e operador) podem inicar uma producao (matriz PERMISSOES). O perfil de consulta vão para a página 403.
 const SESSAO = montarLayout({ acao: 'producao.operar' });
 
 // TODO(E2/E5): confirmar com a API o status que significa "Disponível" para o lote.
