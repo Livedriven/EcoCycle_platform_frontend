@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#084B60" />
+    <title>Serviço indisponível | EcoCycle</title>
+  </head>
+  <body class="error-page">
+    <main class="error-card" aria-labelledby="error-title">
+      <a class="error-brand" href="/index.html" aria-label="EcoCycle — página inicial">
+        <img src="/img/logo.png" alt="EcoCycle Reciclagem Inteligente" />
+      </a>
+      <div class="error-illustration" aria-hidden="true">
+        <span class="error-code">503</span>
+        <span class="error-icon"><i class="bi bi-cloud-slash"></i></span>
+      </div>
+      <p class="error-label">Uma pausa no caminho</p>
+      <h1 id="error-title">Serviço indisponível</h1>
+      <p class="error-description">Não foi possível conectar ao serviço agora. Ele pode estar temporariamente indisponível ou demorando para responder.</p>
+      <p class="error-hint">Verifique sua conexão e tente novamente em alguns instantes.</p>
+      <div class="error-actions">
+        <a class="btn btn-eco" href="/src/features/dashboard/dashboard.html" data-retry><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Tentar novamente</a>
+        <a class="error-link" href="/src/features/dashboard/dashboard.html">Voltar ao dashboard <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      </div>
+      <footer class="error-footer">EcoCycle <span aria-hidden="true">·</span> Reciclagem inteligente</footer>
+    </main>
+    <script type="module" src="./errors.js"></script>
+  </body>
+</html>
