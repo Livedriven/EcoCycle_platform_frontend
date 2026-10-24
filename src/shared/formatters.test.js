@@ -4,6 +4,7 @@ import {
     formatDateTime,
     formatDayMonth,
     formatKg,
+    formatToneladas,
     formatMonth,
     formatNumber
 } from "./formatters.js";
@@ -37,6 +38,15 @@ describe("formatKg", () => {
 
     it("mantém visível uma entrada numérica inválida", () => {
         expect(formatKg("sem peso")).toBe("NaN kg");
+    });
+});
+
+describe('formatToneladas', () => {
+    it('converte kg para toneladas sem perder centésimos de kg', () => {
+        expect(formatToneladas(1234.5)).toBe('1,2345 t');
+        expect(formatToneladas(0.01)).toBe('0,00001 t');
+        expect(formatToneladas('1500')).toBe('1,5 t');
+        expect(formatToneladas(null)).toBe('0 t');
     });
 });
 
