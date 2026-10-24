@@ -28,10 +28,16 @@ if (SESSAO) {
     let carregando = false;
     let dadosCarregados = false;
 
-    function mostrarEstado(texto, erro = false) {
+    function mostrarEstado(texto, tipo = 'mensagem') {
         conteudo.classList.add('d-none');
-        estado.setAttribute('role', erro ? 'alert' : 'status');
-        estado.textContent = texto;
+        estado.setAttribute('role', tipo === 'erro' ? 'alert' : 'status');
+        const simbolo = document.createElement('span');
+        simbolo.className = tipo === 'carregando' ? 'spinner-border spinner-border-sm'
+            : tipo === 'erro' ? 'bi bi-exclamation-triangle fs-3 text-danger' : 'bi bi-info-circle fs-3';
+        simbolo.setAttribute('aria-hidden', 'true');
+        const mensagem = document.createElement('span');
+        mensagem.textContent = texto;
+        estado.replaceChildren(simbolo, mensagem);
     }
 
     function aplicarFiltros() {
@@ -83,8 +89,16 @@ if (SESSAO) {
             grafico = null;
         }
 
+        const temLinhas = linhas.length > 0;
+        document.getElementById('tabela-materiais').classList.toggle('d-none', !temLinhas);
+        document.getElementById('tabela-vazia').classList.toggle('d-none', temLinhas);
+        document.getElementById('mensagem-tabela-vazia').textContent = registros.length
+            ? 'Nenhum material encontrado para os filtros selecionados.'
+            : 'Nenhum material separado foi registrado. Use Atualizar para consultar novamente.';
+        document.getElementById('limpar-filtros-vazio').classList.toggle('d-none', temLinhas || !(filtros.inicio || filtros.fim || filtros.lote));
+
         if (tabela) updateTable(tabela, linhas);
-        else tabela = createTable('#tabela-materiais', [
+        else if (temLinhas) tabela = createTable('#tabela-materiais', [
             { id: 'id_lote', label: 'Lote', formatar: (valor) => 'Lote ' + valor },
             { id: 'data', label: 'Dia', formatar: formatDate },
             { id: 'plastico', label: 'Plástico (kg)', formatar: formatKg },
@@ -99,9 +113,10 @@ if (SESSAO) {
         carregando = true;
         dadosCarregados = false;
         atualizar.disabled = true;
+        document.getElementById('rotulo-atualizar').textContent = 'Atualizando...';
         for (const controle of formulario.elements) controle.disabled = true;
         bloco.setAttribute('aria-busy', 'true');
-        mostrarEstado('Carregando materiais separados...');
+        mostrarEstado('Carregando materiais separados...', 'carregando');
         try {
             const resposta = await API.GET('/producao');
             if (!requireLogin()) return;
@@ -117,10 +132,11 @@ if (SESSAO) {
         } catch (erro) {
             grafico?.destroy();
             grafico = null;
-            mostrarEstado(erro.message + ' Use Atualizar para tentar novamente.', true);
+            mostrarEstado(erro.message + ' Use Atualizar para tentar novamente.', 'erro');
         } finally {
             carregando = false;
             atualizar.disabled = false;
+            document.getElementById('rotulo-atualizar').textContent = 'Atualizar';
             for (const controle of formulario.elements) controle.disabled = !dadosCarregados;
             bloco.setAttribute('aria-busy', 'false');
         }
