@@ -88,9 +88,9 @@ function verificar() {
     return { sessao, motivo: null };
 }
 
-/** Encerra a sessão; só "expirada" vira aviso na tela de login. */
+/** Encerra a sessão e preserva o motivo para exibir o aviso no login. */
 function derrubar(motivo) {
-    endSession(motivo === "expirada" ? "expirada" : undefined);
+    endSession(motivo);
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +136,7 @@ export function clearSession() {
 }
 
 /**
- * Encerra a sessão e volta ao login. "motivo" (ex.: "expirada") aparece como
+ * Encerra a sessão e volta ao login. Quando fornecido, "motivo" aparece como
  * aviso na tela de login. location.replace não deixa a página protegida no
  * histórico, então o botão "voltar" não a reabre.
  */

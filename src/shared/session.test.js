@@ -84,7 +84,7 @@ describe("logout", () => {
 describe("requireLogin", () => {
   it("sem sessão: redireciona ao login e devolve null", () => {
     expect(requireLogin()).toBeNull();
-    expect(destinos).toEqual([LOGIN_URL]);
+    expect(destinos).toEqual([`${LOGIN_URL}?motivo=ausente`]);
   });
   it("sessão expirada: redireciona com ?motivo=expirada e limpa o token", () => {
     sessionStorage.setItem("token", tokenValido({ exp: agora() - 10 }));
@@ -132,6 +132,6 @@ describe("requireLogin com ação", () => {
   });
   it("sem sessão, o login vem antes da permissão", () => {
     expect(requireLogin("lote.registrar")).toBeNull();
-    expect(destinos).toEqual([LOGIN_URL]);
+    expect(destinos).toEqual([`${LOGIN_URL}?motivo=ausente`]);
   });
 });
