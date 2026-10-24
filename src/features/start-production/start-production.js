@@ -1,11 +1,12 @@
 import API from '../../shared/api.js';
 import { montarLayout } from '../../shared/layout.js';
-import { HOME_URL } from '../../shared/session.js';
+import { HOME_URL, requireLogin } from '../../shared/session.js';
 import { formatKg } from '../../shared/formatters.js';
 import { validarProducao } from '../../shared/validators.js';
 
-// Os os perfis (admistrador, gerente e operador) podem inicar uma producao (matriz PERMISSOES). O perfil de consulta vão para a página 403.
-const SESSAO = montarLayout({ acao: 'producao.operar' });
+// Administrador, gerente e operador usam a mesma ação da matriz PERMISSOES.
+const ACAO = 'producao.operar';
+const SESSAO = montarLayout({ acao: ACAO });
 
 // TODO(E2/E5): confirmar com a API o status que significa "Disponível" para o lote.
 const STATUS_LOTE_DISPONIVEL = 'Recebido';
@@ -25,6 +26,15 @@ function iniciarTela() {
     const form = document.getElementById('form-iniciar-producao');
     const aviso = document.getElementById('aviso-envio');
     const btnIniciar = document.getElementById('btn-iniciar');
+    let enviando = false;
+
+    function validarAcesso() {
+        if (requireLogin(ACAO)) return true;
+        bloco.hidden = true;
+        return false;
+    }
+
+    bloco.hidden = false;
     const campos = {
         id_lote: document.getElementById('lote'),
         id_esteira: document.getElementById('esteira'),
@@ -56,6 +66,7 @@ function iniciarTela() {
                 API.GET('/fornecedores'),
                 API.GET('/esteiras')
             ]);
+            if (!validarAcesso()) return;
             preencherLotes(lotes, fornecedores);
             preencherEsteiras(esteiras);
             estado.textContent = '';
@@ -96,6 +107,7 @@ function iniciarTela() {
 
     async function enviar(evento) {
         evento.preventDefault();
+        if (!validarAcesso() || enviando) return;
         esconderAviso();
 
         // Valores crus; a normalização para o payload acontece depois da validação.
@@ -108,8 +120,8 @@ function iniciarTela() {
         mostrarErros(validacao.erros);
         if (!validacao.valido) return;
 
-        // Sem id_usuario: a API identifica o operador pelo token.
-        // TODO(E2): confirmar rota e campos. Hoje o mock só aceita POST /producao para o operador.
+        // Sem id_usuario: a API identifica o usuário pelo token e autoriza
+        // administrador, gerente e operador pela ação producao.operar.
         const payload = {
             id_lote: Number(dados.id_lote),
             id_esteira: Number(dados.id_esteira),
@@ -117,16 +129,19 @@ function iniciarTela() {
             data_hora: agoraIso()
         };
 
+        enviando = true;
         btnIniciar.disabled = true;
         btnIniciar.textContent = 'Iniciando...';
         try {
             await API.POST('/producao', payload);
+            if (!validarAcesso()) return;
             mostrarAviso('success', 'Produção iniciada com sucesso.');
             form.reset();
             campos.id_lote.querySelector('option[value="' + payload.id_lote + '"]')?.remove();
         } catch (erro) {
             mostrarAviso('danger', erro.message);
         } finally {
+            enviando = false;
             btnIniciar.disabled = false;
             btnIniciar.textContent = 'Iniciar produção';
         }
