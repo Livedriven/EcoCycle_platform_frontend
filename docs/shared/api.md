@@ -41,16 +41,18 @@ Quem chama `API.*` recebe sempre um `Error` cuja `message` já pode ser mostrada
 | Situação | `message` |
 |---|---|
 | `401` com token enviado (token inválido, expirado ou revogado) | Além do erro, **encerra a sessão e volta ao login** com o aviso "Sua sessão expirou". |
-| `403` (usuário autenticado sem permissão para a operação) | `Você não tem permissão para acessar estes dados.` |
-| Outro status de erro | `HTTP 404`, `HTTP 500` etc. |
-| A API não respondeu a tempo | `A API demorou para responder (limite de 8 segundos).` |
-| Servidor fora do ar, URL errada ou sem rede | `Não foi possível conectar à API. Confira se o servidor está rodando.` |
+| `403` (usuário autenticado sem permissão para a operação) | `Você não tem permissão para acessar estes dados.` e redireciona para a página de acesso negado. |
+| `404` | `HTTP 404` e redireciona para a página não encontrada. |
+| `500` a `599` | `HTTP <status>` e redireciona para serviço indisponível. |
+| Outros status de erro (como `400`, `409` e `422`) | `HTTP <status>`, sem redirecionamento. |
+| A API não respondeu a tempo | Mensagem com o limite configurado em segundos e redireciona para serviço indisponível. |
+| Servidor fora do ar, URL errada ou sem rede | `Não foi possível conectar à API. Confira se o servidor está rodando.` e redireciona para serviço indisponível. |
 
 O erro original fica em `erro.cause`, para depuração.
 
 > **Não envie `id_usuario` no corpo.** A API obtém o responsável pela ação a partir do token (Especificação MVP2) e não aceita esse campo enviado pelo front-end.
 
-> A mensagem de tempo esgotado cita "8 segundos" fixo. Se `VITE_API_TIMEOUT` for alterado no `.env`, o texto não acompanha.
+Na página de serviço indisponível, **Tentar novamente** retorna à página em que a falha ocorreu (com filtros e âncora), sem reenviar automaticamente operações de escrita. Apenas destinos da mesma origem são aceitos. Falhas simultâneas provocam um único redirecionamento. As páginas de erro não fazem chamadas à API.
 
 ---
 

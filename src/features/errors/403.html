@@ -1,20 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Acesso negado | EcoCycle</title>
-</head>
-<body>
-  <!-- Para onde o session.js manda quem está logado mas não tem permissão para a tela -->
-  <main class="min-vh-100 d-flex flex-column align-items-center justify-content-center text-center p-3 gap-2">
-    <i class="bi bi-shield-lock fs-1" style="color:var(--eco-azul)" aria-hidden="true"></i>
-    <h1 class="h4 m-0">Acesso negado</h1>
-    <p class="m-0" style="color:var(--eco-texto-suave)">Seu perfil não tem permissão para acessar esta tela.</p>
-    <a class="btn btn-eco mt-2" href="/src/features/dashboard/dashboard.html">Voltar ao dashboard</a>
-  </main>
-  <script type="module">
-    import '../../shared/setup.js';
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#084B60" />
+    <title>Acesso negado | EcoCycle</title>
+  </head>
+  <body class="error-page">
+    <main class="error-card" aria-labelledby="error-title">
+      <a class="error-brand" href="/index.html" aria-label="EcoCycle — página inicial">
+        <img src="/img/logo.png" alt="EcoCycle Reciclagem Inteligente" />
+      </a>
+      <div class="error-illustration" aria-hidden="true">
+        <span class="error-code">403</span>
+        <span class="error-icon"><i class="bi bi-shield-lock"></i></span>
+      </div>
+      <p class="error-label">Acesso restrito</p>
+      <h1 id="error-title">Acesso negado</h1>
+      <p class="error-description">Seu perfil não tem permissão para acessar esta página ou realizar esta ação.</p>
+      <p class="error-hint">Se precisar de acesso, fale com o administrador do sistema.</p>
+      <div class="error-actions">
+        <a class="btn btn-eco" href="/src/features/dashboard/dashboard.html"><i class="bi bi-house-door" aria-hidden="true"></i> Voltar ao dashboard</a>
+        <a class="error-link" href="/src/features/login/login.html" data-switch-account>Entrar com outra conta <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+      </div>
+      <footer class="error-footer">EcoCycle <span aria-hidden="true">·</span> Reciclagem inteligente</footer>
+    </main>
+    <script type="module" src="./errors.js"></script>
+  </body>
 </html>
