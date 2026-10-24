@@ -1,6 +1,17 @@
 import { API_URL, API_TIMEOUT } from "./config";
-import { endSession } from "./session";
+import { endSession, FORBIDDEN_URL } from "./session";
 
+let redirecionando = false;
+
+function abrirPaginaErro(destino) {
+    if (redirecionando) return;
+    redirecionando = true;
+    if (destino.endsWith('/unavailable.html')) {
+        const retorno = location.pathname + location.search + location.hash;
+        destino += '?' + new URLSearchParams({ retorno });
+    }
+    location.replace(destino);
+}
 
 /**
  * PADRONIZADORA
@@ -43,16 +54,26 @@ async function requisitar(metodo, url, corpo) {
     const req = padronizarRequisicao(metodo, url, corpo);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), API_TIMEOUT);
+    let respostaRecebida = false;
 
     try {
         const resp = await fetch(req.url, { ...req.opcoes, signal: ctrl.signal });
+        respostaRecebida = true;
 
         if (resp.status === 401 && req.opcoes.headers.Authorization) {
             endSession("expirada");
+            throw new Error('HTTP 401');
         }
 
         if (resp.status === 403) {
+            abrirPaginaErro(FORBIDDEN_URL);
             throw new Error('Você não tem permissão para acessar estes dados.');
+        }
+
+        if (resp.status === 404) {
+            abrirPaginaErro('/src/features/errors/404.html');
+        } else if (resp.status >= 500 && resp.status <= 599) {
+            abrirPaginaErro('/src/features/errors/unavailable.html');
         }
 
         if (!resp.ok) {
@@ -66,9 +87,11 @@ async function requisitar(metodo, url, corpo) {
         let msg = erro.message; // Ex: 'HTTP 404', 'HTTP 500'...
 
         if (erro.name === 'AbortError') {
-            msg = 'A API demorou para responder (limite de 8 segundos).';
-        } else if (erro.name === 'TypeError') {
+            msg = `A API demorou para responder (limite de ${API_TIMEOUT / 1000} segundos).`;
+            abrirPaginaErro('/src/features/errors/unavailable.html');
+        } else if (erro.name === 'TypeError' && !respostaRecebida) {
             msg = 'Não foi possível conectar à API. Confira se o servidor está rodando.';
+            abrirPaginaErro('/src/features/errors/unavailable.html');
         }
 
         throw new Error(msg, { cause: erro });
