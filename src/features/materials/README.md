@@ -7,6 +7,7 @@ Relatório de consulta de **Plástico, Metal, Alumínio e Rejeito** separados na
 - Os totais consideram todos os registros filtrados, incluindo as demais páginas da tabela. A ordenação e a paginação do Grid.js não alteram os totais.
 - O botão Atualizar busca novamente os dados, preservando os filtros disponíveis. Não há operações de escrita.
 - Os quatro materiais têm cartões em kg e toneladas, colunas próprias na tabela e categorias no gráfico. Materiais sem registros aparecem com zero, sem gerar dados fictícios. Alumínio e rejeito já estão preparados para receber registros quando a API passar a fornecê-los.
+- Durante a consulta, exibe spinner e texto de carregamento, oculta o relatório e bloqueia os controles. Sem registros, mantém os cartões zerados e mostra mensagens próprias no lugar do gráfico e da tabela. Se os filtros não encontrarem resultados, oferece **Limpar filtros**. Registros válidos com peso zero continuam na tabela, mesmo sem gráfico para desenhar.
 
 ## Reutilização
 
