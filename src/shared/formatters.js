@@ -40,3 +40,15 @@ export function formatDayMonth(data) {
 export function formatMonth(anoMes) {
     return dayjs(anoMes + '-01').format('MMM/YYYY').replace('.', '');
 }
+
+export function formatCnpj(valor) {
+    const d = String(valor ?? '').replace(/\D/g, '');
+    return d.length === 14 ? d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : String(valor ?? '');
+}
+
+export function formatTelefone(valor) {
+    const d = String(valor ?? '').replace(/\D/g, '');
+    if (d.length === 11) return d.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+    if (d.length === 10) return d.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
+    return String(valor ?? '');
+}

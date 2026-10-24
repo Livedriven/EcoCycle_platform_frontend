@@ -36,7 +36,7 @@ export const MENU = [
         rotulo: 'Operações', icone: 'layers', filhos: [
             {
                 rotulo: 'Fornecedores', filhos: [
-                    { rotulo: 'Consultar fornecedores', href: null },
+                    { rotulo: 'Consultar fornecedores', href: '/src/features/suppliers/suppliers.html' },
                     { rotulo: 'Cadastrar fornecedor', href: '/src/features/suppliers/new-supplier.html', acao: 'fornecedor.cadastrar' }
                 ]
             },
