@@ -70,7 +70,7 @@ try {
 ### Criar, alterar e remover
 
 ```js
-const novo = await API.POST('/lotes', { cnpj_fornecedor: '12345678000195', pesoentrada_kg: 640.35 });
+const novo = await API.POST('/lotes', { id_fornecedor: 1, pesoentrada_kg: 640.35 });
 await API.PUT('/lotes/3', { ...loteCompleto });          // substitui o registro inteiro
 await API.PATCH('/lotes/3', { status: 'Finalizado' });   // altera só alguns campos
 await API.DELETE('/lotes/3');                            // normalmente devolve null (204)

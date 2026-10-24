@@ -59,34 +59,6 @@ if (SESSAO) {
         }[status] || 'b-suave';
     }
 
-    /**
-     * Define o turno a partir do horário informado pela produção. As faixas
-     * usam início inclusivo e fim exclusivo para que 12:00 e 18:00 pertençam
-     * sempre a um único turno.
-     */
-    function calcularTurno(dataHora) {
-        const horario = String(dataHora || '').match(/T(\d{2}):(\d{2})/);
-        if (!horario) {
-            return 'Não informado';
-        }
-
-        const hora = Number(horario[1]);
-        const minuto = Number(horario[2]);
-        if (hora > 23 || minuto > 59) {
-            return 'Não informado';
-        }
-        if (hora >= 6 && hora < 12) {
-            return 'Manhã';
-        }
-        if (hora >= 12 && hora < 18) {
-            return 'Tarde';
-        }
-        if (hora >= 18) {
-            return 'Noite';
-        }
-        return 'Madrugada';
-    }
-
     function preencherOpcoes(select, valores, textoPadrao, ordem = []) {
         const valorSelecionado = select.value;
         const opcoes = [...new Set(valores)].sort((a, b) => {
@@ -138,7 +110,7 @@ if (SESSAO) {
             return {
                 ...producao,
                 status: producao.status || lote?.status || 'Não informado',
-                turno: calcularTurno(producao.data_hora),
+                turno: producao.turno_producao || 'Não informado',
                 nome_esteira: esteira?.nome_esteira || ''
             };
         });

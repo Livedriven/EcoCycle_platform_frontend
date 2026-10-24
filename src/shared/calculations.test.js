@@ -77,14 +77,14 @@ describe("agrupamento por período", () => {
 describe("fornecedores, lotes e alertas", () => {
     it("agrupa por fornecedor e ordena do maior para o menor", () => {
         const lotes = [
-            { cnpj_fornecedor: "1", pesoentrada_kg: 100 },
-            { cnpj_fornecedor: "2", pesoentrada_kg: 300 },
-            { cnpj_fornecedor: "1", pesoentrada_kg: 50 },
-            { cnpj_fornecedor: "9", pesoentrada_kg: 10 }
+            { id_fornecedor: 1, pesoentrada_kg: 100 },
+            { id_fornecedor: 2, pesoentrada_kg: 300 },
+            { id_fornecedor: 1, pesoentrada_kg: 50 },
+            { id_fornecedor: 9, pesoentrada_kg: 10 }
         ];
         const fornecedores = [
-            { id: "1", nome_fornecedor: "A" },
-            { id: "2", nome_fornecedor: "B" }
+            { id: 1, nome_fornecedor: "A" },
+            { id: 2, nome_fornecedor: "B" }
         ];
         expect(recebidoPorFornecedor(lotes, fornecedores)).toEqual([
             { nome: "B", total: 300 },

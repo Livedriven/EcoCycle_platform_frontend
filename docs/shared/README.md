@@ -10,10 +10,11 @@ Código reaproveitado por todas as telas. Antes de escrever algo numa tela, conf
 | `table.js` | Tabelas com busca, ordenação e paginação (Grid.js em português) | [table.md](table.md) |
 | `calculations.js` | Totais e agrupamentos de produção, lotes, fornecedores, alertas e CO₂ | [calculations.md](calculations.md) |
 | `formatters.js` | Números, pesos e datas no padrão brasileiro | [formatters.md](formatters.md) |
+| `validators.js` | Contrato de validação para os formulários | [validators.md](validators.md) |
 | `config.js` e `setup.js` | Leitura do `.env` e carga das bibliotecas visuais | [config-e-setup.md](config-e-setup.md) |
 | `styles/style.css` | Paleta da EcoCycle e classes visuais prontas | [estilos.md](estilos.md) |
 
-Ainda vazios (a implementar): `validators.js` e `ui.js` (avisos com SweetAlert2). `permissions.js` também está vazio: a matriz de permissões fica no `session.js`.
+`validators.js` ainda aguarda implementação; [validators.md](validators.md) define o contrato que os formulários devem seguir. `ui.js` (avisos com SweetAlert2) e `permissions.js` também estão vazios; a matriz de permissões fica no `session.js`.
 
 ---
 

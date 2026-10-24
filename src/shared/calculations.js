@@ -8,7 +8,7 @@ export const CAMPOS = {
     materialProducao: "tipo_material",
     dataProducao: "data_hora",
     pesoLote: "pesoentrada_kg",
-    cnpjLote: "cnpj_fornecedor",
+    idFornecedorLote: "id_fornecedor",
     statusLote: "status",
     idFornecedor: "id",
     nomeFornecedor: "nome_fornecedor",
@@ -101,7 +101,7 @@ export function producaoPorMes(producao, meses = 6, hoje = new Date()) {
     return agruparProducao(producao, chaves, (r) => chaveDia(r[CAMPOS.dataProducao]).slice(0, 7));
 }
 
-/** [{ nome, total }] ordenado do maior para o menor. Fornecedor sem cadastro vira o próprio CNPJ. */
+/** [{ nome, total }] ordenado do maior para o menor. Fornecedor sem cadastro vira o próprio ID. */
 export function recebidoPorFornecedor(lotes, fornecedores) {
     const nomes = new Map(
         (fornecedores ?? []).map((f) => [String(f[CAMPOS.idFornecedor]), f[CAMPOS.nomeFornecedor]])
@@ -109,13 +109,13 @@ export function recebidoPorFornecedor(lotes, fornecedores) {
     const totais = new Map();
 
     (lotes ?? []).forEach((lote) => {
-        const cnpj = String(lote[CAMPOS.cnpjLote]);
+        const idFornecedor = String(lote[CAMPOS.idFornecedorLote]);
         const peso = Number(lote[CAMPOS.pesoLote]);
-        totais.set(cnpj, (totais.get(cnpj) ?? 0) + (Number.isFinite(peso) ? peso : 0));
+        totais.set(idFornecedor, (totais.get(idFornecedor) ?? 0) + (Number.isFinite(peso) ? peso : 0));
     });
 
     return [...totais.entries()]
-        .map(([cnpj, total]) => ({ nome: nomes.get(cnpj) ?? cnpj, total: arredondar(total) }))
+        .map(([idFornecedor, total]) => ({ nome: nomes.get(idFornecedor) ?? idFornecedor, total: arredondar(total) }))
         .sort((a, b) => b.total - a.total);
 }
 
