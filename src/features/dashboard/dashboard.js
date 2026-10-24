@@ -3,7 +3,7 @@ import './dashboard.css';
 import API from '../../shared/api.js';
 import { classeStatus, classeAlerta, classeContadorAlertas } from '../../shared/ui.js';
 import {
-    MATERIAIS,
+    MATERIAIS_RELATORIO as MATERIAIS,
     totalRecebido,
     totalProduzido,
     totalPorMaterial,
@@ -36,17 +36,23 @@ let carregando = false;
 
 // Links "Testar estados" do dashboard.html: ?simular=vazio ou ?simular=erro
 const SIMULAR = new URLSearchParams(window.location.search).get('simular');
+const BLOCO_SIMULADO = new URLSearchParams(window.location.search).get('bloco');
 
 /* ---------- Busca de dados ---------- */
 
-function buscar(caminho) {
-    if (SIMULAR === 'erro') {
+function buscar(caminho, id) {
+    const simular = !BLOCO_SIMULADO || BLOCO_SIMULADO === id;
+    if (simular && SIMULAR === 'erro') {
         return Promise.reject(new Error('Erro simulado para teste.'));
     }
-    if (SIMULAR === 'vazio') {
+    if (simular && SIMULAR === 'vazio') {
         return Promise.resolve([]);
     }
-    return API.GET(caminho);
+    return API.GET(caminho, { erroLocal: true }).then((dados) => {
+        if (dados == null) return [];
+        if (!Array.isArray(dados)) throw new Error('Resposta inválida da API.');
+        return dados;
+    });
 }
 
 /* ---------- Estados de cada bloco (carregando, erro, vazio, pronto) ---------- */
@@ -63,6 +69,8 @@ function mostrarCarregando(id) {
     const { estado, conteudo } = partesDoBloco(id);
     conteudo.classList.add('d-none');
     estado.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div><span>Carregando...</span>';
+    document.getElementById(id).setAttribute('aria-busy', 'true');
+    estado.setAttribute('role', 'status');
 }
 
 function mostrarMensagem(id, texto, icone) {
@@ -74,6 +82,7 @@ function mostrarMensagem(id, texto, icone) {
     const p = document.createElement('span');
     p.textContent = texto;
     estado.append(i, p);
+    estado.setAttribute('role', icone === 'exclamation-triangle' ? 'alert' : 'status');
 }
 
 function mostrarConteudo(id) {
@@ -87,24 +96,31 @@ function mostrarConteudo(id) {
  * e, só se houver o que mostrar, exibe o bloco e executa o que ela devolveu (desenhar).
  * preparar(...dados) devolve uma função de desenho, ou null quando não há dados.
  */
-async function montarBloco(id, fontes, preparar, textoVazio = 'Sem dados para mostrar.') {
-    // Nas próximas atualizações, mantém o bloco visível enquanto busca os dados.
-    const { estado, conteudo } = partesDoBloco(id);
-    if (conteudo.classList.contains('d-none') && !estado.hasChildNodes()) {
-        mostrarCarregando(id);
-    }
+async function montarBloco(id, fontes, preparar) {
+    mostrarCarregando(id);
     try {
-        const dados = await Promise.all(fontes);
-        const desenhar = preparar(...dados);
+        const resultados = await Promise.allSettled(fontes);
+        const falha = resultados.find((resultado) => resultado.status === 'rejected');
+        if (falha) throw falha.reason;
+        const desenhar = preparar(...resultados.map((resultado) => resultado.value));
         if (!desenhar) {
-            mostrarMensagem(id, textoVazio, 'inbox');
+            mostrarMensagem(id, 'Sem dados no período', 'inbox');
             return;
         }
         // Mostra o bloco antes de desenhar: o Chart.js mede o canvas, que não pode estar escondido.
         mostrarConteudo(id);
         desenhar();
-    } catch (erro) {
-        mostrarMensagem(id, erro.message, 'exclamation-triangle');
+    } catch {
+        mostrarMensagem(id, 'Não foi possível carregar este bloco.', 'exclamation-triangle');
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'btn btn-outline-primary btn-sm';
+        botao.textContent = 'Tentar novamente';
+        botao.addEventListener('click', () => carregarBloco(id));
+        partesDoBloco(id).estado.append(botao);
+        if (id === 'bloco-alertas') document.getElementById('contador-alertas').textContent = '–';
+    } finally {
+        document.getElementById(id).setAttribute('aria-busy', 'false');
     }
 }
 
@@ -122,20 +138,23 @@ function cardIndicador(classe, titulo, valor) {
 }
 
 function prepararIndicadores(lotes, producao, alertas) {
-    if (lotes.length === 0 && producao.length === 0 && alertas.length === 0) {
-        return null;
-    }
     return () => {
-        const porMaterial = totalPorMaterial(producao);
+        const porMaterial = totalPorMaterial(producao, MATERIAIS);
         const ativos = alertasAtivos(alertas).length;
         const cards = [
             cardIndicador('ind-azul', 'Total recebido', formatKg(totalRecebido(lotes))),
             cardIndicador('ind-info', 'Total processado', formatKg(totalProduzido(producao))),
             cardIndicador('ind-azul', 'Plástico', formatKg(porMaterial['Plástico'])),
             cardIndicador('ind-verde', 'Metal', formatKg(porMaterial['Metal'])),
+            cardIndicador('ind-info', 'Alumínio', formatKg(porMaterial['Alumínio'])),
+            cardIndicador('ind-info', 'Rejeito', formatKg(porMaterial['Rejeito'])),
             cardIndicador(ativos > 0 ? 'ind-perigo' : 'ind-sucesso', 'Alertas ativos', String(ativos))
         ];
         document.querySelector('#bloco-indicadores .conteudo').replaceChildren(...cards);
+        if (lotes.length === 0 && producao.length === 0 && alertas.length === 0) {
+            mostrarMensagem('bloco-indicadores', 'Sem dados no período', 'inbox');
+            partesDoBloco('bloco-indicadores').conteudo.classList.remove('d-none');
+        }
     };
 }
 
@@ -148,7 +167,7 @@ function temProducao(series) {
 }
 
 function prepararDiaria(producao) {
-    const { chaves, series } = producaoPorDia(producao, 7);
+    const { chaves, series } = producaoPorDia(producao, 7, new Date(), MATERIAIS);
     if (!temProducao(series)) {
         return null;
     }
@@ -161,7 +180,7 @@ function prepararDiaria(producao) {
 }
 
 function prepararMensal(producao) {
-    const { chaves, series } = producaoPorMes(producao, 6);
+    const { chaves, series } = producaoPorMes(producao, 6, new Date(), MATERIAIS);
     if (!temProducao(series)) {
         return null;
     }
@@ -182,8 +201,8 @@ function prepararCo2(producao) {
         document.getElementById('co2-total').textContent = formatNumber(total);
         createBarChart(
             document.getElementById('grafico-co2'),
-            MATERIAIS,
-            [{ label: 'CO₂e evitado (t)', data: MATERIAIS.map((m) => porMaterial[m]), cor: MATERIAIS.map((m) => CORES[m]) }],
+            Object.keys(porMaterial),
+            [{ label: 'CO₂e evitado (t)', data: Object.values(porMaterial), cor: Object.keys(porMaterial).map((m) => CORES[m]) }],
             { rotuloY: 't CO₂e', formatarValor: formatNumber }
         );
     };
@@ -281,28 +300,39 @@ function prepararAlertas(alertas) {
 
 /* ---------- Carga da página ---------- */
 
+const BLOCOS = {
+    'bloco-indicadores': { fontes: ['/lotes', '/producao', '/alertas'], preparar: prepararIndicadores },
+    'bloco-diaria': { fontes: ['/producao'], preparar: prepararDiaria },
+    'bloco-mensal': { fontes: ['/producao'], preparar: prepararMensal },
+    'bloco-co2': { fontes: ['/producao'], preparar: prepararCo2 },
+    'bloco-fornecedores': { fontes: ['/lotes', '/fornecedores'], preparar: prepararFornecedores },
+    'bloco-status-lotes': { fontes: ['/lotes'], preparar: prepararStatusLotes },
+    'bloco-esteira': { fontes: ['/esteiras'], preparar: prepararEsteira },
+    'bloco-alertas': { fontes: ['/alertas'], preparar: prepararAlertas }
+};
+const pendentes = new Map();
+
+function carregarBloco(id, cache = new Map()) {
+    if (pendentes.has(id)) return pendentes.get(id);
+    const { fontes, preparar } = BLOCOS[id];
+    const requisicoes = fontes.map((caminho) => {
+        // Simulação por bloco não deve contaminar os demais consumidores da fonte.
+        const chave = BLOCO_SIMULADO === id ? id + caminho : caminho;
+        if (!cache.has(chave)) cache.set(chave, Promise.resolve().then(() => buscar(caminho, id)));
+        return cache.get(chave);
+    });
+    const carga = montarBloco(id, requisicoes, preparar).finally(() => pendentes.delete(id));
+    pendentes.set(id, carga);
+    return carga;
+}
+
 async function carregarDashboard() {
     if (carregando) return;
     carregando = true;
-
     try {
-        // Cada endpoint é buscado uma vez e compartilhado entre os blocos que precisam dele.
-        const lotes = buscar('/lotes');
-        const producao = buscar('/producao');
-        const fornecedores = buscar('/fornecedores');
-        const alertas = buscar('/alertas');
-        const esteiras = buscar('/esteiras');
-
-        await Promise.all([
-            montarBloco('bloco-indicadores', [lotes, producao, alertas], prepararIndicadores),
-            montarBloco('bloco-diaria', [producao], prepararDiaria, 'Sem produção nos últimos 7 dias.'),
-            montarBloco('bloco-mensal', [producao], prepararMensal, 'Sem produção nos últimos 6 meses.'),
-            montarBloco('bloco-co2', [producao], prepararCo2),
-            montarBloco('bloco-fornecedores', [lotes, fornecedores], prepararFornecedores),
-            montarBloco('bloco-status-lotes', [lotes], prepararStatusLotes),
-            montarBloco('bloco-esteira', [esteiras], prepararEsteira, 'Nenhuma esteira cadastrada.'),
-            montarBloco('bloco-alertas', [alertas], prepararAlertas, 'Nenhum alerta ativo.')
-        ]);
+        // Busca cada endpoint uma vez por atualização, sem bloquear blocos independentes.
+        const cache = new Map();
+        await Promise.allSettled(Object.keys(BLOCOS).map((id) => carregarBloco(id, cache)));
     } finally {
         carregando = false;
     }
