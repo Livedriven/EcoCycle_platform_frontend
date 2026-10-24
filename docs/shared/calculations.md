@@ -64,7 +64,7 @@ const mensal = producaoPorMes(producao, 6);
 
 ### `recebidoPorFornecedor(lotes, fornecedores)`
 
-`[{ nome, total }]` em kg, do maior para o menor. Lote cujo fornecedor não está cadastrado aparece com o CNPJ no lugar do nome.
+`[{ nome, total }]` em kg, do maior para o menor. Lote cujo fornecedor não está cadastrado aparece com o ID do fornecedor no lugar do nome.
 
 ### `lotesPorStatus(lotes)`
 

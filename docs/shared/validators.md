@@ -81,8 +81,8 @@ O formato recomendado é:
 export function validarLote(dados) {
     const erros = {};
 
-    const origem = validarTexto(dados.origem, 'Origem', 2, 80);
-    if (!origem.valido) erros.origem = origem.mensagem;
+    const fornecedor = validarObrigatorio(dados.id_fornecedor, 'Fornecedor');
+    if (!fornecedor.valido) erros.id_fornecedor = fornecedor.mensagem;
 
     const peso = validarPeso(dados.pesoentrada_kg);
     if (!peso.valido) erros.pesoentrada_kg = peso.mensagem;
@@ -100,7 +100,7 @@ Formulários previstos ou prováveis no projeto:
 
 | Validador composto | Dados principais |
 |---|---|
-| `validarLote(dados)` | origem/fornecedor, peso de entrada, data e status. |
+| `validarLote(dados)` | `id_fornecedor`, peso de entrada, data e status. |
 | `validarFornecedor(dados)` | CNPJ, nome, telefone, e-mail e endereço. |
 | `validarProducao(dados)` | lote, esteira, material, peso e `data_hora`. |
 | `validarUsuario(dados)` | nome, login, perfil e senha, respeitando a regra de edição de senha opcional. |
@@ -116,7 +116,7 @@ form.addEventListener('submit', async (evento) => {
     evento.preventDefault();
 
     const dados = {
-        origem: inputOrigem.value,
+        id_fornecedor: inputFornecedor.value,
         pesoentrada_kg: inputPeso.value
     };
     const validacao = validarLote(dados);
@@ -138,7 +138,7 @@ Definam em cada função se ela apenas valida ou também devolve um valor normal
 
 ```js
 const dados = {
-    nome_fornecedor: inputNome.value.trim(),
+    id_fornecedor: Number(inputFornecedor.value),
     pesoentrada_kg: Number(inputPeso.value)
 };
 ```

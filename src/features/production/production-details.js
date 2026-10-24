@@ -1,5 +1,5 @@
 import { Modal } from 'bootstrap';
-import { formatDateTime, formatKg } from '../../shared/formatters.js';
+import { formatDate, formatKg } from '../../shared/formatters.js';
 
 function adicionarCampo(lista, rotulo, valor) {
     const grupo = document.createElement('div');
@@ -37,7 +37,7 @@ export function criarDetalhesProducao() {
             campos.className = 'row g-3 mb-0';
 
             adicionarCampo(campos, 'ID da produção', producao.id);
-            adicionarCampo(campos, 'Data e hora', formatDateTime(producao.data_hora));
+            adicionarCampo(campos, 'Data', formatDate(producao.data_hora));
             adicionarCampo(campos, 'Lote', producao.id_lote);
             adicionarCampo(campos, 'Status do lote', producao.status);
             adicionarCampo(campos, 'Esteira', producao.nome_esteira || 'Não informada');
