@@ -1,0 +1,9 @@
+/* Mesmo padrão de indicadores e paleta do dashboard, sem importar outra feature. */
+.card-material { border-top: 4px solid var(--cor-material); }
+.acento-plastico { --cor-material: var(--eco-azul); }
+.acento-metal { --cor-material: var(--eco-verde-escuro); }
+.acento-aluminio { --cor-material: #6F5FA5; }
+.acento-rejeito { --cor-material: #9A641D; }
+.card-material .valor { color: var(--cor-material); font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; overflow-wrap: anywhere; }
+#tabela-materiais { min-width: 0; }
+#filtros-materiais .form-label { font-size: .875rem; font-weight: 600; }
