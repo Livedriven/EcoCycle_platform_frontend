@@ -1,0 +1,39 @@
+body.error-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+  background: radial-gradient(ellipse at top left, #14667a 0, transparent 55%),
+    linear-gradient(135deg, var(--eco-azul), var(--eco-azul-escuro));
+}
+.error-card {
+  width: 100%;
+  max-width: 640px;
+  padding: 2.5rem 3rem 1.5rem;
+  text-align: center;
+  background: var(--eco-superficie);
+  border-radius: 1.25rem;
+  box-shadow: inset 0 5px 0 var(--eco-verde), 0 24px 64px #00273466;
+}
+.error-brand { display: inline-block; border-radius: .25rem; }
+.error-brand img { width: 150px; max-width: 100%; height: auto; }
+.error-illustration { position: relative; width: fit-content; margin: 1.25rem auto 1rem; padding: 0 1rem; }
+.error-code { display: block; font-size: clamp(6rem, 22vw, 9rem); font-weight: 800; line-height: 1.15; letter-spacing: -.06em; color: #e6efec; }
+.error-icon { position: absolute; bottom: 0; right: 0; display: grid; place-items: center; width: 4.5rem; height: 4.5rem; border: 5px solid var(--eco-superficie); border-radius: 50%; color: var(--eco-azul); background: #eaf4e4; font-size: 2rem; }
+.error-label { margin: 0 0 .6rem; color: var(--eco-verde-escuro); font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.error-card h1 { margin: 0 0 1rem; font-size: clamp(1.6rem, 5vw, 2rem); font-weight: 700; text-wrap: balance; }
+.error-description { margin: 0 auto .75rem; max-width: 450px; line-height: 1.65; color: var(--eco-texto-suave); text-wrap: pretty; }
+.error-hint { margin: 0; font-size: .875rem; line-height: 1.6; color: var(--eco-texto-suave); }
+.error-actions { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; margin-top: 1.75rem; }
+.error-actions .btn { display: inline-flex; justify-content: center; align-items: center; gap: .6rem; padding: .8rem 1.5rem; border-radius: .5rem; font-weight: 600; }
+.error-link { color: var(--eco-azul); font-size: .9rem; text-underline-offset: 4px; }
+.error-link:hover { color: var(--eco-azul-escuro); }
+.error-link i { margin-left: .25rem; }
+.error-page a:focus-visible { outline: 3px solid var(--eco-verde-escuro); outline-offset: 5px; box-shadow: none; }
+.error-footer { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--eco-borda); font-size: .75rem; color: var(--eco-texto-suave); }
+@media (max-width: 480px) {
+  body.error-page { padding: 1rem; }
+  .error-card { padding: 2rem 1.25rem 1.25rem; border-radius: 1rem; }
+  .error-actions .btn { width: 100%; }
+}
