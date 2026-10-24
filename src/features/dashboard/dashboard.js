@@ -126,9 +126,9 @@ async function montarBloco(id, fontes, preparar) {
 
 /* ---------- Blocos ---------- */
 
-function cardIndicador(classe, titulo, valor) {
+function cardIndicador(classe, titulo, valor, grupo = 'material') {
     const col = document.createElement('div');
-    col.className = 'col-6 col-lg';
+    col.className = 'indicador indicador-' + grupo;
     col.innerHTML =
         '<div class="card card-ind shadow-sm h-100 ' + classe + '"><div class="card-body">' +
         '<div class="small" style="color:var(--eco-texto-suave)"></div><div class="valor"></div></div></div>';
@@ -142,13 +142,13 @@ function prepararIndicadores(lotes, producao, alertas) {
         const porMaterial = totalPorMaterial(producao, MATERIAIS);
         const ativos = alertasAtivos(alertas).length;
         const cards = [
-            cardIndicador('ind-azul', 'Total recebido', formatKg(totalRecebido(lotes))),
-            cardIndicador('ind-info', 'Total processado', formatKg(totalProduzido(producao))),
+            cardIndicador('ind-azul', 'Total recebido', formatKg(totalRecebido(lotes)), 'resumo'),
+            cardIndicador('ind-info', 'Total processado', formatKg(totalProduzido(producao)), 'resumo'),
+            cardIndicador(ativos > 0 ? 'ind-perigo' : 'ind-sucesso', 'Alertas ativos', String(ativos), 'resumo'),
             cardIndicador('ind-azul', 'Plástico', formatKg(porMaterial['Plástico'])),
             cardIndicador('ind-verde', 'Metal', formatKg(porMaterial['Metal'])),
             cardIndicador('ind-info', 'Alumínio', formatKg(porMaterial['Alumínio'])),
-            cardIndicador('ind-info', 'Rejeito', formatKg(porMaterial['Rejeito'])),
-            cardIndicador(ativos > 0 ? 'ind-perigo' : 'ind-sucesso', 'Alertas ativos', String(ativos))
+            cardIndicador('ind-info', 'Rejeito', formatKg(porMaterial['Rejeito']))
         ];
         document.querySelector('#bloco-indicadores .conteudo').replaceChildren(...cards);
         if (lotes.length === 0 && producao.length === 0 && alertas.length === 0) {
