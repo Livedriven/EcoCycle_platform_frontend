@@ -6,7 +6,9 @@ import {
     formatKg,
     formatToneladas,
     formatMonth,
-    formatNumber
+    formatNumber,
+    formatCnpj,
+    formatTelefone
 } from "./formatters.js";
 
 describe("formatNumber", () => {
@@ -82,5 +84,27 @@ describe("formatMonth", () => {
 
     it("lança TypeError quando o mês não pode ser convertido em texto", () => {
         expect(() => formatMonth(Symbol("mês"))).toThrow(TypeError);
+    });
+});
+
+describe('formatCnpj', () => {
+    it('aplica a máscara em 14 dígitos', () => {
+        expect(formatCnpj('12345678000195')).toBe('12.345.678/0001-95');
+    });
+    it('mantém o que não é um CNPJ de 14 dígitos e trata vazio', () => {
+        expect(formatCnpj('123')).toBe('123');
+        expect(formatCnpj(null)).toBe('');
+        expect(formatCnpj(undefined)).toBe('');
+    });
+});
+
+describe('formatTelefone', () => {
+    it('formata celular (11) e fixo (10)', () => {
+        expect(formatTelefone('31988810001')).toBe('(31) 98881-0001');
+        expect(formatTelefone('3133883344')).toBe('(31) 3388-3344');
+    });
+    it('mantém tamanhos inesperados e trata vazio', () => {
+        expect(formatTelefone('123')).toBe('123');
+        expect(formatTelefone(null)).toBe('');
     });
 });

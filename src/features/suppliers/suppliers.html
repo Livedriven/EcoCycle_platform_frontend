@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consultar fornecedores | EcoCycle</title>
+</head>
+<body>
+  <!-- topo, menu lateral e rodapé são preenchidos pelo layout.js -->
+  <div id="app-topo"></div>
+  <div class="app-corpo">
+    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+    <main class="conteudo-pagina">
+      <h1 class="h4 mb-1">Consultar fornecedores</h1>
+      <nav aria-label="Você está em" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+          <li class="breadcrumb-item">Início</li>
+          <li class="breadcrumb-item">Operações</li>
+          <li class="breadcrumb-item">Fornecedores</li>
+          <li class="breadcrumb-item active" aria-current="page">Consultar fornecedores</li>
+        </ol>
+      </nav>
+
+      <!-- Só aparece depois que os fornecedores carregam. -->
+      <div class="card shadow-sm mb-3 d-none" id="bloco-filtros">
+        <div class="card-body">
+          <form id="form-filtros" class="row g-2 align-items-center" novalidate>
+            <div class="col-12 col-lg">
+              <label for="busca" class="visually-hidden">Buscar fornecedor</label>
+              <div class="input-group">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+                <input type="search" id="busca" class="form-control" placeholder="Buscar por nome, CNPJ, telefone ou e-mail..." autocomplete="off">
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label for="filtro-cidade" class="visually-hidden">Cidade ou região</label>
+              <div class="input-group">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-geo-alt"></i></span>
+                <select id="filtro-cidade" class="form-select">
+                  <option value="">Todas as cidades/regiões</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+            <div class="col-auto">
+              <button type="button" id="limpar-filtros" class="btn btn-outline-secondary text-nowrap">Limpar filtros</button>
+            </div>
+          </form>
+          <hr class="my-3">
+          <div class="d-flex flex-wrap justify-content-between gap-2 small text-body-secondary">
+            <span id="resumo-resultado" aria-live="polite"></span>
+            <span>Ordenado por: Mais recentes</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm" id="bloco-fornecedores">
+        <div class="card-body">
+          <div class="estado"></div>
+          <div class="conteudo d-none">
+            <div id="tabela-fornecedores" class="overflow-auto"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="suppliers.js"></script>
+</body>
+</html>

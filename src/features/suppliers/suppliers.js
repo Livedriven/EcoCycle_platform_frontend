@@ -1,0 +1,138 @@
+import API from '../../shared/api.js';
+import { montarLayout } from '../../shared/layout.js';
+import { can } from '../../shared/session.js';
+import { createTable, updateTable } from '../../shared/table.js';
+import { formatCnpj, formatTelefone } from '../../shared/formatters.js';
+import { filtrarFornecedores, opcoesDeCidade, ordenarMaisRecentes, textoContagem } from './suppliers-filter.js';
+
+// Consultar vale para todos os perfis (não há ação em PERMISSOES).
+const SESSAO = montarLayout();
+
+const CADASTRO_URL = '/src/features/suppliers/new-supplier.html';
+
+if (SESSAO) {
+    iniciarTela();
+}
+
+function iniciarTela() {
+    const blocoFiltros = document.getElementById('bloco-filtros');
+    const form = document.getElementById('form-filtros');
+    const inputBusca = document.getElementById('busca');
+    const selectCidade = document.getElementById('filtro-cidade');
+    const resumo = document.getElementById('resumo-resultado');
+    const estado = document.querySelector('#bloco-fornecedores .estado');
+    const conteudo = document.querySelector('#bloco-fornecedores .conteudo');
+
+    // Só os campos do wireframe. A coluna Ações é só desenho: editar e excluir ainda não existem.
+    const colunas = [
+        { id: 'nome_fornecedor', label: 'Nome do fornecedor' },
+        { id: 'cnpj_fornecedor', label: 'CNPJ', formatar: formatCnpj },
+        { id: 'telefone_fornecedor', label: 'Telefone', formatar: formatTelefone },
+        { id: 'email_fornecedor', label: 'E-mail' },
+        { id: 'endereco_fornecedor', label: 'Endereço' },
+        {
+            id: 'id',
+            label: 'Ações',
+            html: () => '<span class="text-body-tertiary text-nowrap" aria-hidden="true"><i class="bi bi-pencil me-2"></i><i class="bi bi-trash"></i></span>'
+        }
+    ];
+
+    let fornecedores = [];
+    let grid = null;
+
+    form.addEventListener('submit', (evento) => {
+        evento.preventDefault();
+        aplicarFiltros();
+    });
+    document.getElementById('limpar-filtros').addEventListener('click', () => {
+        form.reset();
+        aplicarFiltros();
+    });
+
+    carregar();
+
+    async function carregar() {
+        blocoFiltros.classList.add('d-none');
+        conteudo.classList.add('d-none');
+        mostrarCarregando();
+        try {
+            const resposta = await API.GET('/fornecedores');
+            fornecedores = Array.isArray(resposta) ? resposta : [];
+        } catch (erro) {
+            mostrarMensagem(erro.message, { texto: 'Tentar novamente', aoClicar: carregar, erro: true });
+            return;
+        }
+        preencherCidades();
+        blocoFiltros.classList.remove('d-none');
+        aplicarFiltros();
+    }
+
+    function preencherCidades() {
+        selectCidade.length = 1;
+        opcoesDeCidade(fornecedores).forEach((cidade) => selectCidade.add(new Option(cidade, cidade)));
+    }
+
+    function aplicarFiltros() {
+        const filtrados = ordenarMaisRecentes(
+            filtrarFornecedores(fornecedores, { busca: inputBusca.value, cidade: selectCidade.value })
+        );
+        resumo.textContent = textoContagem(filtrados.length, fornecedores.length);
+
+        if (fornecedores.length === 0) {
+            conteudo.classList.add('d-none');
+            mostrarMensagem('Nenhum fornecedor cadastrado ainda.', can('fornecedor.cadastrar')
+                ? { texto: 'Cadastrar fornecedor', href: CADASTRO_URL }
+                : null);
+        } else if (filtrados.length === 0) {
+            conteudo.classList.add('d-none');
+            mostrarMensagem('Nenhum fornecedor encontrado para esta busca.', {
+                texto: 'Limpar filtros',
+                aoClicar: () => {
+                    form.reset();
+                    aplicarFiltros();
+                }
+            });
+        } else {
+            mostrarTabela(filtrados);
+        }
+    }
+
+    function mostrarTabela(dados) {
+        estado.replaceChildren();
+        conteudo.classList.remove('d-none'); // visível antes de desenhar
+        if (grid) {
+            updateTable(grid, dados);
+        } else {
+            // Busca e ordenação próprias da tela: a do Grid.js fica desligada.
+            grid = createTable('#tabela-fornecedores', colunas, dados, { busca: false, ordenar: false });
+        }
+    }
+
+    function mostrarCarregando() {
+        estado.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando fornecedores...</span></div></div>';
+    }
+
+    // acao: { texto, aoClicar } (botão) ou { texto, href } (link).
+    function mostrarMensagem(texto, acao = null) {
+        const caixa = document.createElement('div');
+        caixa.className = 'text-center py-4';
+
+        const paragrafo = document.createElement('p');
+        paragrafo.className = (acao && acao.erro ? 'text-danger' : 'text-body-secondary') + ' mb-3';
+        paragrafo.textContent = texto;
+        caixa.appendChild(paragrafo);
+
+        if (acao) {
+            const controle = document.createElement(acao.href ? 'a' : 'button');
+            controle.className = 'btn btn-outline-primary';
+            controle.textContent = acao.texto;
+            if (acao.href) controle.href = acao.href;
+            else {
+                controle.type = 'button';
+                controle.addEventListener('click', acao.aoClicar);
+            }
+            caixa.appendChild(controle);
+        }
+        estado.replaceChildren(caixa);
+    }
+}
