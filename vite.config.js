@@ -22,6 +22,7 @@ export default defineConfig({
         erro404: resolve(__dirname, './src/features/errors/404.html'),
         unavailable: resolve(__dirname, './src/features/errors/unavailable.html'),
         startProduction: resolve(__dirname, './src/features/start-production/start-production.html'),
+        newSupplier: resolve(__dirname, './src/features/suppliers/new-supplier.html'),
         // uma linha por página
       },
     },

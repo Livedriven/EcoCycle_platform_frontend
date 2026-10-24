@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastrar fornecedor | EcoCycle</title>
+</head>
+<body>
+  <!-- topo, menu lateral e rodapé são preenchidos pelo layout.js -->
+  <div id="app-topo"></div>
+  <div class="app-corpo">
+    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+    <main class="conteudo-pagina">
+      <h1 class="h4 mb-1">Cadastrar fornecedor</h1>
+      <nav aria-label="Você está em" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+          <li class="breadcrumb-item">Início</li>
+          <li class="breadcrumb-item">Operações</li>
+          <li class="breadcrumb-item">Fornecedores</li>
+          <li class="breadcrumb-item active" aria-current="page">Cadastrar fornecedor</li>
+        </ol>
+      </nav>
+
+      <div class="card shadow-sm" id="bloco-cadastrar-fornecedor">
+        <div class="card-body">
+          <!-- Resultado do envio (sucesso ou erro da API). -->
+          <div id="aviso-envio" class="d-none" role="alert" aria-live="polite"></div>
+
+          <form id="form-fornecedor" novalidate>
+            <div class="mb-3">
+              <label for="nome" class="form-label fw-semibold">Nome do fornecedor <span class="text-danger" aria-hidden="true">*</span></label>
+              <div class="input-group has-validation">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-building"></i></span>
+                <input type="text" id="nome" name="nome_fornecedor" class="form-control" placeholder="Digite a razão social ou nome fantasia..." maxlength="80" autocomplete="organization" required aria-describedby="erro-nome">
+                <div id="erro-nome" class="invalid-feedback"></div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="cnpj" class="form-label fw-semibold">CNPJ <span class="text-danger" aria-hidden="true">*</span></label>
+              <div class="input-group has-validation">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-person-vcard"></i></span>
+                <input type="text" id="cnpj" name="cnpj_fornecedor" class="form-control" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18" autocomplete="off" required aria-describedby="erro-cnpj">
+                <div id="erro-cnpj" class="invalid-feedback"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="telefone" class="form-label fw-semibold">Telefone</label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text" aria-hidden="true"><i class="bi bi-telephone"></i></span>
+                  <input type="tel" id="telefone" name="telefone_fornecedor" class="form-control" placeholder="(00) 00000-0000" inputmode="tel" maxlength="15" autocomplete="tel" aria-describedby="erro-telefone">
+                  <div id="erro-telefone" class="invalid-feedback"></div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="email" class="form-label fw-semibold">E-mail</label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text" aria-hidden="true"><i class="bi bi-envelope"></i></span>
+                  <input type="email" id="email" name="email_fornecedor" class="form-control" placeholder="exemplo@empresa.com.br" maxlength="254" autocomplete="email" aria-describedby="erro-email">
+                  <div id="erro-email" class="invalid-feedback"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="cep" class="form-label fw-semibold">CEP</label>
+              <div class="row g-2 align-items-start">
+                <div class="col-8 col-sm-5 col-md-4">
+                  <div class="input-group has-validation">
+                    <span class="input-group-text" aria-hidden="true"><i class="bi bi-geo-alt"></i></span>
+                    <input type="text" id="cep" class="form-control" placeholder="00000-000" inputmode="numeric" maxlength="9" autocomplete="postal-code" aria-describedby="ajuda-cep erro-cep status-cep">
+                    <div id="erro-cep" class="invalid-feedback"></div>
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <button type="button" id="btn-buscar-cep" class="btn btn-outline-primary text-nowrap">Buscar CEP</button>
+                </div>
+              </div>
+              <div id="ajuda-cep" class="form-text">Digite o CEP e clique em Buscar CEP para preencher o endereço automaticamente. Se a consulta falhar, preencha o endereço manualmente.</div>
+              <div id="status-cep" class="form-text" aria-live="polite"></div>
+            </div>
+
+            <div class="mb-4">
+              <label for="endereco" class="form-label fw-semibold">Endereço completo</label>
+              <div class="input-group has-validation">
+                <span class="input-group-text align-items-start" aria-hidden="true"><i class="bi bi-geo-alt"></i></span>
+                <textarea id="endereco" name="endereco_fornecedor" class="form-control" rows="4" placeholder="Rua, número, complemento, bairro, cidade - UF..." maxlength="200" autocomplete="street-address" aria-describedby="erro-endereco"></textarea>
+                <div id="erro-endereco" class="invalid-feedback"></div>
+              </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+              <button type="submit" id="btn-salvar" class="btn btn-primary">Salvar fornecedor</button>
+              <button type="button" id="btn-cancelar" class="btn btn-outline-secondary">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="new-supplier.js"></script>
+</body>
+</html>
