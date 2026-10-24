@@ -1,10 +1,11 @@
 import { montarLayout } from '../../shared/layout.js';
 import API from '../../shared/api.js';
 import { createTable, escaparHtml, updateTable } from '../../shared/table.js';
-import { formatDate } from '../../shared/formatters.js';
+import { formatDate, formatKg } from '../../shared/formatters.js';
+import { totalProduzido } from '../../shared/calculations.js';
 import { classeStatus } from '../../shared/ui.js';
 import { criarDetalhesProducao } from './production-details.js';
-import { filtrarProducoes } from './production-filters.js';
+import { filtrarProducoes, validarPeriodo } from './production-filters.js';
 
 // Página protegida: sem sessão válida, montarLayout() já redireciona ao login.
 const SESSAO = montarLayout();
@@ -14,7 +15,9 @@ if (SESSAO) {
     const estado = bloco.querySelector('.estado');
     const conteudo = bloco.querySelector('.conteudo');
     const busca = document.getElementById('busca-producao');
-    const filtroData = document.getElementById('filtro-data');
+    const filtroDataInicial = document.getElementById('filtro-data-inicial');
+    const filtroDataFinal = document.getElementById('filtro-data-final');
+    const erroPeriodo = document.getElementById('erro-periodo');
     const filtroStatus = document.getElementById('filtro-status');
     const filtroTurno = document.getElementById('filtro-turno');
     const limparFiltro = document.getElementById('limpar-filtro');
@@ -68,28 +71,52 @@ if (SESSAO) {
         select.value = opcoes.includes(valorSelecionado) ? valorSelecionado : '';
     }
 
-    function mostrarResultado(quantidade) {
-        const temFiltros = busca.value || filtroData.value || filtroStatus.value || filtroTurno.value;
-        resultadoFiltros.classList.toggle('d-none', !temFiltros);
-        resultadoFiltros.textContent = temFiltros
-            ? quantidade + ' de ' + producoes.length + (quantidade === 1 ? ' registro encontrado.' : ' registros encontrados.')
-            : '';
+    function mostrarResultado(registros) {
+        const quantidade = registros.length;
+        resultadoFiltros.classList.remove('d-none');
+        resultadoFiltros.textContent = quantidade + ' de ' + producoes.length
+            + (quantidade === 1 ? ' registro encontrado. ' : ' registros encontrados. ')
+            + 'Total do período: ' + formatKg(totalProduzido(registros)) + '.';
+    }
+
+    function validarDatas() {
+        const mensagem = filtroDataInicial.validity.badInput || filtroDataFinal.validity.badInput
+            ? 'Informe uma data válida.'
+            : validarPeriodo(filtroDataInicial.value, filtroDataFinal.value);
+        filtroDataInicial.max = filtroDataFinal.value;
+        filtroDataFinal.min = filtroDataInicial.value;
+        [filtroDataInicial, filtroDataFinal].forEach((campo) => {
+            campo.setCustomValidity(mensagem);
+            campo.classList.toggle('is-invalid', Boolean(mensagem));
+            campo.setAttribute('aria-invalid', String(Boolean(mensagem)));
+        });
+        erroPeriodo.textContent = mensagem;
+        erroPeriodo.classList.toggle('d-none', !mensagem);
+        return !mensagem;
     }
 
     function aplicarFiltros() {
+        const datasValidas = validarDatas();
         if (!tabela) {
             return;
         }
+        if (!datasValidas) {
+            conteudo.classList.add('d-none');
+            resultadoFiltros.classList.add('d-none');
+            return;
+        }
+        mostrarConteudo();
 
         const registros = filtrarProducoes(producoes, {
             busca: busca.value,
-            data: filtroData.value,
+            dataInicial: filtroDataInicial.value,
+            dataFinal: filtroDataFinal.value,
             status: filtroStatus.value,
             turno: filtroTurno.value
         });
 
         updateTable(tabela, registros);
-        mostrarResultado(registros.length);
+        mostrarResultado(registros);
     }
 
     function enriquecerProducoes(registros, lotes, esteiras) {
@@ -111,7 +138,7 @@ if (SESSAO) {
 
     async function carregarProducoes() {
         mostrarCarregando();
-        [busca, filtroData, filtroStatus, filtroTurno, limparFiltro].forEach((controle) => {
+        [busca, filtroDataInicial, filtroDataFinal, filtroStatus, filtroTurno, limparFiltro].forEach((controle) => {
             controle.disabled = true;
         });
 
@@ -125,6 +152,7 @@ if (SESSAO) {
 
             if (producoes.length === 0) {
                 mostrarMensagem('Nenhuma produção foi registrada.', 'inbox');
+                mostrarResultado([]);
                 return;
             }
 
@@ -147,6 +175,7 @@ if (SESSAO) {
                 },
                 { id: 'data_hora', label: 'Data', formatar: formatDate },
                 { id: 'turno', label: 'Turno' },
+                { id: 'peso_kg', label: 'Peso produzido', formatar: formatKg },
                 {
                     label: 'Ações',
                     acoes: [{
@@ -157,22 +186,27 @@ if (SESSAO) {
                     }]
                 }
             ], producoes, { busca: false, porPagina: 10 });
+            aplicarFiltros();
         } catch (erro) {
             mostrarMensagem(erro.message, 'exclamation-triangle');
         } finally {
-            [busca, filtroData, filtroStatus, filtroTurno, limparFiltro].forEach((controle) => {
+            [busca, filtroDataInicial, filtroDataFinal, filtroStatus, filtroTurno, limparFiltro].forEach((controle) => {
                 controle.disabled = !tabela;
             });
         }
     }
 
     busca.addEventListener('input', aplicarFiltros);
-    [filtroData, filtroStatus, filtroTurno].forEach((filtro) => {
+    [filtroDataInicial, filtroDataFinal].forEach((filtro) => {
+        filtro.addEventListener('input', aplicarFiltros);
+    });
+    [filtroDataInicial, filtroDataFinal, filtroStatus, filtroTurno].forEach((filtro) => {
         filtro.addEventListener('change', aplicarFiltros);
     });
     limparFiltro.addEventListener('click', () => {
         busca.value = '';
-        filtroData.value = '';
+        filtroDataInicial.value = '';
+        filtroDataFinal.value = '';
         filtroStatus.value = '';
         filtroTurno.value = '';
         aplicarFiltros();
