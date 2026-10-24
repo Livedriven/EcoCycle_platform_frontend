@@ -16,6 +16,11 @@ export function formatKg(valor) {
     return formatNumber(valor) + ' kg';
 }
 
+/** Peso em kg -> toneladas, com até 5 casas para preservar a precisão de 0,01 kg. */
+export function formatToneladas(valorKg) {
+    return formatNumber(Number(valorKg ?? 0) / 1000, 5) + ' t';
+}
+
 /** "2026-10-20" ou "2026-10-20T10:00:00" -> "20/10/2026" */
 export function formatDate(data) {
     return dayjs(data).format('DD/MM/YYYY');
