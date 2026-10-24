@@ -2,7 +2,7 @@
   "fornecedores": [
     {
       "id": 1,
-      "cnpj": "12345678000195",
+      "cnpj_fornecedor": "12345678000195",
       "nome_fornecedor": "Recicla Norte Ltda",
       "telefone_fornecedor": "31988810001",
       "email_fornecedor": "contato@reciclanorte.example.com",
@@ -10,7 +10,7 @@
     },
     {
       "id": 2,
-      "cnpj": "23456789000195",
+      "cnpj_fornecedor": "23456789000195",
       "nome_fornecedor": "Metalúrgica Vale Verde",
       "telefone_fornecedor": "31988820002",
       "email_fornecedor": "comercial@valeverde.example.com",
@@ -18,7 +18,7 @@
     },
     {
       "id": 3,
-      "cnpj": "34567801000155",
+      "cnpj_fornecedor": "34567801000155",
       "nome_fornecedor": "Cooperativa Cata-Forte",
       "telefone_fornecedor": "31988830003",
       "email_fornecedor": "coop@catforte.example.com",
@@ -26,7 +26,7 @@
     },
     {
       "id": 4,
-      "cnpj": "45678912000155",
+      "cnpj_fornecedor": "45678912000155",
       "nome_fornecedor": "Plásticos União Comércio",
       "telefone_fornecedor": "31988840004",
       "email_fornecedor": "vendas@plasticosuniao.example.com",
@@ -34,7 +34,7 @@
     },
     {
       "id": 5,
-      "cnpj": "56789023000181",
+      "cnpj_fornecedor": "56789023000181",
       "nome_fornecedor": "Ecoponto Central",
       "telefone_fornecedor": "31988850005",
       "email_fornecedor": "ecoponto@central.example.com",
