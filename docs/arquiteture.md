@@ -86,7 +86,7 @@ A API entrega os **registros**; o **front-end calcula os totais** (dashboard, pr
 | `dashboard` | Indicadores, gráficos, esteiras e alertas | `/lotes`, `/producao`, `/fornecedores`, `/alertas`, `/esteiras` | RF04, RF13 |
 | `production` | Produção diária com filtro por data | `/producao` | RF05 |
 | `batches` | Listagem, detalhes e cadastro de lotes | `/lotes` | RF06, RF07 |
-| `materials` | Totais de plástico e metal | `/producao` | RF08 |
+| `materials` | Relatório de plástico, metal, alumínio e rejeito por lote e dia, com totais, filtros e gráfico | `/producao` | RF08 |
 | `alerts` | Alertas ativos e histórico | `/alertas` | RF09 |
 | `users` | Reservada (gerenciar usuários está fora do MVP: todos os perfis veem "acesso negado") | `/usuarios` | RF10 |
 | `conveyor` | Status das esteiras | `/esteiras` | RF12 |
