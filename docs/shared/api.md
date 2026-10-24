@@ -101,7 +101,7 @@ Todas as rotas, exceto `/login`, exigem o token. As permissões por perfil ficam
 | `GET` em `/lotes`, `/fornecedores`, `/alertas`, `/producao`, `/esteiras`, `/leituras_sensor` | Todos os perfis |
 | `POST /fornecedores` | administrador, gerente |
 | `POST /lotes` | administrador, gerente, operador |
-| `POST /producao` (iniciar) e `PATCH /producao/:id` (finalizar) | operador |
+| `POST /producao` (iniciar) e `PATCH /producao/:id` (finalizar) | administrador, gerente, operador |
 | `/usuarios` (qualquer método) | ninguém (fora do MVP) |
 | Qualquer outra (`PUT`, `DELETE`, `/logs_sistema`...) | ninguém |
 

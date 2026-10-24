@@ -6,8 +6,11 @@
   --eco-fundo: #F4F7F6; --eco-superficie: #FFFFFF; --eco-borda: #D5DEDB;
   --eco-texto: #1F2D33; --eco-texto-suave: #5A6B72;
   --eco-sucesso: #2E7D32; --eco-aviso: #B26A00; --eco-perigo: #C62828; --eco-info: #0B6E8A;
-  --bs-primary: var(--eco-azul); --bs-success: var(--eco-verde-escuro);
+  --bs-primary: var(--eco-azul); --bs-success: var(--eco-sucesso);
   --bs-danger: var(--eco-perigo); --bs-warning: var(--eco-aviso);
+  --bs-info: var(--eco-info);
+  --bs-success-rgb: 46, 125, 50; --bs-warning-rgb: 178, 106, 0;
+  --bs-danger-rgb: 198, 40, 40; --bs-info-rgb: 11, 110, 138;
   /* altura do topo (p-3 + botão "Sair"): o menu do celular começa logo abaixo dele */
   --altura-topo: 64px;
   /* largura do menu lateral em tela grande (também é quanto ele anda ao recolher) */
@@ -126,6 +129,19 @@ h1, h2, h3 { color: var(--eco-azul); }
 .b-sucesso { background: var(--eco-sucesso); } .b-aviso { background: var(--eco-aviso); }
 .b-perigo { background: var(--eco-perigo); }   .b-info { background: var(--eco-info); }
 .b-verde { background: var(--eco-verde-escuro); } .b-suave { background: var(--eco-texto-suave); }
+.badge-alerta { white-space: normal; text-align: left; line-height: 1.35; }
+
+/* Mensagens Bootstrap usam a mesma paleta dos badges do conveyor. */
+.alert-success { --cor-alerta: var(--eco-sucesso); }
+.alert-warning { --cor-alerta: var(--eco-aviso); }
+.alert-danger { --cor-alerta: var(--eco-perigo); }
+.alert-info { --cor-alerta: var(--eco-info); }
+.alert:is(.alert-success, .alert-warning, .alert-danger, .alert-info) {
+  --bs-alert-color: var(--cor-alerta);
+  --bs-alert-bg: color-mix(in srgb, var(--cor-alerta) 10%, var(--eco-superficie));
+  --bs-alert-border-color: color-mix(in srgb, var(--cor-alerta) 40%, var(--eco-superficie));
+  --bs-alert-link-color: var(--cor-alerta);
+}
 
 /* Estados de bloco: carregando, vazio, erro */
 /* área centralizada para spinner e mensagens */

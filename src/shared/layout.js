@@ -6,6 +6,7 @@
 import './setup.js';
 import API from './api.js';
 import { requireLogin, logout, can, HOME_URL } from './session.js';
+import { aplicarPermissoes } from './permissions.js';
 
 const PAGINAS = '/src/features';
 
@@ -349,5 +350,6 @@ export function montarLayout({ acao } = {}) {
     const conteudo = document.querySelector('.conteudo-pagina');
     conteudo?.querySelector(':scope > .rodape')?.remove();
     conteudo?.append(criarRodape());
+    aplicarPermissoes();
     return sessao;
 }

@@ -46,9 +46,9 @@ A API entrega os **registros**; o **front-end calcula os totais** (dashboard, pr
     │   ├── calculations.js       # totais e agrupamentos dos dados
     │   ├── formatters.js         # números e datas no padrão brasileiro
     │   ├── styles/style.css      # paleta e componentes visuais da EcoCycle
-    │   ├── permissions.js        # (vazio: a matriz de permissões está no session.js)
+    │   ├── permissions.js        # visibilidade de elementos com data-permissao, usando can() do session.js
     │   ├── validators.js         # (vazio, a implementar)
-    │   ├── ui.js                 # (vazio, a implementar: avisos com SweetAlert2)
+    │   ├── ui.js                 # classes de cor compartilhadas para alertas, contadores e situações
     │   └── *.test.js             # testes do Vitest ao lado do código
     └── features/
         ├── login/                # login.html, login.js, login.css
@@ -101,10 +101,8 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
 | Login e consulta de dashboard, lotes, fornecedores, alertas e estoque | Sim | Sim | Sim | Sim |
 | Cadastrar fornecedor | Sim | Sim | Não | Não |
 | Registrar lote | Sim | Sim | Sim | Não |
-| Iniciar e finalizar produção | Pendente* | Pendente* | Sim | Não |
+| Iniciar e finalizar produção | Sim | Sim | Sim | Não |
 | Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
-
-\* A especificação ainda não decidiu se administrador e gerente também iniciam e finalizam produção. Até a confirmação, o portal libera só para o operador.
 
 - A matriz existe em dois lugares que precisam andar juntos: `PERMISSOES` em `src/shared/session.js` (interface) e `mocks/rbac.cjs` (mock da API).
 - A interface pode esconder botões, mas a API verifica a permissão em cada operação protegida (RN12): `401` para token ausente, inválido ou expirado e `403` para usuário sem permissão.
@@ -150,5 +148,4 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
 6. Campo que diferencia alerta ativo de histórico.
 
 **Com a E5 e o professor**
-7. Se administrador e gerente também iniciam e finalizam produção (hoje só o operador). A decisão muda a linha de `producao.operar` no `session.js` e no `mocks/rbac.cjs`, e precisa ser a mesma no backend.
-8. Fórmulas dos totais e fatores de CO₂ evitado.
+7. Fórmulas dos totais e fatores de CO₂ evitado.

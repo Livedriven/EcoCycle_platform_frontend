@@ -13,7 +13,6 @@
     <main class="conteudo-pagina">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="h4 m-0">Dashboard</h1>
-        <button id="btn-atualizar" class="btn btn-eco btn-sm">Atualizar</button>
       </div>
 
       <!-- Cards de indicadores. Todo bloco tem .estado (carregando/erro/vazio) e .conteudo (dados) -->
@@ -73,6 +72,9 @@
           <div class="card-header d-flex justify-content-between align-items-center">
             Alertas ativos <span id="contador-alertas" class="badge b-suave">–</span></div>
           <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
+          <div class="card-footer text-end">
+            <a href="../alerts/alerts.html" class="btn btn-eco btn-sm">Ver alertas</a>
+          </div>
         </div></div>
       </div>
 

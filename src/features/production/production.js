@@ -2,6 +2,7 @@ import { montarLayout } from '../../shared/layout.js';
 import API from '../../shared/api.js';
 import { createTable, escaparHtml, updateTable } from '../../shared/table.js';
 import { formatDate } from '../../shared/formatters.js';
+import { classeStatus } from '../../shared/ui.js';
 import { criarDetalhesProducao } from './production-details.js';
 import { filtrarProducoes } from './production-filters.js';
 
@@ -39,7 +40,7 @@ if (SESSAO) {
         estado.replaceChildren();
 
         const simbolo = document.createElement('i');
-        simbolo.className = 'bi bi-' + icone + ' fs-3';
+        simbolo.className = 'bi bi-' + icone + ' fs-3' + (icone === 'exclamation-triangle' ? ' text-danger' : '');
         simbolo.setAttribute('aria-hidden', 'true');
         const mensagem = document.createElement('span');
         mensagem.textContent = texto;
@@ -49,14 +50,6 @@ if (SESSAO) {
     function mostrarConteudo() {
         estado.replaceChildren();
         conteudo.classList.remove('d-none');
-    }
-
-    function classeDoStatus(status) {
-        return {
-            'Finalizado': 'b-sucesso',
-            'Em processamento': 'b-aviso',
-            'Recebido': 'b-info'
-        }[status] || 'b-suave';
     }
 
     function preencherOpcoes(select, valores, textoPadrao, ordem = []) {
@@ -150,7 +143,7 @@ if (SESSAO) {
                 {
                     id: 'status',
                     label: 'Status',
-                    html: (status) => '<span class="badge ' + classeDoStatus(status) + '">' + escaparHtml(status) + '</span>'
+                    html: (status) => '<span class="badge ' + classeStatus(status) + '">' + escaparHtml(status) + '</span>'
                 },
                 { id: 'data_hora', label: 'Data', formatar: formatDate },
                 { id: 'turno', label: 'Turno' },

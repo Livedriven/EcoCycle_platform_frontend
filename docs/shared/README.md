@@ -7,6 +7,8 @@ Código reaproveitado por todas as telas. Antes de escrever algo numa tela, conf
 | `layout.js` | Topo, menu lateral e rodapé das telas protegidas; também protege a página | [layout.md](layout.md) |
 | `api.js` | Toda chamada à API (token, timeout e mensagens de erro) | [api.md](api.md) |
 | `session.js` | Sessão do usuário (JWT), matriz de permissões, guarda de página e logout | [session.md](session.md) |
+| `permissions.js` | Visibilidade de elementos com `data-permissao`, usando a matriz existente | [permissions.md](permissions.md) |
+| `ui.js` | Classes de cor compartilhadas para alertas, contadores e situações | [estilos.md](estilos.md) |
 | `table.js` | Tabelas com busca, ordenação e paginação (Grid.js em português) | [table.md](table.md) |
 | `calculations.js` | Totais e agrupamentos de produção, lotes, fornecedores, alertas e CO₂ | [calculations.md](calculations.md) |
 | `formatters.js` | Números, pesos e datas no padrão brasileiro | [formatters.md](formatters.md) |
@@ -14,7 +16,7 @@ Código reaproveitado por todas as telas. Antes de escrever algo numa tela, conf
 | `config.js` e `setup.js` | Leitura do `.env` e carga das bibliotecas visuais | [config-e-setup.md](config-e-setup.md) |
 | `styles/style.css` | Paleta da EcoCycle e classes visuais prontas | [estilos.md](estilos.md) |
 
-`validators.js` ainda aguarda implementação; [validators.md](validators.md) define o contrato que os formulários devem seguir. `ui.js` (avisos com SweetAlert2) e `permissions.js` também estão vazios; a matriz de permissões fica no `session.js`.
+`validators.js` ainda aguarda implementação; [validators.md](validators.md) define o contrato que os formulários devem seguir. A matriz de permissões fica no `session.js`.
 
 ---
 
@@ -46,6 +48,7 @@ Login e páginas de erro não usam o layout: importam só `'../../shared/setup.j
 |---|---|---|
 | `montarLayout({ acao? })` | layout | Protege a tela (login e, com `acao`, permissão) e monta topo, menu e rodapé. Devolve a sessão ou `null`. |
 | `MENU` | layout | Lista de itens do menu lateral. |
+| `aplicarPermissoes(raiz = document)` | permissions | Mostra/esconde elementos com `data-permissao`. O layout aplica automaticamente; reaplique para conteúdo dinâmico. |
 | `API.GET(url)` | api | Busca dados. |
 | `API.POST(url, corpo)` | api | Cria um registro. |
 | `API.PUT(url, corpo)` | api | Substitui um registro. |

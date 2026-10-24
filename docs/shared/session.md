@@ -44,10 +44,8 @@ Nas telas protegidas, normalmente basta o `montarLayout()` (de `layout.js`), que
 |---|---|
 | `fornecedor.cadastrar` | administrador, gerente |
 | `lote.registrar` | administrador, gerente, operador |
-| `producao.operar` (iniciar e finalizar produção) | operador* |
+| `producao.operar` (iniciar e finalizar produção) | administrador, gerente, operador |
 | `usuarios.gerenciar` | ninguém (fora do MVP) |
-
-\* Pendente na especificação: confirmar se administrador e gerente também iniciam e finalizam produção. Se for confirmado, só muda a linha de `producao.operar`, e o backend precisa adotar a mesma regra.
 
 Os três usos da matriz:
 
