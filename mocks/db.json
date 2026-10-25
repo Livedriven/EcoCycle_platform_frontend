@@ -45,6 +45,7 @@
     {
       "id": 1,
       "id_fornecedor": 1,
+      "codigo_lote": "NCK7891",
       "pesoentrada_kg": 1200.5,
       "data_entrada": "2026-08-03T08:00:00",
       "status": "Finalizado"
@@ -52,6 +53,7 @@
     {
       "id": 2,
       "id_fornecedor": 2,
+      "codigo_lote": "LOTE-2026/002",
       "pesoentrada_kg": 850.75,
       "data_entrada": "2026-08-17T09:15:00",
       "status": "Finalizado"
@@ -59,6 +61,7 @@
     {
       "id": 3,
       "id_fornecedor": 3,
+      "codigo_lote": "RECICLAGEM A-25",
       "pesoentrada_kg": 2000,
       "data_entrada": "2026-08-31T10:30:00",
       "status": "Finalizado"
@@ -66,6 +69,7 @@
     {
       "id": 4,
       "id_fornecedor": 1,
+      "codigo_lote": "PLAST-004",
       "pesoentrada_kg": 1530.2,
       "data_entrada": "2026-09-14T08:45:00",
       "status": "Finalizado"
@@ -73,6 +77,7 @@
     {
       "id": 5,
       "id_fornecedor": 4,
+      "codigo_lote": "BTR2046",
       "pesoentrada_kg": 980.4,
       "data_entrada": "2026-09-28T11:00:00",
       "status": "Finalizado"
@@ -80,6 +85,7 @@
     {
       "id": 6,
       "id_fornecedor": 5,
+      "codigo_lote": "FORN-05-OUT",
       "pesoentrada_kg": 1750.9,
       "data_entrada": "2026-10-05T13:20:00",
       "status": "Em processamento"
@@ -87,6 +93,7 @@
     {
       "id": 7,
       "id_fornecedor": 2,
+      "codigo_lote": "MAT-2026-107",
       "pesoentrada_kg": 1100,
       "data_entrada": "2026-10-13T14:10:00",
       "status": "Em processamento"
@@ -94,6 +101,7 @@
     {
       "id": 8,
       "id_fornecedor": 3,
+      "codigo_lote": "PLM5832",
       "pesoentrada_kg": 640.35,
       "data_entrada": "2026-10-19T15:30:00",
       "status": "Recebido"
@@ -101,12 +109,14 @@
     {
       "id": 9,
       "id_fornecedor": 3,
+      "codigo_lote": "LOTE-ABC/2026-09",
       "pesoentrada_kg": 1250,
       "data_entrada": "2026-10-24T23:30:14"
     },
     {
       "id": 10,
       "id_fornecedor": 5,
+      "codigo_lote": "ECO-25-10-X7",
       "pesoentrada_kg": 1200,
       "data_entrada": "2026-10-25T00:10:53",
       "status": "Recebido"
