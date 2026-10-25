@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lotes | EcoCycle</title>
+  <title>Consultar lotes | EcoCycle</title>
 </head>
 <body>
   <!-- topo, menu lateral e rodapé são preenchidos pelo layout.js -->
@@ -11,31 +11,58 @@
   <div class="app-corpo">
     <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
     <main class="conteudo-pagina">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 m-0">Lotes recebidos</h1>
-      </div>
-      <!-- Formulário de cadastro (escondido até clicar em "Novo lote") -->
-      <div class="card shadow-sm mb-3 d-none" id="card-form-lote">
-        <div class="card-header">Cadastrar lote</div>
+      <h1 class="h4 mb-1">Consultar lotes</h1>
+      <nav aria-label="Você está em" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+          <li class="breadcrumb-item">Início</li>
+          <li class="breadcrumb-item">Operações</li>
+          <li class="breadcrumb-item">Lotes</li>
+          <li class="breadcrumb-item active" aria-current="page">Consultar lotes</li>
+        </ol>
+      </nav>
+
+      <!-- Só aparece depois que os lotes carregam. -->
+      <div class="card shadow-sm mb-3 d-none" id="bloco-filtros">
         <div class="card-body">
-          <form id="form-lote" class="row g-3" novalidate>
-            <div id="erro-lote" class="alert alert-danger py-2 d-none" role="alert"></div>
-            <div class="col-md-6"><label class="form-label" for="origem">Origem</label>
-              <input id="origem" class="form-control" maxlength="80"></div>
-            <div class="col-md-3"><label class="form-label" for="peso">Peso de entrada (kg)</label>
-              <input id="peso" type="number" step="0.1" min="0" class="form-control"></div>
-            <div class="col-md-3 d-flex align-items-end"><button class="btn btn-eco w-100 d-none" type="submit" data-permissao="lote.registrar">Salvar lote</button></div>
+          <form id="form-filtros" class="row g-2 align-items-center" novalidate>
+            <div class="col-12 col-lg">
+              <label for="busca" class="visually-hidden">Buscar por ID do lote ou fornecedor</label>
+              <div class="input-group">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+                <input type="search" id="busca" class="form-control" placeholder="Buscar por ID do lote ou fornecedor..." autocomplete="off">
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label for="filtro-status" class="visually-hidden">Status</label>
+              <div class="input-group">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-funnel"></i></span>
+                <select id="filtro-status" class="form-select">
+                  <option value="">Status: Todos</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary">Buscar</button>
+            </div>
+            <div class="col-auto">
+              <button type="button" id="limpar-filtros" class="btn btn-outline-secondary text-nowrap">Limpar filtros</button>
+            </div>
           </form>
+          <hr class="my-3">
+          <div class="d-flex flex-wrap justify-content-between gap-2 small text-body-secondary">
+            <span id="resumo-resultado" aria-live="polite"></span>
+            <span>Ordenado por: Mais recentes</span>
+          </div>
         </div>
       </div>
-      <!-- Tabela de lotes (.estado mostra carregando/erro/vazio; .conteudo recebe a tabela) -->
-      <div class="card shadow-sm mb-3" id="bloco-lotes">
-        <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
-      </div>
-      <!-- Detalhes do lote (aparece ao clicar em "Detalhes") -->
-      <div class="card shadow-sm d-none" id="card-detalhe">
-        <div class="card-header">Detalhes do lote</div>
-        <div class="card-body" id="detalhe-lote"></div>
+
+      <div class="card shadow-sm" id="bloco-lotes">
+        <div class="card-body">
+          <div class="estado"></div>
+          <div class="conteudo d-none">
+            <div id="tabela-lotes" class="overflow-auto"></div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
