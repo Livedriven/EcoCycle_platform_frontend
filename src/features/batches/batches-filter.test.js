@@ -9,9 +9,9 @@ const FORNECEDORES = [
     { id: 2, cnpj_fornecedor: '23456789000195', nome_fornecedor: 'Metalúrgica Vale Verde' }
 ];
 const LOTES = [
-    { id: 1, id_fornecedor: 1, pesoentrada_kg: 2300, data_entrada: '2026-10-22T15:20:00', status: 'Recebido' },
-    { id: 2, id_fornecedor: 2, pesoentrada_kg: 950, data_entrada: '2026-10-23T09:10:00', status: 'Em processamento' },
-    { id: 10, id_fornecedor: 2, pesoentrada_kg: 820.5, data_entrada: '2026-10-23T09:10:00', status: 'Recebido' },
+    { id: 1, codigo_lote: 'LT-0001', id_fornecedor: 1, pesoentrada_kg: 2300, data_entrada: '2026-10-22T15:20:00', status: 'Recebido' },
+    { id: 2, codigo_lote: 'ab/77', id_fornecedor: 2, pesoentrada_kg: 950, data_entrada: '2026-10-23T09:10:00', status: 'Em processamento' },
+    { id: 10, codigo_lote: '1500', id_fornecedor: 2, pesoentrada_kg: 820.5, data_entrada: '2026-10-23T09:10:00', status: 'Recebido' },
     { id: 15, id_fornecedor: 9, pesoentrada_kg: 10, data_entrada: '2026-10-24T14:30:00', status: 'Finalizado' }
 ];
 const LINHAS = montarLinhas(LOTES, FORNECEDORES);
@@ -19,7 +19,7 @@ const ids = (lista) => lista.map((l) => l.id);
 
 describe('montarLinhas', () => {
     it('acrescenta o nome do fornecedor e só os campos da tabela', () => {
-        expect(LINHAS[0]).toEqual({ id: 1, fornecedor: 'Recicla Norte Ltda', pesoentrada_kg: 2300, data_entrada: '2026-10-22T15:20:00', status: 'Recebido' });
+        expect(LINHAS[0]).toEqual({ id: 1, codigo_lote: 'LT-0001', fornecedor: 'Recicla Norte Ltda', pesoentrada_kg: 2300, data_entrada: '2026-10-22T15:20:00', status: 'Recebido' });
     });
     it('marca fornecedor que não existe', () => {
         expect(LINHAS[3].fornecedor).toBe('Fornecedor não identificado');
@@ -27,6 +27,9 @@ describe('montarLinhas', () => {
     it('aceita o esquema antigo, com cnpj_fornecedor no lote', () => {
         const antigo = montarLinhas([{ id: 7, cnpj_fornecedor: '23456789000195', status: 'Recebido' }], FORNECEDORES);
         expect(antigo[0].fornecedor).toBe('Metalúrgica Vale Verde');
+    });
+        it('lote sem código fica com texto vazio', () => {
+        expect(LINHAS[3].codigo_lote).toBe('');
     });
 });
 
@@ -53,6 +56,17 @@ describe('filtrarLotes', () => {
     });
     it('devolve lista vazia quando nada casa', () => {
         expect(filtrarLotes(LINHAS, { busca: 'inexistente' })).toEqual([]);
+    });
+        it('busca o código por parte do texto, sem diferenciar maiúsculas e símbolos', () => {
+        expect(ids(filtrarLotes(LINHAS, { busca: 'lt-00' }))).toEqual([1]);
+        expect(ids(filtrarLotes(LINHAS, { busca: 'AB/77' }))).toEqual([2]);
+    });
+    it('termo só com dígitos compara o código inteiro, não parte dele', () => {
+        expect(ids(filtrarLotes(LINHAS, { busca: '1500' }))).toEqual([10]);
+        expect(filtrarLotes(LINHAS, { busca: '150' })).toEqual([]);
+    });
+    it('lote sem código não quebra a busca', () => {
+        expect(() => filtrarLotes(LINHAS, { busca: 'LT-00' })).not.toThrow();
     });
 });
 
