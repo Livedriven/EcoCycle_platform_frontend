@@ -53,30 +53,48 @@ function iniciarTela() {
     });
     document.getElementById('limpar-filtros').addEventListener('click', limparFiltros);
 
+    let carregando = false;
+    let assinaturaDados;
+    setInterval(() => {
+        if (!document.hidden) carregar();
+    }, 5000);
     carregar();
 
     async function carregar() {
-        blocoFiltros.classList.add('d-none');
-        conteudo.classList.add('d-none');
-        mostrarCarregando();
+        if (carregando) return;
+        carregando = true;
+        if (assinaturaDados === undefined) {
+            blocoFiltros.classList.add('d-none');
+            conteudo.classList.add('d-none');
+            mostrarCarregando();
+        }
         try {
-            const [lotes, fornecedores] = await Promise.all([API.GET('/lotes'), API.GET('/fornecedores')]);
-            linhas = montarLinhas(
+            const [lotes, fornecedores] = await Promise.all([API.GET('/lotes', { erroLocal: true }), API.GET('/fornecedores', { erroLocal: true })]);
+            const novosDados = montarLinhas(
                 Array.isArray(lotes) ? lotes : [],
                 Array.isArray(fornecedores) ? fornecedores : []
             );
+            const assinatura = JSON.stringify(novosDados);
+            if (assinatura === assinaturaDados) return;
+            linhas = novosDados;
+            preencherStatus();
+            blocoFiltros.classList.remove('d-none');
+            aplicarFiltros();
+            assinaturaDados = assinatura;
         } catch (erro) {
-            mostrarMensagem(erro.message, { texto: 'Tentar novamente', aoClicar: carregar, erro: true });
-            return;
+            if (assinaturaDados === undefined) {
+                mostrarMensagem(erro.message, { texto: 'Tentar novamente', aoClicar: carregar, erro: true });
+            }
+        } finally {
+            carregando = false;
         }
-        preencherStatus();
-        blocoFiltros.classList.remove('d-none');
-        aplicarFiltros();
     }
 
     function preencherStatus() {
+        const selecionado = selectStatus.value;
         selectStatus.length = 1;
         opcoesDeStatus(linhas).forEach((status) => selectStatus.add(new Option(status, status)));
+        selectStatus.value = selecionado;
     }
 
     function limparFiltros() {

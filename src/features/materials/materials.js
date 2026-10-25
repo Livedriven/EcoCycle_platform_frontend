@@ -20,13 +20,14 @@ if (SESSAO) {
     const fim = document.getElementById('data-final');
     const lote = document.getElementById('filtro-lote');
     const erroPeriodo = document.getElementById('erro-periodo');
-    const atualizar = document.getElementById('atualizar-materiais');
+    const textoAtualizacao = document.getElementById('ultima-atualizacao');
     const canvas = document.getElementById('grafico-materiais');
     let registros = [];
     let tabela;
     let grafico;
     let carregando = false;
     let dadosCarregados = false;
+    let assinaturaDados;
 
     function mostrarEstado(texto, tipo = 'mensagem') {
         conteudo.classList.add('d-none');
@@ -41,7 +42,7 @@ if (SESSAO) {
     }
 
     function aplicarFiltros() {
-        if (!dadosCarregados || carregando) return;
+        if (!dadosCarregados) return;
         if (!requireLogin()) return;
         const filtros = { inicio: inicio.value, fim: fim.value, lote: lote.value };
         const mensagem = validarPeriodo(filtros);
@@ -94,7 +95,7 @@ if (SESSAO) {
         document.getElementById('tabela-vazia').classList.toggle('d-none', temLinhas);
         document.getElementById('mensagem-tabela-vazia').textContent = registros.length
             ? 'Nenhum material encontrado para os filtros selecionados.'
-            : 'Nenhum material separado foi registrado. Use Atualizar para consultar novamente.';
+            : 'Nenhum material separado foi registrado. Os dados são consultados automaticamente a cada 5 segundos.';
         document.getElementById('limpar-filtros-vazio').classList.toggle('d-none', temLinhas || !(filtros.inicio || filtros.fim || filtros.lote));
 
         if (tabela) updateTable(tabela, linhas);
@@ -111,16 +112,18 @@ if (SESSAO) {
     async function carregarMateriais() {
         if (carregando || !requireLogin()) return;
         carregando = true;
-        dadosCarregados = false;
-        atualizar.disabled = true;
-        document.getElementById('rotulo-atualizar').textContent = 'Atualizando...';
-        for (const controle of formulario.elements) controle.disabled = true;
+        if (!dadosCarregados) {
+            for (const controle of formulario.elements) controle.disabled = true;
+            mostrarEstado('Carregando materiais separados...', 'carregando');
+        }
         bloco.setAttribute('aria-busy', 'true');
-        mostrarEstado('Carregando materiais separados...', 'carregando');
         try {
-            const resposta = await API.GET('/producao');
+            const resposta = await API.GET('/producao', { erroLocal: true });
             if (!requireLogin()) return;
             const dados = prepararMateriais(resposta);
+            textoAtualizacao.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
+            const assinatura = JSON.stringify(dados.registros);
+            if (assinatura === assinaturaDados) return;
             registros = dados.registros;
             const selecionado = lote.value;
             lote.replaceChildren(new Option('Todos os lotes', ''));
@@ -129,18 +132,16 @@ if (SESSAO) {
             for (const id of lotes) lote.add(new Option('Lote ' + id, id));
             lote.value = lotes.includes(selecionado) ? selecionado : '';
             dadosCarregados = true;
+            aplicarFiltros();
+            assinaturaDados = assinatura;
         } catch (erro) {
-            grafico?.destroy();
-            grafico = null;
-            mostrarEstado(erro.message + ' Use Atualizar para tentar novamente.', 'erro');
+            textoAtualizacao.textContent = 'Falha ao atualizar. Nova tentativa automática em 5 segundos.';
+            if (!dadosCarregados) mostrarEstado(erro.message + ' Uma nova tentativa será feita automaticamente.', 'erro');
         } finally {
             carregando = false;
-            atualizar.disabled = false;
-            document.getElementById('rotulo-atualizar').textContent = 'Atualizar';
             for (const controle of formulario.elements) controle.disabled = !dadosCarregados;
             bloco.setAttribute('aria-busy', 'false');
         }
-        aplicarFiltros();
     }
 
     formulario.addEventListener('submit', (evento) => { evento.preventDefault(); aplicarFiltros(); });
@@ -149,6 +150,8 @@ if (SESSAO) {
         // Aguarda o reset nativo antes de reler os valores dos filtros.
         queueMicrotask(aplicarFiltros);
     });
-    atualizar.addEventListener('click', carregarMateriais);
     carregarMateriais();
+    setInterval(() => {
+        if (!document.hidden) carregarMateriais();
+    }, 5000);
 }

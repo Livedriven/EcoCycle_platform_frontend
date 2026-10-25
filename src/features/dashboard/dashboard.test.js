@@ -147,4 +147,27 @@ describe('disponibilidade do dashboard', () => {
         await iniciar();
         expect(mocks.get).not.toHaveBeenCalled();
     });
+    it('mantém os blocos visíveis durante a atualização e após falha temporária', async () => {
+        await iniciar();
+        expect(setInterval).toHaveBeenCalledWith(expect.any(Function), 5000);
+        let rejeitar;
+        mocks.get.mockReturnValue(new Promise((_, reject) => { rejeitar = reject; }));
+        intervalo();
+        await concluir();
+        expect(conteudo('diaria').classList.contains('d-none')).toBe(false);
+        expect(estado('diaria').textContent).toBe('');
+        rejeitar(new Error('HTTP 503'));
+        await concluir();
+        expect(conteudo('diaria').classList.contains('d-none')).toBe(false);
+        expect(estado('diaria').textContent).toBe('');
+    });
+    it('consulta sem redesenhar gráficos quando os dados não mudam', async () => {
+        await iniciar();
+        const chamadas = mocks.bar.mock.calls.length;
+        intervalo();
+        await concluir();
+        expect(mocks.get).toHaveBeenCalledTimes(10);
+        expect(mocks.bar).toHaveBeenCalledTimes(chamadas);
+    });
+
 });

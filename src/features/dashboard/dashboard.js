@@ -96,21 +96,28 @@ function mostrarConteudo(id) {
  * e, só se houver o que mostrar, exibe o bloco e executa o que ela devolveu (desenhar).
  * preparar(...dados) devolve uma função de desenho, ou null quando não há dados.
  */
+const dadosExibidos = new Map();
 async function montarBloco(id, fontes, preparar) {
-    mostrarCarregando(id);
+    if (!dadosExibidos.has(id)) mostrarCarregando(id);
     try {
         const resultados = await Promise.allSettled(fontes);
         const falha = resultados.find((resultado) => resultado.status === 'rejected');
         if (falha) throw falha.reason;
-        const desenhar = preparar(...resultados.map((resultado) => resultado.value));
+        const dados = resultados.map((resultado) => resultado.value);
+        const assinatura = JSON.stringify(dados);
+        if (dadosExibidos.get(id) === assinatura) return;
+        const desenhar = preparar(...dados);
         if (!desenhar) {
             mostrarMensagem(id, 'Sem dados no período', 'inbox');
+            dadosExibidos.set(id, assinatura);
             return;
         }
         // Mostra o bloco antes de desenhar: o Chart.js mede o canvas, que não pode estar escondido.
         mostrarConteudo(id);
         desenhar();
+        dadosExibidos.set(id, assinatura);
     } catch {
+        if (dadosExibidos.has(id)) return;
         mostrarMensagem(id, 'Não foi possível carregar este bloco.', 'exclamation-triangle');
         const botao = document.createElement('button');
         botao.type = 'button';

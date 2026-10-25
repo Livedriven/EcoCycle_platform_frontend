@@ -21,7 +21,7 @@ import {
 const SESSAO = montarLayout();
 
 if (SESSAO) {
-    const INTERVALO_ATUALIZACAO_MS = 30000; // atualiza sozinho a cada 30 segundos
+    const INTERVALO_ATUALIZACAO_MS = 5000;
 
     const bloco = document.getElementById('bloco-alertas');
     const estado = bloco.querySelector('.estado');
@@ -33,7 +33,6 @@ if (SESSAO) {
     const limparFiltro = document.getElementById('limpar-filtro');
     const opcoesEstado = document.querySelectorAll('input[name="filtro-estado"]');
     const resultadoFiltros = document.getElementById('resultado-filtros');
-    const botaoAtualizar = document.getElementById('btn-atualizar');
     const textoAtualizacao = document.getElementById('ultima-atualizacao');
     const totalAtivos = document.getElementById('total-ativos');
     const totalHistorico = document.getElementById('total-historico');
@@ -42,6 +41,9 @@ if (SESSAO) {
 
     let tabela = null;      // instância do Grid.js, criada na primeira vez
     let alertas = [];       // todos os alertas já enriquecidos e ordenados
+    let carregando = false;
+    let dadosCarregados = false;
+    let assinaturaDados;
     let numeroRequisicao = 0; // evita que uma resposta antiga sobrescreva a mais nova
 
     /* ---------- Estados do bloco: carregando, erro, vazio e conteúdo ---------- */
@@ -181,6 +183,8 @@ if (SESSAO) {
     /* ---------- Carregamento ---------- */
 
     async function carregar({ silencioso = false } = {}) {
+        if (carregando) return;
+        carregando = true;
         const requisicao = ++numeroRequisicao;
 
         // Na atualização automática não piscamos "Carregando": só trocamos os dados.
@@ -189,23 +193,28 @@ if (SESSAO) {
             mostrarCarregando();
             controles.forEach((controle) => { controle.disabled = true; });
         }
-        botaoAtualizar.disabled = true;
 
         try {
             const [listaAlertas, leituras, esteiras] = await Promise.all([
-                API.GET('/alertas'),
-                API.GET('/leituras_sensor'),
-                API.GET('/esteiras')
+                API.GET('/alertas', { erroLocal: true }),
+                API.GET('/leituras_sensor', { erroLocal: true }),
+                API.GET('/esteiras', { erroLocal: true })
             ]);
 
-            // Se o usuário clicou em Atualizar nesse meio-tempo, esta resposta já é velha.
+            // Ignora respostas de uma consulta que já foi substituída.
             if (requisicao !== numeroRequisicao) {
                 return;
             }
 
-            alertas = ordenarMaisRecentes(enriquecerAlertas(listaAlertas, leituras, esteiras));
-            desenharTotais();
+            const novosAlertas = ordenarMaisRecentes(enriquecerAlertas(listaAlertas, leituras, esteiras));
+            const assinatura = JSON.stringify(novosAlertas);
             textoAtualizacao.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
+
+            if (assinatura === assinaturaDados) return;
+            alertas = novosAlertas;
+            desenharTotais();
+            dadosCarregados = true;
+            assinaturaDados = assinatura;
 
             if (alertas.length === 0) {
                 tabela = null;
@@ -220,7 +229,7 @@ if (SESSAO) {
                 return;
             }
 
-            if (silencioso && tabela) {
+            if (silencioso && dadosCarregados) {
                 // Mantém os dados que já estão na tela e só avisa que a atualização falhou.
                 textoAtualizacao.textContent = 'Falha ao atualizar: ' + erro.message;
             } else {
@@ -229,10 +238,8 @@ if (SESSAO) {
             }
         } finally {
             if (requisicao === numeroRequisicao) {
-                botaoAtualizar.disabled = false;
-                if (!silencioso || !tabela) {
-                    controles.forEach((controle) => { controle.disabled = !tabela; });
-                }
+                carregando = false;
+                controles.forEach((controle) => { controle.disabled = !tabela; });
             }
         }
     }
@@ -253,8 +260,6 @@ if (SESSAO) {
         aplicarFiltros();
         busca.focus();
     });
-
-    botaoAtualizar.addEventListener('click', () => carregar());
 
     // Atualização automática (pausa quando a aba está escondida).
     setInterval(() => {

@@ -25,6 +25,8 @@ if (SESSAO) {
     const detalhes = criarDetalhesProducao();
     let tabela;
     let producoes = [];
+    let carregando = false;
+    let assinaturaDados;
 
     function mostrarCarregando() {
         conteudo.classList.add('d-none');
@@ -137,22 +139,28 @@ if (SESSAO) {
     }
 
     async function carregarProducoes() {
-        mostrarCarregando();
-        [busca, filtroDataInicial, filtroDataFinal, filtroStatus, filtroTurno, limparFiltro].forEach((controle) => {
+        if (carregando) return;
+        carregando = true;
+        if (assinaturaDados === undefined) mostrarCarregando();
+        if (assinaturaDados === undefined) [busca, filtroDataInicial, filtroDataFinal, filtroStatus, filtroTurno, limparFiltro].forEach((controle) => {
             controle.disabled = true;
         });
 
         try {
             const [registros, lotes, esteiras] = await Promise.all([
-                API.GET('/producao'),
-                API.GET('/lotes'),
-                API.GET('/esteiras')
+                API.GET('/producao', { erroLocal: true }),
+                API.GET('/lotes', { erroLocal: true }),
+                API.GET('/esteiras', { erroLocal: true })
             ]);
-            producoes = enriquecerProducoes(registros, lotes, esteiras);
+            const novasProducoes = enriquecerProducoes(registros, lotes, esteiras);
+            const assinatura = JSON.stringify(novasProducoes);
+            if (assinatura === assinaturaDados) return;
+            producoes = novasProducoes;
 
             if (producoes.length === 0) {
                 mostrarMensagem('Nenhuma produção foi registrada.', 'inbox');
                 mostrarResultado([]);
+                assinaturaDados = assinatura;
                 return;
             }
 
@@ -164,7 +172,7 @@ if (SESSAO) {
                 ['Manhã', 'Tarde', 'Noite', 'Madrugada']
             );
             mostrarConteudo();
-            tabela = createTable(conteudo, [
+            if (!tabela) tabela = createTable(conteudo, [
                 { id: 'id', label: 'ID da produção' },
                 { id: 'id_lote', label: 'ID do lote' },
                 { id: 'id_esteira', label: 'ID da esteira' },
@@ -187,9 +195,11 @@ if (SESSAO) {
                 }
             ], producoes, { busca: false, porPagina: 10 });
             aplicarFiltros();
+            assinaturaDados = assinatura;
         } catch (erro) {
-            mostrarMensagem(erro.message, 'exclamation-triangle');
+            if (assinaturaDados === undefined) mostrarMensagem(erro.message, 'exclamation-triangle');
         } finally {
+            carregando = false;
             [busca, filtroDataInicial, filtroDataFinal, filtroStatus, filtroTurno, limparFiltro].forEach((controle) => {
                 controle.disabled = !tabela;
             });
@@ -214,4 +224,7 @@ if (SESSAO) {
     });
 
     carregarProducoes();
+    setInterval(() => {
+        if (!document.hidden) carregarProducoes();
+    }, 5000);
 }
