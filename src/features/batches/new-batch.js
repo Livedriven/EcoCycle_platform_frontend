@@ -100,12 +100,15 @@ function iniciarTela() {
         if (!validacao.valido) return;
 
         // A data vem do calendário (só o dia) e a hora é a do cadastro, no formato do mock.
-        // Sem id_usuario (a API pega do token) e sem status (a API define o status inicial do lote).
+        // Sem id_usuario (a API pega do token). Todo lote começa com status Recebido.
         // TODO(E2): confirmar o nome do campo do fornecedor (id_fornecedor) e se a API quer só a data.
         const payload = {
+            // null mantém a chave no JSON; o servidor gera o identificador no cadastro.
+            id: null,
             id_fornecedor: Number(dados.id_fornecedor),
             pesoentrada_kg: Number(dados.pesoentrada_kg),
-            data_entrada: dados.data_entrada + 'T' + horaAtual()
+            data_entrada: dados.data_entrada + 'T' + horaAtual(),
+            status: 'Recebido'
         };
         const nomeFornecedor = campos.id_fornecedor.selectedOptions[0].textContent;
 

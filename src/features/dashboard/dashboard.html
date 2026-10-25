@@ -17,7 +17,7 @@
 
       <!-- Cards de indicadores. Todo bloco tem .estado (carregando/erro/vazio) e .conteudo (dados) -->
       <section id="bloco-indicadores" class="mb-4">
-        <div class="estado"></div><div class="conteudo row g-3 d-none"></div>
+        <div class="estado"></div><div class="conteudo indicadores-grid d-none"></div>
       </section>
 
       <!-- Gráficos de produção diária e mensal, lado a lado -->
@@ -78,9 +78,9 @@
         </div></div>
       </div>
 
-      <!-- Links para testar os estados com os dados simulados (lidos pelo api.js) -->
+      <!-- Simulações globais ou restritas a um bloco, lidas pelo dashboard.js -->
       <p class="text-center small mt-4" style="color:var(--eco-texto-suave)">
-        Testar estados (dados simulados): <a href="?">normal</a> · <a href="?simular=vazio">vazio</a> · <a href="?simular=erro">erro</a></p>
+        Testar estados (dados simulados): <a href="?">normal</a> · <a href="?simular=vazio">vazio</a> · <a href="?simular=erro">erro</a> · <a href="?simular=erro&amp;bloco=bloco-diaria">erro apenas na produção diária</a> · <a href="?simular=vazio&amp;bloco=bloco-esteira">esteiras vazias</a></p>
     </main>
   </div>
   <script type="module" src="dashboard.js"></script>
