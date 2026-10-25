@@ -16,6 +16,7 @@ export default defineConfig({
         production: resolve(__dirname,'src/features/production/production.html'),
         alerts: resolve(__dirname, './src/features/alerts/alerts.html'),
         conveyor: resolve(__dirname,'./src/features/conveyor/conveyor.html'),
+        conveyorStatus: resolve(__dirname,'./src/features/conveyor/conveyor-status.html'),
         batches: resolve(__dirname,'./src/features/batches/batches.html'),
         users: resolve(__dirname, './src/features/users/users.html'),
         erro403: resolve(__dirname, './src/features/errors/403.html'),
