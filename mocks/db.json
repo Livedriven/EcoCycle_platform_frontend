@@ -97,6 +97,19 @@
       "pesoentrada_kg": 640.35,
       "data_entrada": "2026-10-19T15:30:00",
       "status": "Recebido"
+    },
+    {
+      "id": 9,
+      "id_fornecedor": 3,
+      "pesoentrada_kg": 1250,
+      "data_entrada": "2026-10-24T23:30:14"
+    },
+    {
+      "id": 10,
+      "id_fornecedor": 5,
+      "pesoentrada_kg": 1200,
+      "data_entrada": "2026-10-25T00:10:53",
+      "status": "Recebido"
     }
   ],
   "esteiras": [
