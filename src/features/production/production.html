@@ -14,33 +14,51 @@
       <h1 class="h4 mb-3">Produção diária</h1>
       <!-- Os filtros atualizam a tabela automaticamente; não há botão de filtro. -->
       <div class="card shadow-sm" id="bloco-producao">
-        <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
+        <div class="card-header bg-transparent d-flex gap-2 align-items-center justify-content-between">
           <span>Registros de produção</span>
-          <div class="d-flex flex-wrap gap-2 align-items-center">
-            <div>
-              <label for="busca-producao" class="visually-hidden">Buscar produção</label>
-              <input type="search" id="busca-producao" class="form-control form-control-sm" placeholder="Buscar produção" autocomplete="off" aria-describedby="ajuda-filtros">
-            </div>
-            <div>
-              <label for="filtro-data" class="visually-hidden">Data</label>
-              <input type="date" id="filtro-data" class="form-control form-control-sm" aria-describedby="ajuda-filtros">
-            </div>
-            <div>
-              <label for="filtro-status" class="visually-hidden">Status</label>
-              <select id="filtro-status" class="form-select form-select-sm" aria-describedby="ajuda-filtros">
-                <option value="">Todos os status</option>
-              </select>
-            </div>
-            <div>
-              <label for="filtro-turno" class="visually-hidden">Turno</label>
-              <select id="filtro-turno" class="form-select form-select-sm" aria-describedby="ajuda-filtros">
-                <option value="">Todos os turnos</option>
-              </select>
-            </div>
-            <button id="limpar-filtro" class="btn btn-outline-secondary btn-sm">Limpar</button>
-          </div>
+          <button type="button" id="limpar-filtro" class="btn btn-link btn-sm text-body-secondary text-decoration-none">Limpar filtros</button>
         </div>
-        <span id="ajuda-filtros" class="visually-hidden">Os filtros são aplicados automaticamente. A busca aceita termos aproximados.</span>
+        <div class="px-3 pt-3" role="group" aria-label="Filtros de produção">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-lg-5">
+              <label for="busca-producao" class="form-label small text-body-secondary mb-1">Buscar produção</label>
+              <input type="search" id="busca-producao" class="form-control form-control-sm" placeholder="ID, lote, material…" autocomplete="off" aria-describedby="ajuda-filtros">
+            </div>
+            <fieldset class="col-12 col-lg-7 mb-0">
+              <legend class="float-none w-auto small text-body-secondary mb-1">Período</legend>
+              <div class="d-flex align-items-center gap-2">
+                <div class="flex-grow-1 w-100">
+                  <label for="filtro-data-inicial" class="visually-hidden">Data inicial</label>
+                  <input type="date" id="filtro-data-inicial" class="form-control form-control-sm" aria-describedby="ajuda-filtros erro-periodo">
+                </div>
+                <span class="small text-body-secondary">até</span>
+                <div class="flex-grow-1 w-100">
+                  <label for="filtro-data-final" class="visually-hidden">Data final</label>
+                  <input type="date" id="filtro-data-final" class="form-control form-control-sm" aria-describedby="ajuda-filtros erro-periodo">
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <details class="mt-3">
+            <summary class="small text-body-secondary">Mais filtros</summary>
+            <div class="row g-3 pt-2">
+              <div class="col-12 col-sm-6 col-lg-4">
+                <label for="filtro-status" class="form-label small text-body-secondary mb-1">Status</label>
+                <select id="filtro-status" class="form-select form-select-sm" aria-describedby="ajuda-filtros">
+                  <option value="">Todos os status</option>
+                </select>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-4">
+                <label for="filtro-turno" class="form-label small text-body-secondary mb-1">Turno</label>
+                <select id="filtro-turno" class="form-select form-select-sm" aria-describedby="ajuda-filtros">
+                  <option value="">Todos os turnos</option>
+                </select>
+              </div>
+            </div>
+          </details>
+        </div>
+        <span id="ajuda-filtros" class="visually-hidden">Os filtros são aplicados automaticamente. O período inclui as datas inicial e final. Deixe uma data vazia para não limitar esse lado do período. A busca aceita termos aproximados.</span>
+        <div id="erro-periodo" class="text-danger small px-3 pt-2 d-none" role="alert"></div>
         <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
         <div id="resultado-filtros" class="card-footer bg-transparent small text-body-secondary d-none" aria-live="polite"></div>
       </div>

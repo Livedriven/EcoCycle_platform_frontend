@@ -88,9 +88,9 @@ export function materiaisPorLoteDia(producao) {
 }
 
 /** Agrupa a produção por chave (dia ou mês) e material, mantendo as chaves na ordem recebida. */
-function agruparProducao(producao, chaves, chaveDoRegistro) {
+function agruparProducao(producao, chaves, chaveDoRegistro, materiais) {
     const series = {};
-    MATERIAIS.forEach((material) => {
+    materiais.forEach((material) => {
         series[material] = chaves.map((chave) => {
             const doGrupo = (producao ?? []).filter(
                 (r) => r[CAMPOS.materialProducao] === material && chaveDoRegistro(r) === chave
@@ -102,23 +102,23 @@ function agruparProducao(producao, chaves, chaveDoRegistro) {
 }
 
 /** Últimos "dias" dias, incluindo hoje. Chaves no formato AAAA-MM-DD. */
-export function producaoPorDia(producao, dias = 7, hoje = new Date()) {
+export function producaoPorDia(producao, dias = 7, hoje = new Date(), materiais = MATERIAIS) {
     const chaves = [];
     for (let i = dias - 1; i >= 0; i--) {
         const dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - i);
         chaves.push(paraChaveDia(dia));
     }
-    return agruparProducao(producao, chaves, (r) => chaveDia(r[CAMPOS.dataProducao]));
+    return agruparProducao(producao, chaves, (r) => chaveDia(r[CAMPOS.dataProducao]), materiais);
 }
 
 /** Últimos "meses" meses, incluindo o atual. Chaves no formato AAAA-MM. */
-export function producaoPorMes(producao, meses = 6, hoje = new Date()) {
+export function producaoPorMes(producao, meses = 6, hoje = new Date(), materiais = MATERIAIS) {
     const chaves = [];
     for (let i = meses - 1; i >= 0; i--) {
         const mes = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
         chaves.push(paraChaveDia(mes).slice(0, 7));
     }
-    return agruparProducao(producao, chaves, (r) => chaveDia(r[CAMPOS.dataProducao]).slice(0, 7));
+    return agruparProducao(producao, chaves, (r) => chaveDia(r[CAMPOS.dataProducao]).slice(0, 7), materiais);
 }
 
 /** [{ nome, total }] ordenado do maior para o menor. Fornecedor sem cadastro vira o próprio ID. */
