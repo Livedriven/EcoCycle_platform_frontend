@@ -43,7 +43,7 @@ export const MENU = [
             {
                 rotulo: 'Lotes', filhos: [
                     { rotulo: 'Consultar lotes', href: `${PAGINAS}/batches/batches.html` },
-                    { rotulo: 'Cadastrar lote', href: null, acao: 'lote.registrar' }
+                    { rotulo: 'Cadastrar lote', href: '/src/features/batches/new-batch.html', acao: 'lote.registrar' }
                 ]
             },
             { rotulo: 'Iniciar produção', href: '/src/features/start-production/start-production.html', acao: 'producao.operar' }
