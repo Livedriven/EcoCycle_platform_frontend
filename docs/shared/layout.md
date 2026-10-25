@@ -4,6 +4,10 @@ Monta o layout comum de todas as telas protegidas: **topo** (nome do sistema, us
 
 Login e páginas de erro **não** usam este arquivo.
 
+O grupo **Equipamentos** reúne **Esteiras** (`conveyor/conveyor.html`, busca e detalhes em modal)
+e **Status das esteiras** (`conveyor/conveyor-status.html`, visão geral e monitoramento individual).
+As duas consultas estão disponíveis para todos os perfis autenticados.
+
 ---
 
 ## `montarLayout()`
@@ -74,7 +78,8 @@ Lista que define o menu lateral. Para uma tela nova aparecer no menu, basta acre
 { rotulo: 'Alertas', icone: 'bell-fill', href: '/src/features/alerts/alerts.html' },
 {
     rotulo: 'Equipamentos', icone: 'wrench-adjustable', filhos: [
-        { rotulo: 'Status das esteiras', href: '/src/features/conveyor/conveyor.html' }
+        { rotulo: 'Esteiras', href: '/src/features/conveyor/conveyor.html' },
+        { rotulo: 'Status das esteiras', href: '/src/features/conveyor/conveyor-status.html' }
     ]
 },
 { rotulo: 'Cadastrar lote', href: '/src/features/batches/novo-lote.html', acao: 'lote.registrar' }
