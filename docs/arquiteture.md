@@ -56,7 +56,7 @@ A API entrega os **registros**; o **front-end calcula os totais** (dashboard, pr
         ├── production/           # produção diária
         ├── materials/            # materiais produzidos
         ├── alerts/               # alertas
-        ├── conveyor/             # status das esteiras
+        ├── conveyor/             # consulta, detalhes e status das esteiras
         ├── batches/              # lotes
         ├── users/                # usuários
         └── errors/               # 403 (acesso negado), 404 e indisponibilidade
@@ -89,7 +89,7 @@ A API entrega os **registros**; o **front-end calcula os totais** (dashboard, pr
 | `materials` | Relatório de plástico, metal, alumínio e rejeito por lote e dia, com totais, filtros e gráfico | `/producao` | RF08 |
 | `alerts` | Alertas ativos e histórico | `/alertas` | RF09 |
 | `users` | Reservada (gerenciar usuários está fora do MVP: todos os perfis veem "acesso negado") | `/usuarios` | RF10 |
-| `conveyor` | Status das esteiras | `/esteiras` | RF12 |
+| `conveyor` | Consulta, detalhes em modal e status de múltiplas esteiras | `/esteiras`, `/leituras_sensor`, `/alertas` | RF12 |
 | `errors` | Páginas 403, 404 e indisponibilidade | — | — |
 
 Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shared/session.js` (matriz `PERMISSOES`, `can` e a guarda `requireLogin`), no botão **Sair** do `layout.js` e no `mocks/rbac.cjs`.

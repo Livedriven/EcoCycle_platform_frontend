@@ -1,0 +1,26 @@
+.esteiras-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 1.25rem;
+}
+.esteira-card { width: 100%; padding: 1.25rem; text-align: left; color: var(--eco-texto); }
+.esteira-card:hover { border-color: var(--eco-azul); }
+.esteira-card:focus-visible { outline: 3px solid var(--eco-azul); outline-offset: 3px; }
+.esteira-card.selecionada { border: 2px solid var(--eco-azul); padding: calc(1.25rem - 1px); }
+.esteira-card > span { width: 100%; }
+.esteira-nome, .esteira-acao { color: var(--eco-azul); }
+.esteira-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: .5rem;
+  font-size: 1.3rem;
+  background: var(--eco-fundo);
+  color: var(--eco-azul);
+}
+.esteira-medidas { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; color: var(--eco-texto-suave); }
+.esteira-medidas strong { display: block; color: var(--eco-texto); margin-top: .2rem; overflow-wrap: anywhere; }
+.esteira-acao { border-top: 1px solid var(--eco-borda); padding-top: .75rem; }
+#seletor-esteira { max-width: 100%; }

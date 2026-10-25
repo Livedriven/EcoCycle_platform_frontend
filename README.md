@@ -31,7 +31,8 @@ Simulador do chão de fábrica (E4) ──┘
 | **Produção do dia** | Registros de produção com filtro por data. |
 | **Materiais produzidos** | Totais de plástico e metal e a lista de materiais. |
 | **Alertas** | Alertas gerados pelas leituras dos sensores. |
-| **Status das esteiras** | Velocidade, temperatura e situação de cada esteira. |
+| **Esteiras** | Consulta com busca e cartões; detalhes de cada esteira em modal, dentro de Equipamentos. |
+| **Status das esteiras** | Visão geral de todas as esteiras e seleção individual para velocidade, temperatura, leituras e alertas. |
 | **Lotes** | Lotes recebidos dos fornecedores, com detalhes e cadastro. |
 | **Usuários** | Reservada: gerenciar usuários pela interface está fora do MVP, então a tela mostra "acesso negado" para todos os perfis. |
 
