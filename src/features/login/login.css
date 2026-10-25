@@ -39,6 +39,10 @@ body.login { min-height: 100vh; min-height: 100dvh; display: flex; align-items: 
               --bs-btn-focus-shadow-rgb: 74, 138, 42;
               padding: .65rem 1rem; font-weight: 600; }
 
+.login-instalar { color: var(--eco-verde-escuro); font-weight: 600;
+                  text-decoration: none; }
+.login-instalar:hover, .login-instalar:focus-visible { color: var(--eco-sucesso); }
+
 /* usuários de teste: separados do formulário por uma linha e discretos (remover na versão final) */
 .login-teste { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--eco-borda);
                font-size: .85rem; color: var(--eco-texto-suave); }
