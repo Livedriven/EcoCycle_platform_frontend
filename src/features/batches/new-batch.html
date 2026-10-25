@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cadastrar lote | EcoCycle</title>
+</head>
+<body>
+  <!-- topo, menu lateral e rodapé são preenchidos pelo layout.js -->
+  <div id="app-topo"></div>
+  <div class="app-corpo">
+    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+    <main class="conteudo-pagina">
+      <h1 class="h4 mb-1">Cadastrar lote</h1>
+      <nav aria-label="Você está em" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+          <li class="breadcrumb-item">Início</li>
+          <li class="breadcrumb-item">Operações</li>
+          <li class="breadcrumb-item">Lotes</li>
+          <li class="breadcrumb-item active" aria-current="page">Cadastrar lote</li>
+        </ol>
+      </nav>
+
+      <div class="card shadow-sm" id="bloco-cadastrar-lote">
+        <div class="card-body">
+          <!-- Carregando / erro ao buscar os fornecedores. -->
+          <div class="estado"></div>
+
+          <div class="conteudo d-none">
+            <!-- Resultado do envio (sucesso ou erro da API). -->
+            <div id="aviso-envio" class="d-none" role="alert" aria-live="polite"></div>
+
+            <form id="form-lote" novalidate>
+              <div class="mb-3">
+                <label for="fornecedor" class="form-label fw-semibold">Fornecedor <span class="text-danger" aria-hidden="true">*</span></label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text" aria-hidden="true"><i class="bi bi-building"></i></span>
+                  <select id="fornecedor" name="id_fornecedor" class="form-select" required aria-describedby="ajuda-fornecedor erro-fornecedor">
+                    <option value="">Selecione um fornecedor</option>
+                  </select>
+                  <div id="erro-fornecedor" class="invalid-feedback"></div>
+                </div>
+                <div id="ajuda-fornecedor" class="form-text"></div>
+              </div>
+
+              <div class="mb-3">
+                <label for="peso" class="form-label fw-semibold">Peso (kg) <span class="text-danger" aria-hidden="true">*</span></label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text" aria-hidden="true"><i class="bi bi-speedometer2"></i></span>
+                  <input type="number" id="peso" name="pesoentrada_kg" class="form-control" placeholder="Informe o peso do lote (ex: 1250.50)" min="0.01" step="0.01" inputmode="decimal" required aria-describedby="erro-peso">
+                  <span class="input-group-text">kg</span>
+                  <div id="erro-peso" class="invalid-feedback"></div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="data" class="form-label fw-semibold">Data de entrada <span class="text-danger" aria-hidden="true">*</span></label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text" aria-hidden="true"><i class="bi bi-calendar-event"></i></span>
+                  <input type="date" id="data" name="data_entrada" class="form-control" required aria-describedby="ajuda-data erro-data">
+                  <div id="erro-data" class="invalid-feedback"></div>
+                </div>
+                <div id="ajuda-data" class="form-text">A hora será registrada automaticamente no momento do cadastro.</div>
+              </div>
+
+              <hr class="my-4">
+
+              <div class="d-flex flex-wrap gap-2">
+                <button type="submit" id="btn-salvar" class="btn btn-primary">Salvar lote</button>
+                <button type="button" id="btn-cancelar" class="btn btn-outline-secondary">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="new-batch.js"></script>
+</body>
+</html>
