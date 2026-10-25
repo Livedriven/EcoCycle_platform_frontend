@@ -23,11 +23,13 @@ function iniciarTela() {
     const ajudaFornecedor = document.getElementById('ajuda-fornecedor');
     // As chaves são as mesmas do payload e das chaves de erro de validarLote.
     const campos = {
+        codigo_lote: document.getElementById('codigo'),
         id_fornecedor: document.getElementById('fornecedor'),
         pesoentrada_kg: document.getElementById('peso'),
         data_entrada: document.getElementById('data')
     };
     const feedbacks = {
+        codigo_lote: document.getElementById('erro-codigo'),
         id_fornecedor: document.getElementById('erro-fornecedor'),
         pesoentrada_kg: document.getElementById('erro-peso'),
         data_entrada: document.getElementById('erro-data')
@@ -105,6 +107,8 @@ function iniciarTela() {
         const payload = {
             // null mantém a chave no JSON; o servidor gera o identificador no cadastro.
             id: null,
+            // Codigo do lote guardado como foi digitado, só sem espaços nas pontas (não é validação de formato).
+            codigo_lote: dados.codigo_lote.trim(),
             id_fornecedor: Number(dados.id_fornecedor),
             pesoentrada_kg: Number(dados.pesoentrada_kg),
             data_entrada: dados.data_entrada + 'T' + horaAtual(),

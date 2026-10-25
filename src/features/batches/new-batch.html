@@ -32,6 +32,16 @@
 
             <form id="form-lote" novalidate>
               <div class="mb-3">
+                <label for="codigo" class="form-label fw-semibold">Código do lote <span class="text-danger" aria-hidden="true">*</span></label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text" aria-hidden="true"><i class="bi bi-upc-scan"></i></span>
+                  <input type="text" id="codigo" name="codigo_lote" class="form-control" placeholder="Informe o código do lote recebido" autocomplete="off" required aria-describedby="ajuda-codigo erro-codigo">
+                  <div id="erro-codigo" class="invalid-feedback"></div>
+                </div>
+                <div id="ajuda-codigo" class="form-text">Use o código que acompanha o lote. O formato varia de empresa para empresa.</div>
+              </div>
+
+              <div class="mb-3">
                 <label for="fornecedor" class="form-label fw-semibold">Fornecedor <span class="text-danger" aria-hidden="true">*</span></label>
                 <div class="input-group has-validation">
                   <span class="input-group-text" aria-hidden="true"><i class="bi bi-building"></i></span>

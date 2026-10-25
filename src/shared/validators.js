@@ -152,6 +152,10 @@ export function validarDataEntrada(data, agora = new Date()) {
 export function validarLote(dados, { agora = new Date() } = {}) {
     const erros = {};
 
+    // O código varia de empresa para empresa: só é obrigatório, sem regra de formato.
+    const codigo = validarObrigatorio(dados.codigo_lote, 'Código do lote');
+    if (!codigo.valido) erros.codigo_lote = codigo.mensagem;
+
     const fornecedor = validarObrigatorio(dados.id_fornecedor, 'Fornecedor');
     if (!fornecedor.valido) erros.id_fornecedor = fornecedor.mensagem;
 
