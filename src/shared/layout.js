@@ -29,7 +29,8 @@ export const MENU = [
     { rotulo: 'Alertas', icone: 'bell-fill', href: `${PAGINAS}/alerts/alerts.html` },
     {
         rotulo: 'Equipamentos', icone: 'wrench-adjustable', filhos: [
-            { rotulo: 'Status das esteiras', href: `${PAGINAS}/conveyor/conveyor.html` }
+            { rotulo: 'Esteiras', href: `${PAGINAS}/conveyor/conveyor.html` },
+            { rotulo: 'Status das esteiras', href: `${PAGINAS}/conveyor/conveyor-status.html` }
         ]
     },
     {

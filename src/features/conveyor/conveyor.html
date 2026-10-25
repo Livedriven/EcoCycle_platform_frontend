@@ -3,53 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Status da esteira | EcoCycle</title>
-  <!-- Bootstrap, ícones, Grid.js e o style.css da EcoCycle entram pelo setup.js (importado no conveyor.js) -->
+  <title>Esteiras | EcoCycle</title>
 </head>
 <body>
-  <!-- topo e menu lateral são preenchidos pelo layout.js -->
   <div id="app-topo"></div>
   <div class="app-corpo">
     <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
     <main class="conteudo-pagina">
-
-      <!-- Título e seletor de esteira (só aparece se houver mais de uma) -->
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <h1 class="h4 m-0">Status da esteira</h1>
-        <div class="d-flex align-items-center gap-2">
-          <span id="ultima-atualizacao" class="small" style="color:var(--eco-texto-suave)"></span>
-          <select id="seletor-esteira" class="form-select form-select-sm w-auto d-none" aria-label="Escolher esteira"></select>
-        </div>
-      </div>
-
-      <!-- Indicadores da esteira: situação, velocidade, temperatura e alertas ativos -->
-      <section id="bloco-indicadores" class="mb-4">
-        <div class="estado"></div><div class="conteudo row g-3 d-none"></div>
-      </section>
-
-      <div class="row g-3 mb-4">
-        <!-- Última leitura enviada pelo sensor -->
-        <div class="col-lg-5"><div class="card h-100 shadow-sm" id="bloco-leitura">
-          <div class="card-header">Última leitura do sensor</div>
-          <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
-        </div></div>
-
-        <!-- Alertas ainda não resolvidos desta esteira -->
-        <div class="col-lg-7"><div class="card h-100 shadow-sm" id="bloco-alertas">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            Alertas ativos <span id="contador-alertas" class="badge b-suave">–</span>
+      <header class="mb-4">
+        <nav aria-label="Caminho da página">
+          <ol class="breadcrumb small mb-2">
+            <li class="breadcrumb-item"><a href="../dashboard/dashboard.html">Início</a></li>
+            <li class="breadcrumb-item">Equipamentos</li>
+            <li class="breadcrumb-item active" aria-current="page">Esteiras</li>
+          </ol>
+        </nav>
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+          <div>
+            <h1 class="h3 mb-1">Esteiras</h1>
+            <p class="text-body-secondary mb-0">Consulte os equipamentos e selecione uma esteira para ver os detalhes.</p>
           </div>
-          <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
+          <a class="btn btn-outline-secondary" href="conveyor-status.html"><i class="bi bi-activity me-1" aria-hidden="true"></i>Status das esteiras</a>
+        </div>
+      </header>
+      <section aria-label="Consulta de esteiras">
+        <div class="card shadow-sm mb-4"><div class="card-body">
+          <label class="form-label" for="busca-esteiras">Buscar esteira</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="busca-esteiras" type="search" class="form-control" placeholder="Busque por nome, código, tipo, local ou status" aria-controls="lista-esteiras">
+          </div>
         </div></div>
-      </div>
-
-      <!-- Histórico de leituras (tabela do Grid.js criada pelo table.js) -->
-      <div class="card shadow-sm" id="bloco-historico">
-        <div class="card-header">Histórico de leituras</div>
-        <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
-      </div>
-
+        <div class="d-flex flex-wrap justify-content-between gap-2 mb-3 small text-body-secondary">
+          <span id="quantidade-esteiras" role="status" aria-live="polite"></span>
+          <span id="ultima-atualizacao"></span>
+        </div>
+        <div id="estado-esteiras" class="estado" role="status"></div>
+        <div id="lista-esteiras" class="esteiras-grid" aria-busy="true"></div>
+      </section>
     </main>
+  </div>
+  <div class="modal fade" id="modal-esteira" tabindex="-1" aria-labelledby="titulo-modal-esteira" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="titulo-modal-esteira">Detalhes da esteira</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar detalhes"></button>
+      </div>
+      <div class="modal-body" id="detalhes-esteira"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+        <a id="link-status-esteira" class="btn btn-eco" href="conveyor-status.html">Ver status e leituras</a>
+      </div>
+    </div></div>
   </div>
   <script type="module" src="conveyor.js"></script>
 </body>
