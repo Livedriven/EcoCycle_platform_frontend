@@ -23,6 +23,8 @@ export default defineConfig({
         unavailable: resolve(__dirname, './src/features/errors/unavailable.html'),
         startProduction: resolve(__dirname, './src/features/start-production/start-production.html'),
         newSupplier: resolve(__dirname, './src/features/suppliers/new-supplier.html'),
+        suppliers: resolve(__dirname, './src/features/suppliers/suppliers.html'),
+        newBatch: resolve(__dirname, './src/features/batches/new-batch.html'),
         // uma linha por página
       },
     },

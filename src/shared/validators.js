@@ -113,3 +113,57 @@ export function validarFornecedor(dados) {
 
     return { valido: Object.keys(erros).length === 0, erros };
 }
+
+// "2026-10-24" a partir do calendário LOCAL (toISOString usaria UTC e viraria o dia à noite).
+function dataLocalIso(data) {
+    const dois = (n) => String(n).padStart(2, '0');
+    return data.getFullYear() + '-' + dois(data.getMonth() + 1) + '-' + dois(data.getDate());
+}
+
+// Menor e maior data de entrada aceitas: de ontem até hoje (regra das 24 horas).
+export function limitesDataEntrada(agora = new Date()) {
+    const ontem = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() - 1);
+    return { min: dataLocalIso(ontem), max: dataLocalIso(agora) };
+}
+
+export function validarPeso(peso) {
+    const numero = Number(peso);
+    return peso !== null && String(peso).trim() !== '' && Number.isFinite(numero) && numero > 0
+        ? resultado(true)
+        : resultado(false, 'Informe um peso maior que zero.');
+}
+
+// Data só com o dia (AAAA-MM-DD, como o <input type="date">). A hora é a do cadastro, então
+// "não anterior a 24h" equivale a "não anterior a ontem". `agora` existe para os testes.
+export function validarDataEntrada(data, agora = new Date()) {
+    const texto = String(data ?? '').trim();
+    const partes = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const real = partes && new Date(+partes[1], +partes[2] - 1, +partes[3]);
+    const existe = real && real.getFullYear() === +partes[1] && real.getMonth() === +partes[2] - 1 && real.getDate() === +partes[3];
+    if (!existe) return resultado(false, 'Informe uma data de entrada válida.');
+
+    const { min, max } = limitesDataEntrada(agora);
+    if (texto < min) return resultado(false, 'A data de entrada não pode ser anterior a ontem.');
+    if (texto > max) return resultado(false, 'A data de entrada não pode ser futura.');
+    return resultado(true);
+}
+
+// Chaves de `erros` = nomes do payload enviado à API (POST /lotes).
+export function validarLote(dados, { agora = new Date() } = {}) {
+    const erros = {};
+
+    const fornecedor = validarObrigatorio(dados.id_fornecedor, 'Fornecedor');
+    if (!fornecedor.valido) erros.id_fornecedor = fornecedor.mensagem;
+
+    const peso = validarPeso(dados.pesoentrada_kg);
+    if (!peso.valido) erros.pesoentrada_kg = peso.mensagem;
+
+    const obrigatoria = validarObrigatorio(dados.data_entrada, 'Data de entrada');
+    if (!obrigatoria.valido) erros.data_entrada = obrigatoria.mensagem;
+    else {
+        const data = validarDataEntrada(dados.data_entrada, agora);
+        if (!data.valido) erros.data_entrada = data.mensagem;
+    }
+
+    return { valido: Object.keys(erros).length === 0, erros };
+}

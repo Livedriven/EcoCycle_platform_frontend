@@ -81,3 +81,39 @@ describe('tratamento de erros da API', () => {
         expect(location.replace).not.toHaveBeenCalled();
     });
 });
+
+
+describe('erros locais dos blocos do dashboard', () => {
+    it.each([404, 500, 503])('rejeita HTTP %s sem sair do dashboard', async (status) => {
+        fetch.mockResolvedValue({ status, ok: false });
+        await expect(API.GET('/producao', { erroLocal: true })).rejects.toThrow('HTTP ' + status);
+        expect(location.replace).not.toHaveBeenCalled();
+    });
+    it('mantém falhas de rede locais', async () => {
+        fetch.mockRejectedValue(new TypeError('Failed to fetch'));
+        await expect(API.GET('/esteiras', { erroLocal: true })).rejects.toThrow('Não foi possível conectar');
+        expect(location.replace).not.toHaveBeenCalled();
+    });
+    it('mantém timeout local', async () => {
+        vi.useFakeTimers();
+        fetch.mockImplementation((url, { signal }) => new Promise((resolve, reject) => {
+            signal.addEventListener('abort', () => reject(new DOMException('Timeout', 'AbortError')));
+        }));
+        const resultado = expect(API.GET('/esteiras', { erroLocal: true })).rejects.toThrow('limite de 1.5 segundos');
+        await vi.advanceTimersByTimeAsync(1500);
+        await resultado;
+        expect(location.replace).not.toHaveBeenCalled();
+    });
+    it('preserva o redirecionamento por falta de permissão', async () => {
+        fetch.mockResolvedValue({ status: 403, ok: false });
+        await expect(API.GET('/lotes', { erroLocal: true })).rejects.toThrow();
+        expect(location.replace).toHaveBeenCalledWith('/src/features/errors/403.html');
+    });
+    it('preserva a expiração de sessão', async () => {
+        sessionStorage.getItem.mockReturnValue('token');
+        fetch.mockResolvedValue({ status: 401, ok: false });
+        await expect(API.GET('/lotes', { erroLocal: true })).rejects.toThrow('HTTP 401');
+        expect(sessionStorage.removeItem).toHaveBeenCalledWith('token');
+        expect(location.replace).toHaveBeenCalledWith('/src/features/login/login.html?motivo=expirada');
+    });
+});

@@ -2,7 +2,8 @@ import API from '../../shared/api.js';
 import { montarLayout } from '../../shared/layout.js';
 import { HOME_URL } from '../../shared/session.js';
 import { validarFornecedor } from '../../shared/validators.js';
-import { buscarCep, formatarCep, validarCep } from './cep.js';
+import { buscarCep, validarCep } from './cep.js';
+import { aplicarMascarasFornecedor } from './input-masks.js';
 
 // Só administrador e gerente cadastram fornecedor (matriz PERMISSOES). Outros perfis vão para a página 403.
 const SESSAO = montarLayout({ acao: 'fornecedor.cadastrar' });
@@ -38,15 +39,18 @@ function iniciarTela() {
     const statusCep = document.getElementById('status-cep');
     let enderecoDoCep = '';
 
+    aplicarMascarasFornecedor({
+        cnpj: campos.cnpj_fornecedor,
+        telefone: campos.telefone_fornecedor,
+        cep: inputCep
+    });
+
     btnCep.addEventListener('click', consultarCep);
     inputCep.addEventListener('keydown', (evento) => {
         if (evento.key === 'Enter') {
             evento.preventDefault();
             consultarCep();
         }
-    });
-    inputCep.addEventListener('blur', () => {
-        inputCep.value = formatarCep(inputCep.value);
     });
     inputCep.addEventListener('input', () => {
         limparErroCep();

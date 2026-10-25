@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     validarObrigatorio, validarOpcao, validarProducao,
-    validarTexto, validarCnpj, validarTelefone, validarEmail, validarFornecedor
+    validarTexto, validarCnpj, validarTelefone, validarEmail, validarFornecedor,
+    limitesDataEntrada, validarPeso, validarDataEntrada, validarLote
 } from './validators.js';
 
 const TURNOS = ['Manhã', 'Tarde', 'Noite'];
@@ -90,5 +91,61 @@ describe('validarFornecedor', () => {
     });
     it('rejeita CNPJ com dígito verificador errado', () => {
         expect(validarFornecedor({ ...ok, cnpj_fornecedor: '12345678000196' }).erros.cnpj_fornecedor).toBeDefined();
+    });
+});
+
+describe('validarPeso', () => {
+    it.each([1, '1250.50', 0.01, '0.5'])('aceita %s', (peso) => {
+        expect(validarPeso(peso)).toEqual({ valido: true, mensagem: '' });
+    });
+    it.each([['zero', 0], ['negativo', -3], ['texto', 'abc'], ['vazio', ''], ['null', null], ['espaços', '  '], ['infinito', Infinity]])('rejeita %s', (_, peso) => {
+        expect(validarPeso(peso)).toEqual({ valido: false, mensagem: 'Informe um peso maior que zero.' });
+    });
+});
+
+describe('limitesDataEntrada e validarDataEntrada', () => {
+    const AGORA = new Date(2026, 9, 24, 10, 30); // 24/10/2026 10:30, calendário local
+
+    it('os limites são ontem e hoje', () => {
+        expect(limitesDataEntrada(AGORA)).toEqual({ min: '2026-10-23', max: '2026-10-24' });
+    });
+    it('aceita hoje e ontem', () => {
+        expect(validarDataEntrada('2026-10-24', AGORA).valido).toBe(true);
+        expect(validarDataEntrada('2026-10-23', AGORA).valido).toBe(true);
+    });
+    it('rejeita anteontem e antes', () => {
+        expect(validarDataEntrada('2026-10-22', AGORA)).toEqual({ valido: false, mensagem: 'A data de entrada não pode ser anterior a ontem.' });
+    });
+    it('rejeita data futura', () => {
+        expect(validarDataEntrada('2026-10-25', AGORA)).toEqual({ valido: false, mensagem: 'A data de entrada não pode ser futura.' });
+    });
+    it.each([['vazio', ''], ['null', null], ['formato brasileiro', '24/10/2026'], ['dia inexistente', '2026-02-30'], ['mês inexistente', '2026-13-01']])('rejeita %s', (_, data) => {
+        expect(validarDataEntrada(data, AGORA)).toEqual({ valido: false, mensagem: 'Informe uma data de entrada válida.' });
+    });
+    it('"ontem" atravessa a virada de mês e de ano', () => {
+        const primeiroDoMes = new Date(2026, 2, 1, 0, 5);
+        expect(validarDataEntrada('2026-02-28', primeiroDoMes).valido).toBe(true);
+        expect(validarDataEntrada('2026-02-27', primeiroDoMes).valido).toBe(false);
+        expect(limitesDataEntrada(new Date(2027, 0, 1, 9, 0)).min).toBe('2026-12-31');
+    });
+    it('usa a data local, não a UTC (23h no Brasil já é o dia seguinte em UTC)', () => {
+        expect(limitesDataEntrada(new Date(2026, 9, 24, 23, 30)).max).toBe('2026-10-24');
+    });
+});
+
+describe('validarLote', () => {
+    const AGORA = new Date(2026, 9, 24, 10, 30);
+    const ok = { id_fornecedor: '3', pesoentrada_kg: '640.35', data_entrada: '2026-10-24' };
+    it('aceita dados completos', () => {
+        expect(validarLote(ok, { agora: AGORA })).toEqual({ valido: true, erros: {} });
+    });
+    it('devolve todos os erros de uma vez', () => {
+        const r = validarLote({ id_fornecedor: '', pesoentrada_kg: '0', data_entrada: '' }, { agora: AGORA });
+        expect(Object.keys(r.erros)).toEqual(['id_fornecedor', 'pesoentrada_kg', 'data_entrada']);
+    });
+    it('rejeita data antiga e peso negativo', () => {
+        const r = validarLote({ ...ok, pesoentrada_kg: '-1', data_entrada: '2026-10-01' }, { agora: AGORA });
+        expect(r.erros.pesoentrada_kg).toBeDefined();
+        expect(r.erros.data_entrada).toBe('A data de entrada não pode ser anterior a ontem.');
     });
 });

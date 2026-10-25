@@ -50,7 +50,7 @@ function padronizarRequisicao(metodo, url, corpo) {
  * REQUISIÇÃO
  * Chama a padronizadora, faz o fetch e devolve o JSON. Lança erro se falhar.
  */
-async function requisitar(metodo, url, corpo) {
+async function requisitar(metodo, url, corpo, { erroLocal = false } = {}) {
     const req = padronizarRequisicao(metodo, url, corpo);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), API_TIMEOUT);
@@ -70,9 +70,9 @@ async function requisitar(metodo, url, corpo) {
             throw new Error('Você não tem permissão para acessar estes dados.');
         }
 
-        if (resp.status === 404) {
+        if (!erroLocal && resp.status === 404) {
             abrirPaginaErro('/src/features/errors/404.html');
-        } else if (resp.status >= 500 && resp.status <= 599) {
+        } else if (!erroLocal && resp.status >= 500 && resp.status <= 599) {
             abrirPaginaErro('/src/features/errors/unavailable.html');
         }
 
@@ -88,10 +88,10 @@ async function requisitar(metodo, url, corpo) {
 
         if (erro.name === 'AbortError') {
             msg = `A API demorou para responder (limite de ${API_TIMEOUT / 1000} segundos).`;
-            abrirPaginaErro('/src/features/errors/unavailable.html');
+            if (!erroLocal) abrirPaginaErro('/src/features/errors/unavailable.html');
         } else if (erro.name === 'TypeError' && !respostaRecebida) {
             msg = 'Não foi possível conectar à API. Confira se o servidor está rodando.';
-            abrirPaginaErro('/src/features/errors/unavailable.html');
+            if (!erroLocal) abrirPaginaErro('/src/features/errors/unavailable.html');
         }
 
         throw new Error(msg, { cause: erro });
@@ -105,7 +105,7 @@ async function requisitar(metodo, url, corpo) {
  * Interface pública da API
  */
 const API = {
-    GET: (url) => requisitar('GET', url),
+    GET: (url, opcoes) => requisitar('GET', url, undefined, opcoes),
     POST: (url, corpo) => requisitar('POST', url, corpo),
     PUT: (url, corpo) => requisitar('PUT', url, corpo),
     PATCH: (url, corpo) => requisitar('PATCH', url, corpo),
