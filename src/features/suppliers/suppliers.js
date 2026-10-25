@@ -49,27 +49,45 @@ function iniciarTela() {
         aplicarFiltros();
     });
 
+    let carregando = false;
+    let assinaturaDados;
+    setInterval(() => {
+        if (!document.hidden) carregar();
+    }, 5000);
     carregar();
 
     async function carregar() {
-        blocoFiltros.classList.add('d-none');
-        conteudo.classList.add('d-none');
-        mostrarCarregando();
-        try {
-            const resposta = await API.GET('/fornecedores');
-            fornecedores = Array.isArray(resposta) ? resposta : [];
-        } catch (erro) {
-            mostrarMensagem(erro.message, { texto: 'Tentar novamente', aoClicar: carregar, erro: true });
-            return;
+        if (carregando) return;
+        carregando = true;
+        if (assinaturaDados === undefined) {
+            blocoFiltros.classList.add('d-none');
+            conteudo.classList.add('d-none');
+            mostrarCarregando();
         }
-        preencherCidades();
-        blocoFiltros.classList.remove('d-none');
-        aplicarFiltros();
+        try {
+            const resposta = await API.GET('/fornecedores', { erroLocal: true });
+            const novosDados = Array.isArray(resposta) ? resposta : [];
+            const assinatura = JSON.stringify(novosDados);
+            if (assinatura === assinaturaDados) return;
+            fornecedores = novosDados;
+            preencherCidades();
+            blocoFiltros.classList.remove('d-none');
+            aplicarFiltros();
+            assinaturaDados = assinatura;
+        } catch (erro) {
+            if (assinaturaDados === undefined) {
+                mostrarMensagem(erro.message, { texto: 'Tentar novamente', aoClicar: carregar, erro: true });
+            }
+        } finally {
+            carregando = false;
+        }
     }
 
     function preencherCidades() {
+        const selecionado = selectCidade.value;
         selectCidade.length = 1;
         opcoesDeCidade(fornecedores).forEach((cidade) => selectCidade.add(new Option(cidade, cidade)));
+        selectCidade.value = selecionado;
     }
 
     function aplicarFiltros() {

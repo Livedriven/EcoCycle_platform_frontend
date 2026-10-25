@@ -20,9 +20,16 @@ const OPCOES_BASE = {
     plugins: { legend: { position: 'bottom' } }
 };
 
-/** Se o gráfico já existe no canvas (ex.: botão "Atualizar"), destrói antes de desenhar de novo. */
+/** Reutiliza o gráfico para preservar o canvas e evitar repetir a animação inicial. */
 function criar(canvas, config) {
-    Chart.getChart(canvas)?.destroy();
+    const existente = Chart.getChart(canvas);
+    if (existente && existente.config.type === config.type) {
+        existente.data = config.data;
+        existente.options = config.options;
+        existente.update('none');
+        return existente;
+    }
+    existente?.destroy();
     return new Chart(canvas, config);
 }
 

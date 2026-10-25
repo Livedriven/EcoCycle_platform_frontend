@@ -13,15 +13,12 @@
     <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
     <main class="conteudo-pagina">
 
-      <!-- Título, seletor de esteira (só aparece se houver mais de uma) e botão de atualizar -->
+      <!-- Título e seletor de esteira (só aparece se houver mais de uma) -->
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <h1 class="h4 m-0">Status da esteira</h1>
         <div class="d-flex align-items-center gap-2">
-          <span id="ultima-atualizacao" class="small" style="color:var(--eco-texto-suave)" aria-live="polite"></span>
+          <span id="ultima-atualizacao" class="small" style="color:var(--eco-texto-suave)"></span>
           <select id="seletor-esteira" class="form-select form-select-sm w-auto d-none" aria-label="Escolher esteira"></select>
-          <button id="btn-atualizar" type="button" class="btn btn-eco btn-sm">
-            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Atualizar
-          </button>
         </div>
       </div>
 

@@ -14,7 +14,7 @@ const SESSAO = montarLayout();
 
 if (SESSAO) {
 
-const INTERVALO_ATUALIZACAO_MS = 30000; // atualiza sozinho a cada 30 segundos
+const INTERVALO_ATUALIZACAO_MS = 5000;
 
 // ---------- Elementos da página ----------
 const blocos = {
@@ -24,13 +24,14 @@ const blocos = {
     historico: document.querySelector("#bloco-historico")
 };
 const seletor = document.querySelector("#seletor-esteira");
-const botaoAtualizar = document.querySelector("#btn-atualizar");
 const textoAtualizacao = document.querySelector("#ultima-atualizacao");
 const contadorAlertas = document.querySelector("#contador-alertas");
 
 // ---------- Estado da tela ----------
 let esteiraId = null;
 let tabela = null;      // instância do Grid.js, criada na primeira vez
+let carregando = false;
+let assinaturaDados;
 let numeroRequisicao = 0; // evita que uma resposta antiga sobrescreva a mais nova
 
 // ---------- Formatação ----------
@@ -228,19 +229,23 @@ function desenharHistorico(leituras) {
 
 // ---------- Carregamento dos dados ----------
 async function carregar({ silencioso = false } = {}) {
+    if (silencioso && carregando) return;
+    carregando = true;
     const requisicao = ++numeroRequisicao;
 
     // Na atualização automática não piscamos "Carregando": só trocamos os dados.
     if (!silencioso) mostrarEstadoEmTodos("carregando");
-    botaoAtualizar.disabled = true;
 
     try {
-        const esteiras = await API.GET("/esteiras");
+        const esteiras = await API.GET("/esteiras", { erroLocal: true });
+
+        if (requisicao !== numeroRequisicao) return;
 
         if (!Array.isArray(esteiras) || esteiras.length === 0) {
             if (requisicao !== numeroRequisicao) return;
             contadorAlertas.textContent = "–";
             contadorAlertas.className = "badge b-suave";
+            assinaturaDados = undefined;
             mostrarEstadoEmTodos("vazio", "Nenhuma esteira cadastrada.");
             return;
         }
@@ -250,11 +255,11 @@ async function carregar({ silencioso = false } = {}) {
 
         // O alerta não guarda o id da esteira: ele aponta para uma leitura, que aponta para a esteira.
         const [leiturasDaApi, todosAlertas] = await Promise.all([
-            API.GET("/leituras_sensor?id_esteira=" + encodeURIComponent(esteiraId)),
-            API.GET("/alertas")
+            API.GET("/leituras_sensor?id_esteira=" + encodeURIComponent(esteiraId), { erroLocal: true }),
+            API.GET("/alertas", { erroLocal: true })
         ]);
 
-        // Se o usuário clicou em Atualizar ou trocou de esteira nesse meio-tempo, esta resposta já é velha.
+        // Se o usuário trocou de esteira, esta resposta já é velha.
         if (requisicao !== numeroRequisicao) return;
 
         const leituras = [...leiturasDaApi].sort((a, b) => b.datahora_leitura.localeCompare(a.datahora_leitura));
@@ -263,13 +268,15 @@ async function carregar({ silencioso = false } = {}) {
             .filter((alerta) => idsDasLeituras.has(alerta.id_leitura) && !estaResolvido(alerta.resolvido))
             .sort((a, b) => b.datahora_alerta.localeCompare(a.datahora_alerta));
 
+        textoAtualizacao.textContent = "Atualizado às " + new Date().toLocaleTimeString("pt-BR");
+        const assinatura = JSON.stringify([esteiras, esteiraId, leituras, alertasAtivos]);
+        if (assinatura === assinaturaDados) return;
         montarSeletor(esteiras);
         desenharIndicadores(esteira, alertasAtivos);
         desenharUltimaLeitura(leituras);
         desenharAlertas(alertasAtivos, leituras);
         desenharHistorico(leituras);
-
-        textoAtualizacao.textContent = "Atualizado às " + new Date().toLocaleTimeString("pt-BR");
+        assinaturaDados = assinatura;
     } catch (erro) {
         if (requisicao !== numeroRequisicao) return;
 
@@ -280,15 +287,14 @@ async function carregar({ silencioso = false } = {}) {
             mostrarEstadoEmTodos("erro", erro.message);
         }
     } finally {
-        if (requisicao === numeroRequisicao) botaoAtualizar.disabled = false;
+        if (requisicao === numeroRequisicao) carregando = false;
     }
 }
 
 // ---------- Eventos ----------
-botaoAtualizar.addEventListener("click", () => carregar());
-
 seletor.addEventListener("change", () => {
     esteiraId = Number(seletor.value);
+    assinaturaDados = undefined;
     carregar();
 });
 

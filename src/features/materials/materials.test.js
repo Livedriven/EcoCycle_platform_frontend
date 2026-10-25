@@ -34,7 +34,7 @@ function elemento() {
     };
 }
 
-let elementos, estado, conteudo;
+let elementos, estado, conteudo, intervalo;
 const producao = [
     { id_lote: 1, tipo_material: 'Plástico', peso_kg: 12.5, data_hora: '2026-10-20' },
     { id_lote: 1, tipo_material: 'Metal', peso_kg: 5, data_hora: '2026-10-20' },
@@ -59,6 +59,7 @@ beforeEach(() => {
     obter('bloco-materiais').querySelector = (seletor) => seletor === '.estado' ? estado : conteudo;
     obter('filtros-materiais').elements = ['data-inicial', 'data-final', 'filtro-lote'].map(obter);
     vi.stubGlobal('document', { getElementById: obter, createElement: elemento });
+    vi.stubGlobal('setInterval', vi.fn((fn) => { intervalo = fn; }));
     vi.stubGlobal('Option', class {
         constructor(texto, valor) { this.text = texto; this.value = valor; }
     });
@@ -81,15 +82,11 @@ describe('controlador do relatório de materiais', () => {
         expect(estado.getAttribute('role')).toBe('status');
         expect(conteudo.classList.contains('d-none')).toBe(true);
         expect(elementos.get('bloco-materiais').getAttribute('aria-busy')).toBe('true');
-        expect(elementos.get('atualizar-materiais').disabled).toBe(true);
-        expect(elementos.get('rotulo-atualizar').textContent).toBe('Atualizando...');
         expect(elementos.get('data-inicial').disabled).toBe(true);
         expect(mocks.criarTabela).not.toHaveBeenCalled();
         concluir(producao);
         await vi.waitFor(() => expect(elementos.get('bloco-materiais').getAttribute('aria-busy')).toBe('false'));
         expect(estado.children).toHaveLength(0);
-        expect(elementos.get('rotulo-atualizar').textContent).toBe('Atualizar');
-        expect(elementos.get('atualizar-materiais').disabled).toBe(false);
         expect(elementos.get('data-inicial').disabled).toBe(false);
     });
     it('não consulta dados nem acessa o DOM do relatório sem sessão', async () => {
@@ -100,7 +97,7 @@ describe('controlador do relatório de materiais', () => {
     });
     it('permite consulta e alimenta os cartões, gráfico e tabela com os mesmos dados', async () => {
         await iniciar();
-        expect(mocks.get).toHaveBeenCalledExactlyOnceWith('/producao');
+        expect(mocks.get).toHaveBeenCalledExactlyOnceWith('/producao', { erroLocal: true });
         expect(elementos.get('total-plastico').textContent).toBe('12,5 kg');
         expect(elementos.get('total-metal').textContent).toBe('13 kg');
         expect(mocks.criarTabela.mock.calls[0][2]).toHaveLength(2);
@@ -154,7 +151,7 @@ describe('controlador do relatório de materiais', () => {
         expect(elementos.get('tabela-vazia').classList.contains('d-none')).toBe(false);
         expect(elementos.get('tabela-materiais').classList.contains('d-none')).toBe(true);
         expect(elementos.get('grafico-vazio').classList.contains('d-none')).toBe(false);
-        expect(elementos.get('mensagem-tabela-vazia').textContent).toContain('Use Atualizar');
+        expect(elementos.get('mensagem-tabela-vazia').textContent).toContain('automaticamente');
         expect(elementos.get('limpar-filtros-vazio').classList.contains('d-none')).toBe(true);
     });
     it('remove o gráfico quando o filtro não encontra pesos e restaura ao limpar', async () => {
@@ -187,7 +184,8 @@ describe('controlador do relatório de materiais', () => {
         mocks.get.mockResolvedValueOnce([]);
         await iniciar();
         expect(mocks.criarTabela).not.toHaveBeenCalled();
-        await elementos.get('atualizar-materiais').disparar('click');
+        intervalo();
+        await vi.dynamicImportSettled();
         expect(mocks.criarTabela).toHaveBeenCalledOnce();
         expect(elementos.get('tabela-vazia').classList.contains('d-none')).toBe(true);
         expect(elementos.get('tabela-materiais').classList.contains('d-none')).toBe(false);
@@ -196,7 +194,9 @@ describe('controlador do relatório de materiais', () => {
         await iniciar();
         elementos.get('data-inicial').value = '2026-10-22';
         elementos.get('data-final').value = '2026-10-20';
-        await elementos.get('atualizar-materiais').disparar('click');
+        elementos.get('data-final').disparar('change');
+        intervalo();
+        await vi.dynamicImportSettled();
         expect(elementos.get('erro-periodo').textContent).toContain('anterior ou igual');
         expect(estado.textContent).toContain('Corrija o período');
         elementos.get('data-inicial').value = '2026-10-20';
@@ -210,8 +210,43 @@ describe('controlador do relatório de materiais', () => {
         await iniciar();
         expect(estado.textContent).toContain(mensagem);
         expect(estado.getAttribute('role')).toBe('alert');
-        expect(elementos.get('atualizar-materiais').disabled).toBe(false);
-        await elementos.get('atualizar-materiais').disparar('click');
+        intervalo();
+        await vi.dynamicImportSettled();
         expect(elementos.get('total-metal').textContent).toBe('13 kg');
     });
+    it('consulta a cada 5s sem esconder dados, bloquear filtros ou sobrepor requisições', async () => {
+        await iniciar();
+        expect(setInterval).toHaveBeenCalledWith(expect.any(Function), 5000);
+        let resolver;
+        mocks.get.mockReturnValue(new Promise((resolve) => { resolver = resolve; }));
+        intervalo();
+        intervalo();
+        expect(mocks.get).toHaveBeenCalledTimes(2);
+        expect(conteudo.classList.contains('d-none')).toBe(false);
+        expect(elementos.get('data-inicial').disabled).toBe(false);
+        elementos.get('filtro-lote').value = '1';
+        elementos.get('filtro-lote').disparar('change');
+        expect(elementos.get('total-metal').textContent).toBe('5 kg');
+        resolver([...producao, { ...producao[1], peso_kg: 2 }]);
+        await vi.dynamicImportSettled();
+        expect(elementos.get('filtro-lote').value).toBe('1');
+        expect(elementos.get('total-metal').textContent).toBe('7 kg');
+    });
+    it('preserva o conteúdo após falha e evita redesenhar dados iguais', async () => {
+        await iniciar();
+        intervalo();
+        await vi.dynamicImportSettled();
+        expect(mocks.grafico).toHaveBeenCalledOnce();
+        expect(mocks.atualizarTabela).not.toHaveBeenCalled();
+        mocks.get.mockRejectedValueOnce(new Error('HTTP 503'));
+        intervalo();
+        await vi.dynamicImportSettled();
+        expect(conteudo.classList.contains('d-none')).toBe(false);
+        expect(elementos.get('total-metal').textContent).toBe('13 kg');
+        expect(elementos.get('ultima-atualizacao').textContent).toContain('Falha');
+        document.hidden = true;
+        intervalo();
+        expect(mocks.get).toHaveBeenCalledTimes(3);
+    });
+
 });
