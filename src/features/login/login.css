@@ -26,6 +26,12 @@ body.login { min-height: 100vh; min-height: 100dvh; display: flex; align-items: 
 /* campos um pouco mais altos, mais fáceis de tocar no celular */
 .login-card .form-control { padding: .6rem .75rem; }
 
+/* olho para mostrar/ocultar a senha, integrado ao grupo do campo */
+.login-card .btn-visibilidade-senha { cursor: pointer; border-color: var(--eco-borda); }
+.login-card .btn-visibilidade-senha:hover { background-color: var(--eco-borda); }
+.login-card .btn-visibilidade-senha:focus-visible { outline: 2px solid var(--eco-azul);
+                                               outline-offset: 2px; z-index: 5; }
+
 /* mensagem de erro mais compacta que o padrão do Bootstrap */
 .login-card .alert { padding: .6rem .9rem; font-size: .9rem; }
 
