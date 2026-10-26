@@ -1,6 +1,6 @@
 import { montarLayout } from '../../shared/layout.js';
 import API from '../../shared/api.js';
-import { createTable, escaparHtml, updateTable } from '../../shared/table.js';
+import { createTable, h, updateTable } from '../../shared/table.js';
 import { formatDate, formatKg } from '../../shared/formatters.js';
 import { totalProduzido } from '../../shared/calculations.js';
 import { classeStatus } from '../../shared/ui.js';
@@ -179,7 +179,7 @@ if (SESSAO) {
                 {
                     id: 'status',
                     label: 'Status',
-                    html: (status) => '<span class="badge ' + classeStatus(status) + '">' + escaparHtml(status) + '</span>'
+                    formatar: (status) => h('span', { className: 'badge ' + classeStatus(status) }, String(status ?? ''))
                 },
                 { id: 'data_hora', label: 'Data', formatar: formatDate },
                 { id: 'turno', label: 'Turno' },
