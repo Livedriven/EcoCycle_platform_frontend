@@ -135,17 +135,24 @@ describe('limitesDataEntrada e validarDataEntrada', () => {
 
 describe('validarLote', () => {
     const AGORA = new Date(2026, 9, 24, 10, 30);
-    const ok = { id_fornecedor: '3', pesoentrada_kg: '640.35', data_entrada: '2026-10-24' };
+    const ok = { codigo_lote: 'LT-0001', id_fornecedor: '3', pesoentrada_kg: '640.35', data_entrada: '2026-10-24' };
     it('aceita dados completos', () => {
         expect(validarLote(ok, { agora: AGORA })).toEqual({ valido: true, erros: {} });
     });
     it('devolve todos os erros de uma vez', () => {
-        const r = validarLote({ id_fornecedor: '', pesoentrada_kg: '0', data_entrada: '' }, { agora: AGORA });
-        expect(Object.keys(r.erros)).toEqual(['id_fornecedor', 'pesoentrada_kg', 'data_entrada']);
+        const r = validarLote({ codigo_lote: '', id_fornecedor: '', pesoentrada_kg: '0', data_entrada: '' }, { agora: AGORA });
+        expect(Object.keys(r.erros)).toEqual(['codigo_lote', 'id_fornecedor', 'pesoentrada_kg', 'data_entrada']);
     });
     it('rejeita data antiga e peso negativo', () => {
         const r = validarLote({ ...ok, pesoentrada_kg: '-1', data_entrada: '2026-10-01' }, { agora: AGORA });
         expect(r.erros.pesoentrada_kg).toBeDefined();
         expect(r.erros.data_entrada).toBe('A data de entrada não pode ser anterior a ontem.');
+    });
+    it('exige o código, mas não confere o formato', () => {
+        expect(validarLote({ ...ok, codigo_lote: '   ' }, { agora: AGORA }).erros.codigo_lote).toBe('Código do lote é obrigatório.');
+        expect(validarLote({ ...ok, codigo_lote: null }, { agora: AGORA }).erros.codigo_lote).toBeDefined();
+    });
+    it.each(['LT-2026-0001', 'abc123', '12/34 - Ü*', 'A'])('aceita o código "%s"', (codigo) => {
+        expect(validarLote({ ...ok, codigo_lote: codigo }, { agora: AGORA }).valido).toBe(true);
     });
 });

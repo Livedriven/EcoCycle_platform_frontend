@@ -13,6 +13,7 @@ export function montarLinhas(lotes, fornecedores) {
     const porCnpj = new Map(fornecedores.map((f) => [String(f.cnpj_fornecedor), f.nome_fornecedor]));
     return lotes.map((lote) => ({
         id: lote.id,
+        codigo_lote: lote.codigo_lote ?? '',
         fornecedor: porId.get(String(lote.id_fornecedor)) ?? porCnpj.get(String(lote.cnpj_fornecedor)) ?? 'Fornecedor não identificado',
         pesoentrada_kg: lote.pesoentrada_kg,
         data_entrada: lote.data_entrada,
@@ -26,15 +27,20 @@ export function opcoesDeStatus(linhas) {
     return [...status].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
 }
 
-// Busca por ID do lote (número exato: "5" acha o lote 5, não o 15) ou por parte do nome do
-// fornecedor (sem diferenciar acento e maiúsculas). O status filtra à parte.
+// Busca por ID do lote, código do lote ou fornecedor, sem diferenciar acento e maiúsculas.
+// Termo só com dígitos é tratado como identificador e compara o valor inteiro ("5" acha o lote 5
+// ou o código "5", não o 15). Termo com letras ou símbolos acha parte do código ou do nome.
+// O status filtra à parte.
 export function filtrarLotes(linhas, { busca = '', status = '' } = {}) {
     const termo = normalizarTexto(busca);
     return linhas.filter((linha) => {
         if (status && linha.status !== status) return false;
         if (!termo) return true;
-        const porId = /^\d+$/.test(termo) && String(linha.id) === termo;
-        return porId || normalizarTexto(linha.fornecedor).includes(termo);
+        const soDigitos = /^\d+$/.test(termo);
+        const codigo = normalizarTexto(linha.codigo_lote);
+        const porId = soDigitos && String(linha.id) === termo;
+        const porCodigo = soDigitos ? codigo === termo : codigo.includes(termo);
+        return porId || porCodigo || normalizarTexto(linha.fornecedor).includes(termo);
     });
 }
 

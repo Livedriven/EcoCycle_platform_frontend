@@ -29,6 +29,7 @@ function iniciarTela() {
     // Só os campos do wireframe. A coluna Ações é só desenho: ver detalhes e editar ainda não existem.
     const colunas = [
         { id: 'id', label: 'ID do lote' },
+        { id: 'codigo_lote', label: 'Código do lote', formatar: (codigo) => codigo || '—' },
         { id: 'fornecedor', label: 'Fornecedor' },
         { id: 'pesoentrada_kg', label: 'Peso (kg)', formatar: formatarPeso },
         { id: 'data_entrada', label: 'Data de entrada', formatar: formatDateTime },
