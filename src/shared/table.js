@@ -4,24 +4,13 @@
 // carregando/erro/vazio (cada tela cuida disso no bloco .estado).
 // O CSS do tema do Grid.js já é carregado pelo setup.js.
 
-import { Grid, h, html } from "gridjs";
+import { Grid, h } from "gridjs";
 import { ptBR } from "gridjs/l10n";
 
 const POR_PAGINA_PADRAO = 10;
 
-/**
- * ESCAPAR HTML
- * Use em qualquer texto vindo da API antes de montar um HTML à mão
- * (opção "html" das colunas). Sem isso, um texto como "<script>" seria executado.
- */
-export function escaparHtml(texto) {
-    return String(texto ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
+// Nas células compostas, h() cria elementos e trata strings filhas como texto.
+export { h };
 
 /**
  * BOTÕES DA COLUNA DE AÇÕES
@@ -58,8 +47,7 @@ function criarBotoes(acoes, linha) {
  * Coluna comum:   { id: "origem", label: "Origem" }
  * Com formatação: { id: "data", label: "Data", formatar: (valor) => formatDate(valor) }
  *                 (a ordenação usa o valor original, não o texto formatado)
- * Com HTML:       { id: "status", label: "Status", html: (valor) => badge(valor) }
- *                 (quem passa "html" é responsável por usar escaparHtml nos dados da API)
+ * Com elementos:  { id: "status", label: "Status", formatar: (valor) => h("span", { className: "badge b-info" }, String(valor ?? "")) }
  * De ações:       { label: "Ações", acoes: [{ texto: "Detalhes", icone: "eye", aoClicar: (linha) => {} }] }
  * Sem ordenação:  { id: "obs", label: "Obs.", ordenavel: false }
  */
@@ -85,10 +73,14 @@ function converterColuna(coluna) {
 
     const convertida = { id: coluna.id, name: coluna.label };
 
-    if (coluna.html) {
-        convertida.formatter = (valor) => html(coluna.html(valor));
-    } else if (coluna.formatar) {
-        convertida.formatter = (valor) => coluna.formatar(valor);
+    if (coluna.formatar) {
+        convertida.formatter = (valor) => {
+            const conteudo = coluna.formatar(valor);
+            // Preserva o span externo que o Grid.js usava nas células com HTML.
+            return conteudo !== null && typeof conteudo === 'object'
+                ? h('span', {}, conteudo)
+                : conteudo;
+        };
     }
 
     if (coluna.ordenavel === false) {
@@ -123,7 +115,7 @@ export function createTable(elemento, colunas, dados, opcoes = {}) {
     const { busca = true, ordenar = true, porPagina = POR_PAGINA_PADRAO } = opcoes;
 
     // Limpa o que já estava ali, para não empilhar duas tabelas ao renderizar de novo.
-    alvo.innerHTML = "";
+    alvo.replaceChildren();
 
     const grid = new Grid({
         columns: colunas.map(converterColuna),
