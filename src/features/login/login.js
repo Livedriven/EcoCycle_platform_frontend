@@ -12,8 +12,19 @@ if (isLoggedIn()) location.replace(HOME_URL);
 const form = document.getElementById("form-login");
 const campoUsuario = document.getElementById("usuario");
 const campoSenha = document.getElementById("senha");
+const alternarSenha = document.getElementById("alternar-senha");
 const caixaErro = document.getElementById("erro-login");
 const botao = form.querySelector("button[type=submit]");
+
+alternarSenha.addEventListener("click", () => {
+  const mostrar = campoSenha.type === "password";
+  campoSenha.type = mostrar ? "text" : "password";
+  const rotulo = mostrar ? "Ocultar senha" : "Mostrar senha";
+  alternarSenha.setAttribute("aria-label", rotulo);
+  alternarSenha.setAttribute("aria-pressed", String(mostrar));
+  alternarSenha.title = rotulo;
+  alternarSenha.querySelector("i").className = mostrar ? "bi bi-eye" : "bi bi-eye-slash";
+});
 
 // Aviso vindo do guard ao exigir autenticação para acessar uma página protegida.
 const mensagensPorMotivo = {

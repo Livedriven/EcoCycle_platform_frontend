@@ -17,7 +17,6 @@ function elemento() {
         setAttribute: (c, v) => atributos.set(c, v), getAttribute: (c) => atributos.get(c),
         get textContent() { return texto + this.children.map((c) => c.textContent).join('') + [...seletores.values()].map((c) => c.textContent).join(''); },
         set textContent(v) { texto = v; this.children = []; },
-        set innerHTML(v) { texto = v; this.children = []; seletores.clear(); },
         append(...filhos) { this.children.push(...filhos); },
         replaceChildren(...filhos) { texto = ''; this.children = filhos; },
         querySelector(s) { if (!seletores.has(s)) seletores.set(s, elemento()); return seletores.get(s); },

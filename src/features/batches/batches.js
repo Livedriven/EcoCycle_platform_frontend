@@ -1,7 +1,8 @@
 import API from '../../shared/api.js';
+import { criarElemento, criarSpinner } from '../../shared/dom.js';
 import { montarLayout } from '../../shared/layout.js';
 import { can } from '../../shared/session.js';
-import { createTable, updateTable, escaparHtml } from '../../shared/table.js';
+import { createTable, updateTable, h } from '../../shared/table.js';
 import { formatDateTime } from '../../shared/formatters.js';
 import {
     montarLinhas, opcoesDeStatus, filtrarLotes, ordenarMaisRecentes,
@@ -36,12 +37,13 @@ function iniciarTela() {
         {
             id: 'status',
             label: 'Status',
-            html: (status) => '<span class="badge ' + classeDoStatus(status) + '">' + escaparHtml(status) + '</span>'
+            formatar: (status) => h('span', { className: 'badge ' + classeDoStatus(status) }, String(status ?? ''))
         },
         {
             id: 'id',
             label: 'Ações',
-            html: () => '<span class="text-body-tertiary text-nowrap" aria-hidden="true"><i class="bi bi-eye me-2"></i><i class="bi bi-pencil-square"></i></span>'
+            formatar: () => h('span', { className: 'text-body-tertiary text-nowrap', 'aria-hidden': 'true' },
+                h('i', { className: 'bi bi-eye me-2' }), h('i', { className: 'bi bi-pencil-square' }))
         }
     ];
 
@@ -134,7 +136,9 @@ function iniciarTela() {
     }
 
     function mostrarCarregando() {
-        estado.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando lotes...</span></div></div>';
+        const caixa = criarElemento('div', 'text-center py-4');
+        caixa.append(criarSpinner('Carregando lotes...'));
+        estado.replaceChildren(caixa);
     }
 
     // acao: { texto, aoClicar } (botão) ou { texto, href } (link).

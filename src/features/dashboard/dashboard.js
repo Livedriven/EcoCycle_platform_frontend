@@ -1,4 +1,5 @@
 import { montarLayout } from '../../shared/layout.js';
+import { criarElemento, criarSpinner } from '../../shared/dom.js';
 import './dashboard.css';
 import API from '../../shared/api.js';
 import { classeStatus, classeAlerta, classeContadorAlertas } from '../../shared/ui.js';
@@ -68,7 +69,7 @@ function partesDoBloco(id) {
 function mostrarCarregando(id) {
     const { estado, conteudo } = partesDoBloco(id);
     conteudo.classList.add('d-none');
-    estado.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div><span>Carregando...</span>';
+    estado.replaceChildren(criarSpinner(undefined, 'spinner-border spinner-border-sm'), criarElemento('span', '', 'Carregando...'));
     document.getElementById(id).setAttribute('aria-busy', 'true');
     estado.setAttribute('role', 'status');
 }
@@ -76,7 +77,7 @@ function mostrarCarregando(id) {
 function mostrarMensagem(id, texto, icone) {
     const { estado, conteudo } = partesDoBloco(id);
     conteudo.classList.add('d-none');
-    estado.innerHTML = '';
+    estado.replaceChildren();
     const i = document.createElement('i');
     i.className = 'bi bi-' + icone + ' fs-3' + (icone === 'exclamation-triangle' ? ' text-danger' : '');
     const p = document.createElement('span');
@@ -87,7 +88,7 @@ function mostrarMensagem(id, texto, icone) {
 
 function mostrarConteudo(id) {
     const { estado, conteudo } = partesDoBloco(id);
-    estado.innerHTML = '';
+    estado.replaceChildren();
     conteudo.classList.remove('d-none');
 }
 
@@ -136,11 +137,13 @@ async function montarBloco(id, fontes, preparar) {
 function cardIndicador(classe, titulo, valor, grupo = 'material') {
     const col = document.createElement('div');
     col.className = 'indicador indicador-' + grupo;
-    col.innerHTML =
-        '<div class="card card-ind shadow-sm h-100 ' + classe + '"><div class="card-body">' +
-        '<div class="small" style="color:var(--eco-texto-suave)"></div><div class="valor"></div></div></div>';
-    col.querySelector('.small').textContent = titulo;
-    col.querySelector('.valor').textContent = valor;
+    const card = criarElemento('div', 'card card-ind shadow-sm h-100 ' + classe);
+    const corpo = criarElemento('div', 'card-body');
+    const rotulo = criarElemento('div', 'small', titulo);
+    rotulo.style.color = 'var(--eco-texto-suave)';
+    corpo.append(rotulo, criarElemento('div', 'valor', valor));
+    card.append(corpo);
+    col.append(card);
     return col;
 }
 

@@ -1,4 +1,5 @@
 import API from '../../shared/api.js';
+import { criarElemento, criarSpinner } from '../../shared/dom.js';
 import { montarLayout } from '../../shared/layout.js';
 import { can, HOME_URL } from '../../shared/session.js';
 import { formatKg } from '../../shared/formatters.js';
@@ -47,7 +48,9 @@ function iniciarTela() {
 
     async function carregarFornecedores() {
         conteudo.classList.add('d-none');
-        estado.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando fornecedores...</span></div></div>';
+        const caixa = criarElemento('div', 'text-center py-4');
+        caixa.append(criarSpinner('Carregando fornecedores...'));
+        estado.replaceChildren(caixa);
         try {
             const fornecedores = await API.GET('/fornecedores');
             preencherFornecedores(Array.isArray(fornecedores) ? fornecedores : []);

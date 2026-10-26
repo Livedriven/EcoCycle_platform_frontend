@@ -66,7 +66,7 @@ Login e páginas de erro não usam o layout: importam só `'../../shared/setup.j
 | `endSession(motivo)` | session | Igual ao `logout`, com aviso na tela de login (ex.: `"expirada"`). |
 | `createTable(elemento, colunas, dados, opcoes)` | table | Desenha uma tabela. |
 | `updateTable(grid, dados)` | table | Troca os dados de uma tabela já desenhada. |
-| `escaparHtml(texto)` | table | Protege texto da API antes de montar HTML. |
+| `h(tag, atributos, ...filhos)` | table | Cria badges e ícones; strings filhas são texto, sem interpretar HTML. |
 | `somar(registros, campo)` | calculations | Soma um campo numérico de uma lista. |
 | `arredondar(valor, casas)` | calculations | Arredonda (2 casas por padrão). |
 | `totalRecebido(lotes)` | calculations | Peso total recebido nos lotes (kg). |

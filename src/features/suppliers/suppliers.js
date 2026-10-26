@@ -1,7 +1,8 @@
 import API from '../../shared/api.js';
+import { criarElemento, criarSpinner } from '../../shared/dom.js';
 import { montarLayout } from '../../shared/layout.js';
 import { can } from '../../shared/session.js';
-import { createTable, updateTable } from '../../shared/table.js';
+import { createTable, updateTable, h } from '../../shared/table.js';
 import { formatCnpj, formatTelefone } from '../../shared/formatters.js';
 import { filtrarFornecedores, opcoesDeCidade, ordenarMaisRecentes, textoContagem } from './suppliers-filter.js';
 
@@ -33,7 +34,8 @@ function iniciarTela() {
         {
             id: 'id',
             label: 'Ações',
-            html: () => '<span class="text-body-tertiary text-nowrap" aria-hidden="true"><i class="bi bi-pencil me-2"></i><i class="bi bi-trash"></i></span>'
+            formatar: () => h('span', { className: 'text-body-tertiary text-nowrap', 'aria-hidden': 'true' },
+                h('i', { className: 'bi bi-pencil me-2' }), h('i', { className: 'bi bi-trash' }))
         }
     ];
 
@@ -127,7 +129,9 @@ function iniciarTela() {
     }
 
     function mostrarCarregando() {
-        estado.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando fornecedores...</span></div></div>';
+        const caixa = criarElemento('div', 'text-center py-4');
+        caixa.append(criarSpinner('Carregando fornecedores...'));
+        estado.replaceChildren(caixa);
     }
 
     // acao: { texto, aoClicar } (botão) ou { texto, href } (link).
