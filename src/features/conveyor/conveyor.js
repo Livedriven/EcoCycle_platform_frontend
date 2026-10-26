@@ -1,7 +1,7 @@
 import { Modal } from 'bootstrap';
 import { montarLayout } from '../../shared/layout.js';
 import API from '../../shared/api.js';
-import { escaparHtml } from '../../shared/table.js';
+import { criarElemento } from '../../shared/dom.js';
 import { classeStatus } from '../../shared/ui.js';
 import { filtrarEsteiras, numeroComUnidade, dataManutencao, urlStatus } from './conveyor-data.js';
 import { criarCartaoEsteira } from './conveyor-cards.js';
@@ -41,17 +41,26 @@ if (montarLayout()) {
     }
 
     function preencherDetalhes(esteira) {
-        const campo = (rotulo, valor) => '<div class="col-sm-6"><dt class="small text-body-secondary fw-normal">' +
-            escaparHtml(rotulo) + '</dt><dd class="fw-semibold mb-0 text-break">' + escaparHtml(valor || 'Não informado') + '</dd></div>';
+        const campo = (rotulo, valor) => {
+            const grupo = criarElemento('div', 'col-sm-6');
+            grupo.append(
+                criarElemento('dt', 'small text-body-secondary fw-normal', rotulo),
+                criarElemento('dd', 'fw-semibold mb-0 text-break', valor || 'Não informado')
+            );
+            return grupo;
+        };
         document.getElementById('titulo-modal-esteira').textContent = esteira.nome_esteira || 'Detalhes da esteira';
-        document.getElementById('detalhes-esteira').innerHTML =
-            '<div class="mb-4"><span class="badge ' + classeStatus(esteira.status_esteira) + '">' +
-            escaparHtml(esteira.status_esteira || 'Não informado') + '</span></div><dl class="row g-4 mb-0">' +
-            campo('Código da esteira', String(esteira.id)) + campo('Nome', esteira.nome_esteira) +
-            campo('Tipo', esteira.tipo_esteira) + campo('Local', esteira.local_esteira) +
-            campo('Velocidade', numeroComUnidade(esteira.velocidade_esteira_kmh, 'km/h')) +
-            campo('Temperatura da esteira', numeroComUnidade(esteira.temperatura_esteira_c, '°C')) +
-            campo('Última manutenção', dataManutencao(esteira.ultima_manutencao)) + '</dl>';
+        const status = criarElemento('div', 'mb-4');
+        status.append(criarElemento('span', 'badge ' + classeStatus(esteira.status_esteira), esteira.status_esteira || 'Não informado'));
+        const campos = criarElemento('dl', 'row g-4 mb-0');
+        campos.append(
+            campo('Código da esteira', String(esteira.id)), campo('Nome', esteira.nome_esteira),
+            campo('Tipo', esteira.tipo_esteira), campo('Local', esteira.local_esteira),
+            campo('Velocidade', numeroComUnidade(esteira.velocidade_esteira_kmh, 'km/h')),
+            campo('Temperatura da esteira', numeroComUnidade(esteira.temperatura_esteira_c, '°C')),
+            campo('Última manutenção', dataManutencao(esteira.ultima_manutencao))
+        );
+        document.getElementById('detalhes-esteira').replaceChildren(status, campos);
         document.getElementById('link-status-esteira').href = urlStatus(esteira.id);
         document.getElementById('link-status-esteira').hidden = false;
     }
