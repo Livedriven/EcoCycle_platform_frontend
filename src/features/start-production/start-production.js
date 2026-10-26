@@ -85,7 +85,7 @@ function iniciarTela() {
         lotes
             .filter((lote) => lote.status === STATUS_LOTE_DISPONIVEL)
             .forEach((lote) => {
-                const fornecedor = nomes.get(lote.cnpj_fornecedor) || 'Fornecedor não identificado';
+                const fornecedor = nomes.get(lote.id_fornecedor) || 'Fornecedor não identificado';
                 const texto = 'Lote ' + lote.id + ' · ' + fornecedor + ' · ' + formatKg(lote.pesoentrada_kg);
                 campos.id_lote.add(new Option(texto, lote.id));
             });
