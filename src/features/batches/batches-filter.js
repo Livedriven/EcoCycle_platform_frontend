@@ -45,11 +45,17 @@ export function filtrarLotes(linhas, { busca = '', status = '' } = {}) {
 }
 
 // "Mais recentes": data de entrada decrescente; em empate, o maior id primeiro.
+// export function ordenarMaisRecentes(linhas) {
+//     return [...linhas].sort((a, b) => {
+//         const porData = String(b.data_entrada ?? '').localeCompare(String(a.data_entrada ?? ''));
+//         return porData !== 0 ? porData : (Number(b.id) || 0) - (Number(a.id) || 0);
+//     });
+// }
+
+// "Mais recentes": último lote cadastrado primeiro (maior id).
+// A data de entrada é informada pelo usuário (de ontem até hoje), então não serve de critério de ordem.
 export function ordenarMaisRecentes(linhas) {
-    return [...linhas].sort((a, b) => {
-        const porData = String(b.data_entrada ?? '').localeCompare(String(a.data_entrada ?? ''));
-        return porData !== 0 ? porData : (Number(b.id) || 0) - (Number(a.id) || 0);
-    });
+    return [...linhas].sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
 }
 
 // 1450 -> "1.450,00 kg" (sempre 2 casas, como no wireframe; o formatKg tira os zeros).
