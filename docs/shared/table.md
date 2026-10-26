@@ -3,7 +3,7 @@
 Único lugar do projeto que configura o **Grid.js**. As telas só chamam `createTable()` e recebem uma tabela em português, com busca, ordenação e paginação.
 
 ```js
-import { createTable, updateTable, escaparHtml } from '../../shared/table.js';
+import { createTable, updateTable, h } from '../../shared/table.js';
 ```
 
 O `table.js` só desenha. Buscar os dados (`api.js`), somar (`calculations.js`) e mostrar carregando/erro/vazio (bloco `.estado`) ficam com a tela.
@@ -29,7 +29,7 @@ Lança erro com mensagem clara se o elemento não existir, se não houver coluna
 |---|---|
 | Comum | `{ id: 'nome_fornecedor', label: 'Fornecedor' }` |
 | Com formatação | `{ id: 'data_entrada', label: 'Data', formatar: (valor) => formatDate(valor) }` — a ordenação usa o valor original. |
-| Com HTML | `{ id: 'status', label: 'Status', html: (valor) => '<span class="badge b-info">' + escaparHtml(valor) + '</span>' }` |
+| Com elementos | `{ id: 'status', label: 'Status', formatar: (valor) => h('span', { className: 'badge b-info' }, String(valor ?? '')) }` |
 | De ações | `{ label: 'Ações', acoes: [{ texto: 'Detalhes', icone: 'eye', aoClicar: (linha) => abrir(linha.id) }] }` |
 | Sem ordenação | `{ id: 'obs', label: 'Obs.', ordenavel: false }` |
 
@@ -37,7 +37,7 @@ Toda coluna precisa de `label`; toda coluna que não seja de ações precisa de 
 
 **Ações** (`acoes`): cada uma tem `texto`, e opcionalmente `icone` (Bootstrap Icons sem o `bi-`), `classe` (padrão `btn-outline-secondary`) e `visivel(linha)` para mostrar o botão só em algumas linhas. `aoClicar` recebe o registro inteiro da linha. A busca ignora a coluna de ações.
 
-> Quem usa `html` é responsável por passar os textos vindos da API por `escaparHtml`. As colunas comuns, com formatação e de ações já são seguras.
+> Use strings para texto e `h()` para badges e ícones. Strings filhas de `h()` são tratadas como texto, sem interpretar HTML. A opção `html` foi removida; use `formatar` para retornar texto ou elementos.
 
 ---
 
@@ -53,13 +53,12 @@ updateTable(grid, lotesFiltrados);
 
 ---
 
-## `escaparHtml(texto)`
+## `h(tag, atributos, ...filhos)`
 
-Converte `& < > " '` em entidades HTML. Use em qualquer texto da API antes de montar HTML à mão, para que algo como `<script>` não seja executado.
+Cria elementos virtuais do Grid.js, preservando as tags e classes da célula sem montar strings de HTML. Passe dados da API como filhos de texto, nunca como HTML ou atributos de eventos.
 
 ```js
-escaparHtml('<b>Lote</b>');   // "&lt;b&gt;Lote&lt;/b&gt;"
-escaparHtml(null);            // ""
+h('span', { className: 'badge b-info' }, '<b>Lote</b>'); // exibe o texto literal
 ```
 
 ---
