@@ -5,7 +5,7 @@
 
 import { montarLayout } from '../../shared/layout.js';
 import API from '../../shared/api.js';
-import { createTable, updateTable, escaparHtml } from '../../shared/table.js';
+import { createTable, updateTable, h } from '../../shared/table.js';
 import { alertasAtivos } from '../../shared/calculations.js';
 import { formatDateTime, formatNumber } from '../../shared/formatters.js';
 import { classeAlerta } from '../../shared/ui.js';
@@ -135,7 +135,7 @@ if (SESSAO) {
     }
 
     function badge(texto, classe) {
-        return '<span class="badge ' + classe + '">' + escaparHtml(texto) + '</span>';
+        return h('span', { className: 'badge ' + classe }, String(texto ?? ''));
     }
 
     function colunas() {
@@ -144,7 +144,7 @@ if (SESSAO) {
             {
                 id: 'tipo_alerta',
                 label: 'Tipo',
-                html: (tipo) => badge(tipo, classeAlerta(tipo))
+                formatar: (tipo) => badge(tipo, classeAlerta(tipo))
             },
             { id: 'datahora_alerta', label: 'Data e hora', formatar: formatDateTime },
             { id: 'nome_esteira', label: 'Esteira', formatar: (nome) => nome || '–' },
@@ -161,7 +161,7 @@ if (SESSAO) {
             {
                 id: 'situacao',
                 label: 'Situação',
-                html: (situacao) => badge(situacao, situacao === 'Ativo' ? 'b-perigo' : 'b-sucesso')
+                formatar: (situacao) => badge(situacao, situacao === 'Ativo' ? 'b-perigo' : 'b-sucesso')
             }
         ];
     }
