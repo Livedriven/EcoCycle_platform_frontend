@@ -72,7 +72,7 @@ function iniciarTela() {
             estado.textContent = '';
             conteudo.classList.remove('d-none');
         } catch (erro) {
-            estado.innerHTML = '';
+            estado.replaceChildren();
             const alerta = document.createElement('div');
             alerta.className = 'alert alert-danger mb-0';
             alerta.textContent = erro.message;
