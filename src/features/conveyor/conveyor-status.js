@@ -2,7 +2,8 @@
 
 import { montarLayout } from "../../shared/layout.js";
 import API from "../../shared/api.js";
-import { createTable, updateTable, escaparHtml } from "../../shared/table.js";
+import { createTable, updateTable, h } from "../../shared/table.js";
+import { criarElemento, criarIcone, criarSpinner } from '../../shared/dom.js';
 import { classeStatus, classeAlerta, classeContadorAlertas } from "../../shared/ui.js";
 import { formatNumber } from '../../shared/formatters.js';
 import { dadosDaEsteira, dataHora } from './conveyor-data.js';
@@ -47,27 +48,37 @@ function formatarDataHora(iso) {
     return dataHora(iso);
 }
 
-// ---------- Pedaços de HTML (todo texto da API passa por escaparHtml) ----------
+// ---------- Elementos visuais (os dados são inseridos como texto) ----------
 function badge(texto, classeCor) {
-    return '<span class="badge ' + (classeCor || "b-suave") + '">' + escaparHtml(texto) + "</span>";
+    return criarElemento('span', 'badge ' + (classeCor || 'b-suave'), texto ?? '');
 }
 
-function cartaoIndicador(icone, rotulo, valorHtml, extraHtml = "") {
-    return (
-        '<div class="col-6 col-lg-3"><div class="card h-100 shadow-sm"><div class="card-body">' +
-        '<div class="small" style="color:var(--eco-texto-suave)"><i class="bi bi-' + icone + '" aria-hidden="true"></i> ' +
-        escaparHtml(rotulo) + "</div>" +
-        '<div class="fs-3 fw-bold" style="color:var(--eco-azul)">' + valorHtml + "</div>" +
-        extraHtml +
-        "</div></div></div>"
-    );
+function textoSuave(tag, classe, texto) {
+    const elemento = criarElemento(tag, classe, texto);
+    elemento.style.color = 'var(--eco-texto-suave)';
+    return elemento;
 }
 
-function campoLeitura(rotulo, valorHtml) {
-    return (
-        '<div class="col-6"><div class="small" style="color:var(--eco-texto-suave)">' + escaparHtml(rotulo) +
-        '</div><div class="fw-semibold">' + valorHtml + "</div></div>"
-    );
+function cartaoIndicador(icone, rotulo, valor, extra) {
+    const coluna = criarElemento('div', 'col-6 col-lg-3');
+    const card = criarElemento('div', 'card h-100 shadow-sm');
+    const corpo = criarElemento('div', 'card-body');
+    const titulo = textoSuave('div', 'small');
+    titulo.append(criarIcone('bi bi-' + icone), ' ' + rotulo);
+    const conteudo = criarElemento('div', 'fs-3 fw-bold');
+    conteudo.style.color = 'var(--eco-azul)';
+    conteudo.append(valor);
+    corpo.append(titulo, conteudo);
+    if (extra) corpo.append(extra);
+    card.append(corpo);
+    coluna.append(card);
+    return coluna;
+}
+
+function campoLeitura(rotulo, valor) {
+    const campo = criarElemento('div', 'col-6');
+    campo.append(textoSuave('div', 'small', rotulo), criarElemento('div', 'fw-semibold', valor));
+    return campo;
 }
 
 // ---------- Estados dos blocos: carregando, erro, vazio e conteúdo ----------
@@ -77,22 +88,12 @@ function mostrarEstado(bloco, tipo, mensagem = "") {
     estado.replaceChildren();
 
     if (tipo === "carregando") {
-        estado.insertAdjacentHTML(
-            "beforeend",
-            '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div>' +
-            "<span>Carregando...</span>"
-        );
-    } else if (tipo === "erro") {
-        estado.insertAdjacentHTML(
-            "beforeend",
-            '<i class="bi bi-exclamation-triangle fs-3 text-danger" aria-hidden="true"></i>' +
-            '<span role="alert">' + escaparHtml(mensagem) + "</span>"
-        );
+        estado.append(criarSpinner('Carregando...'), criarElemento('span', '', 'Carregando...'));
     } else {
-        estado.insertAdjacentHTML(
-            "beforeend",
-            '<i class="bi bi-inbox fs-3" aria-hidden="true"></i><span>' + escaparHtml(mensagem) + "</span>"
-        );
+        const erro = tipo === 'erro';
+        const texto = criarElemento('span', '', mensagem);
+        if (erro) texto.setAttribute('role', 'alert');
+        estado.append(criarIcone(erro ? 'bi bi-exclamation-triangle fs-3 text-danger' : 'bi bi-inbox fs-3'), texto);
     }
 }
 
@@ -148,13 +149,14 @@ function desenharIndicadores(esteira, alertasAtivos) {
     const corStatus = classeStatus(esteira.status_esteira);
     const temAlerta = alertasAtivos.length > 0;
 
-    blocos.indicadores.querySelector(".conteudo").innerHTML =
+    blocos.indicadores.querySelector(".conteudo").replaceChildren(
         cartaoIndicador("activity", "Situação", badge(esteira.status_esteira, corStatus),
-            '<div class="small text-truncate" style="color:var(--eco-texto-suave)">' + escaparHtml(esteira.nome_esteira) + "</div>") +
-        cartaoIndicador("speedometer2", "Velocidade", formatarNumero(esteira.velocidade_esteira_kmh) + " km/h") +
-        cartaoIndicador("thermometer-half", "Temperatura da esteira", formatarNumero(esteira.temperatura_esteira_c) + " °C") +
+            textoSuave('div', 'small text-truncate', esteira.nome_esteira ?? '')),
+        cartaoIndicador("speedometer2", "Velocidade", formatarNumero(esteira.velocidade_esteira_kmh) + " km/h"),
+        cartaoIndicador("thermometer-half", "Temperatura da esteira", formatarNumero(esteira.temperatura_esteira_c) + " °C"),
         cartaoIndicador("bell", "Alertas ativos",
-            '<span class="' + (temAlerta ? "text-danger" : "text-success") + '">' + alertasAtivos.length + "</span>");
+            criarElemento('span', temAlerta ? 'text-danger' : 'text-success', alertasAtivos.length))
+    );
 
     mostrarConteudo(blocos.indicadores);
 }
@@ -167,14 +169,16 @@ function desenharUltimaLeitura(leituras) {
 
     const ultima = leituras[0]; // a lista já vem ordenada da mais nova para a mais antiga
 
-    blocos.leitura.querySelector(".conteudo").innerHTML =
-        '<div class="mb-3">' + badge(ultima.status_leitura, classeStatus(ultima.status_leitura)) +
-        ' <span class="small" style="color:var(--eco-texto-suave)">' + escaparHtml(formatarDataHora(ultima.datahora_leitura)) + "</span></div>" +
-        '<div class="row g-3">' +
-        campoLeitura("Temperatura", formatarNumero(ultima.temperatura_leitura_c) + " °C") +
-        campoLeitura("Peso", formatarNumero(ultima.peso_leitura_kg, 2) + " kg") +
-        campoLeitura("Material", escaparHtml(ultima.material_leitura || "–")) +
-        "</div>";
+    const topo = criarElemento('div', 'mb-3');
+    topo.append(badge(ultima.status_leitura, classeStatus(ultima.status_leitura)), ' ',
+        textoSuave('span', 'small', formatarDataHora(ultima.datahora_leitura)));
+    const campos = criarElemento('div', 'row g-3');
+    campos.append(
+        campoLeitura("Temperatura", formatarNumero(ultima.temperatura_leitura_c) + " °C"),
+        campoLeitura("Peso", formatarNumero(ultima.peso_leitura_kg, 2) + " kg"),
+        campoLeitura("Material", ultima.material_leitura || "–")
+    );
+    blocos.leitura.querySelector(".conteudo").replaceChildren(topo, campos);
 
     mostrarConteudo(blocos.leitura);
 }
@@ -197,17 +201,17 @@ function desenharAlertas(alertasAtivos, leituras) {
               formatarNumero(leitura.peso_leitura_kg, 2) + " kg"
             : "Leitura " + alerta.id_leitura;
 
-        return (
-            '<li class="list-group-item d-flex justify-content-between align-items-start gap-2">' +
-            "<div>" + badge(alerta.tipo_alerta, classeAlerta(alerta.tipo_alerta) + " badge-alerta") +
-            '<div class="small mt-1" style="color:var(--eco-texto-suave)">' + escaparHtml(detalhe) + "</div></div>" +
-            '<span class="small text-nowrap" style="color:var(--eco-texto-suave)">' +
-            escaparHtml(formatarDataHora(alerta.datahora_alerta)) + "</span></li>"
-        );
+        const item = criarElemento('li', 'list-group-item d-flex justify-content-between align-items-start gap-2');
+        const conteudo = criarElemento('div');
+        conteudo.append(badge(alerta.tipo_alerta, classeAlerta(alerta.tipo_alerta) + ' badge-alerta'),
+            textoSuave('div', 'small mt-1', detalhe));
+        item.append(conteudo, textoSuave('span', 'small text-nowrap', formatarDataHora(alerta.datahora_alerta)));
+        return item;
     });
 
-    blocos.alertas.querySelector(".conteudo").innerHTML =
-        '<ul class="list-group list-group-flush">' + itens.join("") + "</ul>";
+    const lista = criarElemento('ul', 'list-group list-group-flush');
+    lista.append(...itens);
+    blocos.alertas.querySelector(".conteudo").replaceChildren(lista);
     mostrarConteudo(blocos.alertas);
 }
 
@@ -235,7 +239,7 @@ function desenharHistorico(leituras) {
             {
                 id: "status_leitura",
                 label: "Status",
-                html: (valor) => badge(valor, classeStatus(valor))
+                formatar: (valor) => h('span', { className: 'badge ' + classeStatus(valor) }, String(valor ?? ''))
             },
             { id: "temperatura_leitura_c", label: "Temperatura (°C)", formatar: (valor) => formatarNumero(valor) },
             { id: "peso_leitura_kg", label: "Peso (kg)", formatar: (valor) => formatarNumero(valor, 2) },
