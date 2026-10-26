@@ -70,10 +70,26 @@ describe('filtrarLotes', () => {
     });
 });
 
+// Teste com a logica antiga da funcao ordernarMaisRecentes
+// describe('ordenarMaisRecentes', () => {
+//     it('ordena pela data de entrada e desempata pelo maior id, sem alterar a original', () => {
+//         expect(ids(ordenarMaisRecentes(LINHAS))).toEqual([15, 10, 2, 1]);
+//         expect(ids(LINHAS)).toEqual([1, 2, 10, 15]);
+//     });
+// });
+
 describe('ordenarMaisRecentes', () => {
-    it('ordena pela data de entrada e desempata pelo maior id, sem alterar a original', () => {
+    it('ordena pelo maior id primeiro, sem alterar a original', () => {
         expect(ids(ordenarMaisRecentes(LINHAS))).toEqual([15, 10, 2, 1]);
         expect(ids(LINHAS)).toEqual([1, 2, 10, 15]);
+    });
+
+    it('ignora a data de entrada: lote cadastrado depois com data anterior continua no topo', () => {
+        const linhas = [
+            { id: 1, data_entrada: '2026-10-26T09:00:00' },
+            { id: 2, data_entrada: '2026-10-25T15:00:00' }
+        ];
+        expect(ids(ordenarMaisRecentes(linhas))).toEqual([2, 1]);
     });
 });
 
