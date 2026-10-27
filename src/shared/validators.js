@@ -148,13 +148,21 @@ export function validarDataEntrada(data, agora = new Date()) {
     return resultado(true);
 }
 
+// Código do lote: coluna CHAR(15) UNIQUE no banco. Aqui só obrigatório e com no máximo 15 caracteres;
+// não há regra de formato (varia por empresa). A unicidade só o backend garante.
+export const TAMANHO_MAXIMO_CODIGO_LOTE = 15;
+
 // Chaves de `erros` = nomes do payload enviado à API (POST /lotes).
 export function validarLote(dados, { agora = new Date() } = {}) {
     const erros = {};
 
-    // O código varia de empresa para empresa: só é obrigatório, sem regra de formato.
-    const codigo = validarObrigatorio(dados.codigo_lote, 'Código do lote');
-    if (!codigo.valido) erros.codigo_lote = codigo.mensagem;
+    // O código varia de empresa para empresa: sem regra de formato, só obrigatório e com limite de tamanho.
+    const codigoObrigatorio = validarObrigatorio(dados.codigo_lote, 'Código do lote');
+    if (!codigoObrigatorio.valido) erros.codigo_lote = codigoObrigatorio.mensagem;
+    else {
+        const codigo = validarTexto(dados.codigo_lote, 'Código do lote', 1, TAMANHO_MAXIMO_CODIGO_LOTE);
+        if (!codigo.valido) erros.codigo_lote = codigo.mensagem;
+    }
 
     const fornecedor = validarObrigatorio(dados.id_fornecedor, 'Fornecedor');
     if (!fornecedor.valido) erros.id_fornecedor = fornecedor.mensagem;
