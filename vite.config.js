@@ -26,6 +26,8 @@ export default defineConfig({
         newSupplier: resolve(__dirname, './src/features/suppliers/new-supplier.html'),
         suppliers: resolve(__dirname, './src/features/suppliers/suppliers.html'),
         newBatch: resolve(__dirname, './src/features/batches/new-batch.html'),
+        productionMonitoring: resolve(__dirname, './src/features/production/production-monitoring.html'),
+        productionProgress: resolve(__dirname, './src/features/production/production-progress.html'),
         // uma linha por página
       },
     },

@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
     validarObrigatorio, validarOpcao, validarProducao,
     validarTexto, validarCnpj, validarTelefone, validarEmail, validarFornecedor,
-    limitesDataEntrada, validarPeso, validarDataEntrada, validarLote
+    limitesDataEntrada, validarPeso, validarDataEntrada, validarLote,
+    TAMANHO_MAXIMO_CODIGO_LOTE
 } from './validators.js';
 
 const TURNOS = ['Manhã', 'Tarde', 'Noite'];
@@ -161,5 +162,14 @@ describe('validarLote', () => {
     });
     it.each(['LT-2026-0001', 'abc123', '12/34 - Ü*', 'A'])('aceita o código "%s"', (codigo) => {
         expect(validarLote({ ...ok, codigo_lote: codigo }, { agora: AGORA }).valido).toBe(true);
+    });
+    it('limita o código a 15 caracteres, contados depois de tirar os espaços das pontas', () => {
+        expect(validarLote({ ...ok, codigo_lote: 'A'.repeat(15) }, { agora: AGORA }).valido).toBe(true);
+        expect(validarLote({ ...ok, codigo_lote: '  ' + 'A'.repeat(15) + '  ' }, { agora: AGORA }).valido).toBe(true);
+        expect(validarLote({ ...ok, codigo_lote: 'A'.repeat(16) }, { agora: AGORA }).erros.codigo_lote)
+            .toBe('Código do lote deve ter no máximo 15 caracteres.');
+    });
+    it('exporta o limite do código', () => {
+        expect(TAMANHO_MAXIMO_CODIGO_LOTE).toBe(15);
     });
 });

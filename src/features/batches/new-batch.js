@@ -125,8 +125,13 @@ function iniciarTela() {
             form.reset();
             campos.id_fornecedor.focus();
         } catch (erro) {
-            // TODO(E2): combinar a mensagem para data ou peso recusados (hoje o api.js mostra só "HTTP 400").
-            mostrarAviso('danger', erro.message);
+            // TODO(E2): confirmar o status devolvido para código repetido (aqui, 409; o api.js só repassa "HTTP 409").
+            if (erro.message === 'HTTP 409') {
+                mostrarErros({ codigo_lote: 'Já existe um lote com este código.' });
+            } else {
+                // TODO(E2): combinar a mensagem para data ou peso recusados (hoje o api.js mostra só "HTTP 400").
+                mostrarAviso('danger', erro.message);
+            }
         } finally {
             btnSalvar.disabled = false;
             btnSalvar.textContent = 'Salvar lote';

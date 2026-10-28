@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Controle de produções | EcoCycle</title>
+</head>
+<body>
+  <!-- topo, menu lateral e rodapé são preenchidos pelo layout.js -->
+  <div id="app-topo"></div>
+  <div class="app-corpo">
+    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+    <main class="conteudo-pagina">
+      <h1 class="h4 mb-1">Controle de produções</h1>
+      <p class="text-body-secondary mb-1">Selecione uma produção cadastrada com status disponível.</p>
+      <nav aria-label="Você está em" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+          <li class="breadcrumb-item">Início</li>
+          <li class="breadcrumb-item">Operações</li>
+          <li class="breadcrumb-item active" aria-current="page">Controle de produções</li>
+        </ol>
+      </nav>
+
+      <!-- Só aparece depois que as produções carregam. -->
+      <div class="card shadow-sm mb-3 d-none" id="bloco-filtros">
+        <div class="card-body">
+          <form id="form-filtros" class="row g-2 align-items-center" novalidate>
+            <div class="col-12 col-lg">
+              <label for="busca" class="visually-hidden">Buscar por ID da produção ou do lote</label>
+              <div class="input-group">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-search"></i></span>
+                <input type="search" id="busca" class="form-control" placeholder="Buscar por ID da produção, ID ou código do lote..." autocomplete="off">
+              </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label for="filtro-status" class="visually-hidden">Status</label>
+              <div class="input-group">
+                <span class="input-group-text" aria-hidden="true"><i class="bi bi-funnel"></i></span>
+                <select id="filtro-status" class="form-select">
+                  <option value="">Status: Todos</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-auto">
+              <button type="submit" class="btn btn-primary">Pesquisar</button>
+            </div>
+            <div class="col-auto">
+              <button type="button" id="limpar-filtros" class="btn btn-outline-secondary">Limpar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card shadow-sm" id="bloco-producoes">
+        <div class="card-header d-none" id="cabecalho-producoes">
+          Produções disponíveis <span class="text-body-secondary fw-normal" id="contador-producoes" aria-live="polite"></span>
+        </div>
+        <div class="card-body">
+          <div class="estado"></div>
+          <div class="conteudo d-none">
+            <div id="tabela-producoes" class="overflow-auto"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="production-monitoring.js"></script>
+</body>
+</html>

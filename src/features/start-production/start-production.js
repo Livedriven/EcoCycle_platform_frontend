@@ -148,7 +148,7 @@ function iniciarTela() {
         try {
             await API.POST('/producao', payload);
             if (!validarAcesso()) return;
-            mostrarAviso('success', 'Produção iniciada com sucesso.');
+            mostrarAviso('success', 'Produção cadastrada com sucesso.');
             form.reset();
             campos.id_lote.querySelector('option[value="' + payload.id_lote + '"]')?.remove();
         } catch (erro) {
@@ -156,7 +156,7 @@ function iniciarTela() {
         } finally {
             enviando = false;
             btnIniciar.disabled = false;
-            btnIniciar.textContent = 'Iniciar produção';
+            btnIniciar.textContent = 'Cadastrar produção';
         }
     }
 

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitoramento de produção | EcoCycle</title>
+</head>
+<body>
+  <!-- topo, menu lateral e rodapé são preenchidos pelo layout.js -->
+  <div id="app-topo"></div>
+  <div class="app-corpo">
+    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+    <main class="conteudo-pagina">
+      <h1 class="h4 mb-1">Monitoramento de produção</h1>
+      <nav aria-label="Você está em" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+          <li class="breadcrumb-item">Início</li>
+          <li class="breadcrumb-item">Operações</li>
+          <li class="breadcrumb-item"><a href="/src/features/production/production-monitoring.html">Controle de produções</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Monitoramento</li>
+        </ol>
+      </nav>
+
+      <!-- Carregando / erro / produção não identificada ou não encontrada. -->
+      <div class="estado"></div>
+
+      <div id="monitoramento" class="d-none">
+        <!-- Lote e progresso -->
+        <section class="card shadow-sm mb-3" aria-labelledby="lote-titulo">
+          <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+              <div>
+                <h2 class="h5 mb-1" id="lote-titulo"></h2>
+                <div class="small text-body-secondary" id="lote-subtitulo"></div>
+              </div>
+              <div><span id="lote-status" class="badge d-none"></span></div>
+            </div>
+
+            <div id="bloco-progresso">
+              <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2">
+                <div><span class="display-6 fw-bold" id="progresso-percentual"></span> <span class="fs-5">concluído</span></div>
+                <div class="fw-semibold" id="progresso-faltam"></div>
+              </div>
+              <div class="progress mb-2" style="height: 12px;">
+                <div id="barra-progresso" class="progress-bar bg-success" role="progressbar" aria-label="Progresso da produção" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+              </div>
+              <div class="d-flex flex-wrap justify-content-between gap-2 small text-body-secondary">
+                <span id="peso-processado"></span>
+                <span id="peso-restante"></span>
+              </div>
+            </div>
+            <p id="sem-progresso" class="text-body-secondary mb-0 d-none">Peso total do lote não informado: não é possível calcular o progresso.</p>
+
+            <hr class="my-3">
+            <div class="row g-3 mb-3">
+              <div class="col-auto">
+                <div class="small text-body-secondary">Início da produção</div>
+                <div class="fw-semibold" id="inicio-producao"></div>
+              </div>
+              <div class="col-auto">
+                <div class="small text-body-secondary">Tempo em operação</div>
+                <div class="fw-semibold" id="tempo-operacao"></div>
+              </div>
+            </div>
+
+            <div id="acoes-producao" class="d-none">
+              <div class="d-flex flex-wrap gap-2">
+                <button type="button" id="btn-iniciar" class="btn btn-primary" disabled title="A produção já foi iniciada quando foi cadastrada.">
+                  <i class="bi bi-play me-1" aria-hidden="true"></i>Iniciar produção
+                </button>
+                <button type="button" id="btn-finalizar" class="btn btn-outline-secondary" disabled title="Finalização ainda não disponível: a operação não está definida no contrato da API.">
+                  <i class="bi bi-stop-circle me-1" aria-hidden="true"></i>Finalizar produção
+                </button>
+              </div>
+              <div class="form-text">Iniciar produção já foi feito no cadastro. Finalizar produção ainda não está disponível.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Esteira -->
+        <section class="card shadow-sm mb-3" aria-labelledby="esteira-nome">
+          <div class="card-body">
+            <p id="sem-esteira" class="text-body-secondary mb-0 d-none">Esteira não informada.</p>
+            <div id="bloco-esteira" class="row g-3 align-items-center">
+              <div class="col-12 col-md">
+                <h2 class="h5 mb-1" id="esteira-nome"></h2>
+                <span id="esteira-status" class="badge d-none"></span>
+              </div>
+              <div class="col-auto">
+                <div class="small text-body-secondary">Velocidade</div>
+                <div class="fw-semibold" id="esteira-velocidade"></div>
+              </div>
+              <div class="col-auto">
+                <div class="small text-body-secondary">Temperatura</div>
+                <div class="fw-semibold" id="esteira-temperatura"></div>
+              </div>
+              <div class="col-12 col-md-auto">
+                <div class="small text-body-secondary">Sensores</div>
+                <span id="sensor-leitura" class="badge"></span>
+                <span id="sensor-alertas" class="badge"></span>
+                <div class="small text-body-secondary" id="sensor-data"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Materiais -->
+        <section class="card shadow-sm mb-3" aria-labelledby="titulo-materiais">
+          <div class="card-body">
+            <h2 class="h5 mb-3" id="titulo-materiais">Materiais separados</h2>
+            <div class="d-flex justify-content-between small text-body-secondary border-bottom pb-2">
+              <span>Material</span><span>Peso</span>
+            </div>
+            <ul class="list-unstyled mb-0" id="lista-materiais"></ul>
+          </div>
+        </section>
+
+        <p class="small text-body-secondary" id="atualizado" aria-live="polite"></p>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="production-progress.js"></script>
+</body>
+</html>
