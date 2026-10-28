@@ -1,6 +1,8 @@
 # Materiais separados
 
-Relatório de consulta de **Plástico, Metal, Alumínio e Rejeito** separados na produção, baseado em `GET /producao`. O peso de entrada de um lote não informa a composição dos materiais e não entra neste relatório.
+Relatório de consulta de **Plástico, Metal, Alumínio e Rejeito** separados na produção, baseado em `GET /producao`. **Limitação atual do backend:** `GET /producao` retorna ciclos com balanço de massas, sem composição por material. Nessa resposta a tela informa que o detalhamento está indisponível. `GET /materiais` contém apenas o catálogo de tipos. O relatório abaixo se aplica a respostas que disponibilizem os pesos separados.
+
+O peso de entrada de um lote não informa a composição dos materiais e não entra neste relatório.
 
 - Exibe todo o histórico por padrão, com filtros por data inicial, data final e lote. As datas são inclusivas e o dia informado pela API é preservado.
 - Os filtros alimentam a mesma lista usada por cartões (kg e toneladas), gráfico de rosca e tabela. Cada linha soma todos os turnos e esteiras de um lote no mesmo dia.
@@ -23,10 +25,10 @@ Textos externos usam `textContent`/`Option` e as colunas de texto do Grid.js, se
 
 ## Contrato de integração
 
-O endpoint deve devolver a lista completa. O mock atual atende esse contrato. Se a API real introduzir paginação no servidor, será necessário buscar todas as páginas ou usar um endpoint de agregação antes de apresentar totais globais.
+O endpoint deve devolver a lista completa. Se a API real introduzir paginação no servidor, será necessário buscar todas as páginas ou usar um endpoint de agregação antes de apresentar totais globais.
 
 Campos utilizados: `id_lote`, `tipo_material`, `peso_kg` e `data_hora`, centralizados em `CAMPOS`. Não são necessários outros endpoints nem acesso a dados de usuários.
 
-O campo `tipo_material` deve usar um dos nomes canônicos: `Plástico`, `Metal`, `Alumínio` ou `Rejeito`. Metal e alumínio são categorias separadas: um peso não é inferido nem duplicado na outra categoria. O mock existente continua com os dados atuais; zeros indicam ausência de registros no filtro aplicado.
+O campo `tipo_material` deve usar um dos nomes canônicos: `Plástico`, `Metal`, `Alumínio` ou `Rejeito`. Metal e alumínio são categorias separadas: um peso não é inferido nem duplicado na outra categoria. Zeros indicam ausência de registros no filtro aplicado, quando há detalhamento por material disponível.
 
 Testes: `materials-report.test.js` cobre validação e filtros; `materials.test.js` cobre o controlador, proteção de sessão, filtros sincronizados, estados vazios, erros e nova tentativa; as novas funções compartilhadas são testadas em `calculations.test.js` e `formatters.test.js`.
