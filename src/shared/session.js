@@ -1,6 +1,7 @@
 import { jwtDecode } from "jwt-decode";
 
 const CHAVE_TOKEN = "token"; // não renomear: o api.js lê exatamente esta chave
+const CHAVE_AUTENTICACAO = "autenticacao";
 
 export const LOGIN_URL = "/src/features/login/login.html";
 export const HOME_URL = "/src/features/dashboard/dashboard.html";
@@ -29,6 +30,7 @@ let ouvintes = null;
 // página (layout, permissions, api), então o token só é decodificado de novo
 // quando muda. A validade (exp) continua sendo conferida a cada chamada.
 let cacheToken = null;
+let cacheAutenticacao = null;
 let cacheSessao = null;
 
 // ---------------------------------------------------------------------------
@@ -51,24 +53,37 @@ export function decodeToken(token) {
 }
 
 /**
- * ÚNICO ponto que conhece o formato do token. Quando a Equipe 2 definir o
- * login real (alinhamento pendente nº 5), só esta função muda.
+ * Combina o JWT com o perfil e a liberação devolvidos pelo login.
+ * JWTs legados continuam aceitos com nome/perfil no payload.
  * Devolve { token, nome, perfil, exp } ou null se o token não serve.
  */
-function lerToken(token) {
+function lerToken(token, autenticacao) {
     const p = decodeToken(token);
     if (!p) return null;
-    const perfil = String(p.perfil ?? "").toLowerCase();
-    if (!p.nome || !PERFIS.includes(perfil)) return null;
+    if (autenticacao && (
+        autenticacao.access_token !== token ||
+        autenticacao.acesso_liberado !== true ||
+        String(autenticacao.token_type).toLowerCase() !== "bearer"
+    )) return null;
+    const perfil = String(autenticacao ? autenticacao.perfil : p.perfil ?? "").toLowerCase();
+    if (!PERFIS.includes(perfil) || (!autenticacao && !p.nome)) return null;
+    const nome = p.nome || p.usuario || p.sub || "Usuário";
     const exp = Number(p.exp);
-    return { token, nome: p.nome, perfil, exp: Number.isFinite(exp) ? exp : null };
+    return { token, nome: String(nome), perfil, exp: Number.isFinite(exp) ? exp : null };
 }
 
-/** Igual a lerToken, mas reaproveita o resultado enquanto o token for o mesmo. */
-function lerTokenComCache(token) {
-    if (token !== cacheToken) {
+/** Reaproveita a leitura enquanto o token e os dados do login forem os mesmos. */
+function lerTokenComCache(token, autenticacao) {
+    if (token !== cacheToken || autenticacao !== cacheAutenticacao) {
         cacheToken = token;
-        cacheSessao = lerToken(token);
+        cacheAutenticacao = autenticacao;
+        try {
+            const dados = autenticacao === null ? null : JSON.parse(autenticacao);
+            cacheSessao = autenticacao !== null && (!dados || typeof dados !== "object")
+                ? null : lerToken(token, dados);
+        } catch {
+            cacheSessao = null;
+        }
     }
     return cacheSessao;
 }
@@ -77,7 +92,7 @@ function lerTokenComCache(token) {
 function verificar() {
     const token = sessionStorage.getItem(CHAVE_TOKEN);
     if (!token) return { sessao: null, motivo: "ausente" };
-    const sessao = lerTokenComCache(token);
+    const sessao = lerTokenComCache(token, sessionStorage.getItem(CHAVE_AUTENTICACAO));
     if (!sessao) return { sessao: null, motivo: "invalida" };
     // exp do JWT é em segundos; sem exp, só a API (401) derruba a sessão.
     if (sessao.exp !== null && sessao.exp * 1000 <= Date.now()) {
@@ -95,11 +110,25 @@ function derrubar(motivo) {
 // API pública da sessão
 // ---------------------------------------------------------------------------
 
-/** Guarda a sessão após o login. Lança erro se o token não for utilizável. */
-export function saveSession(token) {
+/** Guarda a resposta do login; também aceita JWTs legados. */
+export function saveSession(resposta) {
+    if (resposta?.acesso_liberado === false) {
+        clearSession();
+        throw new Error("Acesso não liberado para este usuário.");
+    }
+    const legado = typeof resposta === "string";
+    const token = legado ? resposta : resposta?.access_token;
+    const autenticacao = legado ? null : JSON.stringify({
+        access_token: token,
+        token_type: resposta?.token_type,
+        perfil: resposta?.perfil,
+        acesso_liberado: resposta?.acesso_liberado,
+    });
     // Valida antes de gravar: um token ruim nunca chega ao sessionStorage.
-    if (!lerTokenComCache(token)) throw new Error("Token de sessão inválido");
+    if (!lerTokenComCache(token, autenticacao)) throw new Error("Token de sessão inválido");
     sessionStorage.setItem(CHAVE_TOKEN, token);
+    if (autenticacao === null) sessionStorage.removeItem(CHAVE_AUTENTICACAO);
+    else sessionStorage.setItem(CHAVE_AUTENTICACAO, autenticacao);
 }
 
 /** { token, nome, perfil, exp } ou null (ausente, inválida ou expirada). */
@@ -129,7 +158,9 @@ export function can(acao, perfil = getUser()?.perfil) {
 /** Apaga a sessão, sem redirecionar. */
 export function clearSession() {
     sessionStorage.removeItem(CHAVE_TOKEN);
+    sessionStorage.removeItem(CHAVE_AUTENTICACAO);
     cacheToken = null;
+    cacheAutenticacao = null;
     cacheSessao = null;
 }
 
