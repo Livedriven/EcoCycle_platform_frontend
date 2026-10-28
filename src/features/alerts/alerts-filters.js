@@ -14,7 +14,7 @@ export function normalizarTexto(valor) {
         .replace(/\s+/g, ' ');
 }
 
-/** O mock devolve "true"/"false" como texto; a API real pode devolver boolean. */
+/** Aceita booleanos e representações textuais de verdadeiro/falso. */
 export function estaResolvido(valor) {
     return valor === true || valor === 'true';
 }
