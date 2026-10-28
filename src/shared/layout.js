@@ -142,7 +142,7 @@ function nomeDoPerfil(perfil) {
 }
 
 /**
- * Logout: avisa a API para recusar o token daqui em diante e encerra a
+ * Logout: avisa o mock/API para recusar o token daqui em diante e encerra a
  * sessão local. Se a API não responder, sai do mesmo jeito.
  */
 async function sair(botao) {

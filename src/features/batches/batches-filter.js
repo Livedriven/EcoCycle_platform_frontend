@@ -7,7 +7,7 @@ export function normalizarTexto(valor) {
 }
 
 // Acrescenta o nome do fornecedor a cada lote. Usa id_fornecedor; se o lote ainda vier com
-// cnpj_fornecedor (contrato legado), tenta por ele.
+// cnpj_fornecedor (esquema antigo do mock), tenta por ele.
 export function montarLinhas(lotes, fornecedores) {
     const porId = new Map(fornecedores.map((f) => [String(f.id), f.nome_fornecedor]));
     const porCnpj = new Map(fornecedores.map((f) => [String(f.cnpj_fornecedor), f.nome_fornecedor]));

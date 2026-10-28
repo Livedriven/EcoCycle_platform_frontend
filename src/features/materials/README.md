@@ -23,10 +23,10 @@ Textos externos usam `textContent`/`Option` e as colunas de texto do Grid.js, se
 
 ## Contrato de integração
 
-O endpoint deve devolver a lista completa. Se a API real introduzir paginação no servidor, será necessário buscar todas as páginas ou usar um endpoint de agregação antes de apresentar totais globais.
+O endpoint deve devolver a lista completa. O mock atual atende esse contrato. Se a API real introduzir paginação no servidor, será necessário buscar todas as páginas ou usar um endpoint de agregação antes de apresentar totais globais.
 
 Campos utilizados: `id_lote`, `tipo_material`, `peso_kg` e `data_hora`, centralizados em `CAMPOS`. Não são necessários outros endpoints nem acesso a dados de usuários.
 
-O campo `tipo_material` deve usar um dos nomes canônicos: `Plástico`, `Metal`, `Alumínio` ou `Rejeito`. Metal e alumínio são categorias separadas: um peso não é inferido nem duplicado na outra categoria. Zeros indicam ausência de registros no filtro aplicado, quando há detalhamento por material disponível.
+O campo `tipo_material` deve usar um dos nomes canônicos: `Plástico`, `Metal`, `Alumínio` ou `Rejeito`. Metal e alumínio são categorias separadas: um peso não é inferido nem duplicado na outra categoria. O mock existente continua com os dados atuais; zeros indicam ausência de registros no filtro aplicado.
 
 Testes: `materials-report.test.js` cobre validação e filtros; `materials.test.js` cobre o controlador, proteção de sessão, filtros sincronizados, estados vazios, erros e nova tentativa; as novas funções compartilhadas são testadas em `calculations.test.js` e `formatters.test.js`.

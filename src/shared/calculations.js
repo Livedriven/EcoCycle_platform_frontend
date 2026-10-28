@@ -149,7 +149,7 @@ export function lotesPorStatus(lotes) {
     return [...contagem.entries()].map(([status, quantidade]) => ({ status, quantidade }));
 }
 
-/** Alertas não resolvidos. Aceita true/false ou "true"/"false". */
+/** Alertas não resolvidos. Aceita true/false ou "true"/"false" (o mock manda texto). */
 export function alertasAtivos(alertas) {
     return (alertas ?? []).filter((a) => String(a[CAMPOS.resolvidoAlerta]) !== "true");
 }

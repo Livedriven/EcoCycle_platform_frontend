@@ -129,6 +129,12 @@ describe('disponibilidade do dashboard', () => {
         expect(series[2].data.at(-1)).toBe(8);
         expect(series[3].data.at(-1)).toBe(3);
     });
+    it.each(['erro', 'vazio'])('simula %s apenas no bloco escolhido', async (modo) => {
+        window.location.search = '?simular=' + modo + '&bloco=bloco-diaria';
+        await iniciar();
+        expect(estado('diaria').textContent).toContain(modo === 'erro' ? 'Tentar novamente' : 'Sem dados no período');
+        expect(conteudo('mensal').classList.contains('d-none')).toBe(false);
+    });
     it('isola também erros de renderização', async () => {
         mocks.bar.mockImplementation((canvas) => { if (canvas === obter('grafico-diaria')) throw new Error('Canvas'); });
         await iniciar();

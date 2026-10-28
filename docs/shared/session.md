@@ -62,7 +62,7 @@ if (can('fornecedor.cadastrar')) {
 { rotulo: 'Cadastrar lote', href: '...', acao: 'lote.registrar' }
 ```
 
-Para uma ação nova, acrescente uma chave em `PERMISSOES`, cubra a regra em `session.test.js` e alinhe a autorização correspondente no backend.
+Para uma ação nova, acrescente uma chave em `PERMISSOES`, um caso em `session.test.js` e a mesma regra no mock (`mocks/rbac.cjs`, que tem uma cópia da matriz e liga cada ação às requisições).
 
 > Esconder ou barrar na interface é só conforto: a API verifica a permissão em cada operação protegida e responde `403`. Ação com nome errado em `can` devolve `false`, então o recurso some em vez de aparecer para todos.
 

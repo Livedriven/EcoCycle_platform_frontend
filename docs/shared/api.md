@@ -85,3 +85,26 @@ const [lotes, fornecedores] = await Promise.all([API.GET('/lotes'), API.GET('/fo
 ```
 
 ---
+
+## Endpoints do mock
+
+O mock (`npm run mock`) responde tanto em `/lotes` quanto em `/api/lotes` (`mocks/routes.json`).
+
+| Endpoint | Dados |
+|---|---|
+| `POST /login` | Recebe `{ login, senha }` e devolve `{ token }`. |
+| `POST /logout` | Revoga o token enviado (responde `204`). |
+| `/lotes`, `/producao`, `/fornecedores`, `/alertas`, `/esteiras`, `/leituras_sensor`, `/usuarios`, `/logs_sistema` | Coleções do `mocks/db.json` (GET, POST, PUT, PATCH e DELETE do json-server). |
+
+Todas as rotas, exceto `/login`, exigem o token. As permissões por perfil ficam em `mocks/rbac.cjs`, com a mesma matriz do MVP descrita em [session.md](session.md#permissões):
+
+| Requisição | Quem pode |
+|---|---|
+| `GET` em `/lotes`, `/fornecedores`, `/alertas`, `/producao`, `/esteiras`, `/leituras_sensor` | Todos os perfis |
+| `POST /fornecedores` | administrador, gerente |
+| `POST /lotes` | administrador, gerente, operador |
+| `POST /producao` (iniciar) e `PATCH /producao/:id` (finalizar) | administrador, gerente, operador |
+| `/usuarios` (qualquer método) | ninguém (fora do MVP) |
+| Qualquer outra (`PUT`, `DELETE`, `/logs_sistema`...) | ninguém |
+
+O resto recebe `403 { "erro": "sem permissão" }`. O administrador não tem passe livre: segue a matriz como os outros perfis.

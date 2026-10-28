@@ -1,6 +1,54 @@
+import { createRequire } from 'node:module';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PERFIS, saveSession, clearSession } from './session.js';
+import { can, PERFIS, saveSession, clearSession } from './session.js';
 import { aplicarPermissoes } from './permissions.js';
+
+const require = createRequire(import.meta.url);
+const rbac = require('../../mocks/rbac.cjs');
+
+function requisicao(perfil, method, path) {
+    const next = vi.fn();
+    const res = { status: vi.fn(), json: vi.fn() };
+    res.status.mockReturnValue(res);
+    rbac({ claims: { perfil }, method, path }, res, next);
+    return { next, res };
+}
+
+describe('permissões da API de teste', () => {
+    it.each(PERFIS)('%s segue a mesma matriz do frontend em cada operação', (perfil) => {
+        const operacoes = [
+            ['POST', '/fornecedores', 'fornecedor.cadastrar'],
+            ['POST', '/lotes', 'lote.registrar'],
+            ['POST', '/producao', 'producao.operar'],
+            ['PATCH', '/producao/1', 'producao.operar'],
+            ...['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((metodo) =>
+                [metodo, '/usuarios/1', 'usuarios.gerenciar'])
+        ];
+
+        for (const [metodo, caminho, acao] of operacoes) {
+            const { next, res } = requisicao(perfil, metodo, caminho);
+            if (can(acao, perfil)) {
+                expect(next).toHaveBeenCalledOnce();
+                expect(res.status).not.toHaveBeenCalled();
+            } else {
+                expect(next).not.toHaveBeenCalled();
+                expect(res.status).toHaveBeenCalledWith(403);
+            }
+        }
+    });
+
+    it.each(PERFIS)('%s continua podendo consultar os dados de monitoramento', (perfil) => {
+        for (const recurso of ['lotes', 'fornecedores', 'alertas', 'producao', 'esteiras', 'leituras_sensor']) {
+            expect(requisicao(perfil, 'GET', '/' + recurso).next).toHaveBeenCalledOnce();
+        }
+    });
+
+    it.each(PERFIS)('%s não recebe permissão para excluir produção', (perfil) => {
+        const { next, res } = requisicao(perfil, 'DELETE', '/producao/1');
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(403);
+    });
+});
 
 describe('aplicarPermissoes', () => {
     // Dublês do DOM: preservam classes e a seleção pelo atributo declarado.

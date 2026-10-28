@@ -35,9 +35,20 @@ const SESSAO = montarLayout();
 const INTERVALO_ATUALIZACAO_MS = 5000;
 let carregando = false;
 
+// Links "Testar estados" do dashboard.html: ?simular=vazio ou ?simular=erro
+const SIMULAR = new URLSearchParams(window.location.search).get('simular');
+const BLOCO_SIMULADO = new URLSearchParams(window.location.search).get('bloco');
+
 /* ---------- Busca de dados ---------- */
 
-function buscar(caminho) {
+function buscar(caminho, id) {
+    const simular = !BLOCO_SIMULADO || BLOCO_SIMULADO === id;
+    if (simular && SIMULAR === 'erro') {
+        return Promise.reject(new Error('Erro simulado para teste.'));
+    }
+    if (simular && SIMULAR === 'vazio') {
+        return Promise.resolve([]);
+    }
     return API.GET(caminho, { erroLocal: true }).then((dados) => {
         if (dados == null) return [];
         if (!Array.isArray(dados)) throw new Error('Resposta inválida da API.');
@@ -315,8 +326,9 @@ function carregarBloco(id, cache = new Map()) {
     if (pendentes.has(id)) return pendentes.get(id);
     const { fontes, preparar } = BLOCOS[id];
     const requisicoes = fontes.map((caminho) => {
-        const chave = caminho;
-        if (!cache.has(chave)) cache.set(chave, Promise.resolve().then(() => buscar(caminho)));
+        // Simulação por bloco não deve contaminar os demais consumidores da fonte.
+        const chave = BLOCO_SIMULADO === id ? id + caminho : caminho;
+        if (!cache.has(chave)) cache.set(chave, Promise.resolve().then(() => buscar(caminho, id)));
         return cache.get(chave);
     });
     const carga = montarBloco(id, requisicoes, preparar).finally(() => pendentes.delete(id));

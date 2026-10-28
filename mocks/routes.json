@@ -1,0 +1,13 @@
+{
+  "/api/equipamentos*": "/esteiras$1",
+  "/api/materiais*": "/producao$1",
+  "/api/fornecedores*": "/fornecedores$1",
+  "/api/lotes*": "/lotes$1",
+  "/api/esteiras*": "/esteiras$1",
+  "/api/usuarios*": "/usuarios$1",
+  "/api/producao*": "/producao$1",
+  "/api/leituras_sensor*": "/leituras_sensor$1",
+  "/api/alertas*": "/alertas$1",
+  "/api/logs_sistema*": "/logs_sistema$1",
+  "/api/*": "/$1"
+}

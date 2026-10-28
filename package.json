@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --open",
     "build": "vite build",
+    "mock": "json-server --watch mocks/db.json --routes mocks/routes.json --middlewares mocks/auth.cjs mocks/rbac.cjs --port 3000",
     "test": "vitest",
     "lint": "eslint ."
   },
@@ -23,8 +24,10 @@
   "homepage": "https://github.com/Livedriven/EcoCycle_platform_frontend#readme",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "bcryptjs": "^3.0.3",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
+    "jsonwebtoken": "^9.0.3",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
   },
@@ -34,6 +37,7 @@
     "chart.js": "^4.5.1",
     "dayjs": "^1.11.23",
     "gridjs": "^6.2.0",
+    "json-server": "^0.17.4",
     "jwt-decode": "^4.0.0",
     "sweetalert2": "^11.26.25"
   }

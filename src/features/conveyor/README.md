@@ -15,4 +15,4 @@ opcionais `tipo_esteira`, `local_esteira` e `ultima_manutencao` (data ISO).
 Dados opcionais ausentes são exibidos como não informados; não são deduzidos do nome.
 
 Falhas de atualização preservam os dados anteriores com aviso. A carga inicial oferece nova tentativa.
-A interface suporta qualquer quantidade de esteiras retornada pela API.
+O mock padrão contém uma esteira; a interface suporta qualquer quantidade retornada pela API.
