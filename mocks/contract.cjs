@@ -19,6 +19,8 @@ const OPCIONAIS = {
     '/lotes': ['data_entrada'], '/producao': ['data_inicio', 'data_fim', 'itens'],
     '/esteiras': ['status_esteira', 'velocidade_esteira_kmh', 'temperatura_esteira_c'],
 };
+// Status que o portal envia ao cadastrar uma produção; o mock a guarda como "Disponível".
+const STATUS_PRODUCAO_INICIAL = ['em processamento', 'disponivel', 'disponível', 'recebido'];
 // Campos aceitos pelo PATCH de cada rota com identificador (atualização parcial).
 const EDITAVEIS = {
     '/esteiras': ['nome_esteira', 'status_esteira', 'velocidade_esteira_kmh', 'temperatura_esteira_c'],
@@ -100,7 +102,11 @@ module.exports = (req, res) => {
         if (listar(caminho).some((r) => r[contrato[3]] === id || (caminho === '/fornecedores' && r.cnpj === dados.cnpj))) return res.status(409).json({ detail: 'Código ou CNPJ já cadastrado.' });
         const novo = { ...dados, [contrato[3]]: id };
         if (caminho === '/lotes') novo.data_entrada ??= new Date().toISOString();
-        if (caminho === '/producao') novo.data_inicio ??= new Date().toISOString();
+        if (caminho === '/producao') {
+            novo.data_inicio ??= new Date().toISOString();
+            // Produção recém-cadastrada aguarda o início na etapa de acompanhamento: fica disponível.
+            if (STATUS_PRODUCAO_INICIAL.includes(String(dados.status_producao).trim().toLowerCase())) novo.status_producao = 'Disponível';
+        }
         if (caminho === '/esteiras') Object.assign(novo, { status_esteira: 'DESLIGADA', velocidade_esteira_kmh: 0, temperatura_esteira_c: 0, ...dados });
         salvar(contrato[0], novo);
         return res.status(caminho === '/fornecedores' ? 200 : 201).json({ mensagem: 'Cadastro realizado com sucesso.', [contrato[2]]: novo });

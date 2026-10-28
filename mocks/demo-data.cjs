@@ -16,6 +16,12 @@ function prepararDadosDemo(seed, hoje = new Date().toLocaleDateString('en-CA', {
         }
     }
     dados.materiais ??= ['plastico', 'metal', 'aluminio'].map((tipo_material, i) => ({ id_material: i + 1, tipo_material }));
+    // Produção sem status herda o do lote (como a API real); sem lote, conta como finalizada.
+    // Sem isso o mock devolveria "Finalizado" e esconderia produções de lotes Recebido/Disponível.
+    const statusDoLote = new Map((dados.lotes ?? []).map((l) => [Number(l.id_lote ?? l.id), l.status_lote ?? l.status]));
+    for (const producao of dados.producao) {
+        producao.status_producao ??= statusDoLote.get(Number(producao.id_lote)) ?? 'Finalizado';
+    }
     // Expõe a mesma composição aninhada da API real, sem tipo_material no ciclo.
     for (const producao of dados.producao) {
         if (Array.isArray(producao.itens)) continue;

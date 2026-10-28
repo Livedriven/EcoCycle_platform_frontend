@@ -87,6 +87,9 @@ describe('demonstração isolada da API EcoCycle', () => {
         const idLote = (await lote.json()).lote.id_lote;
         const producao = await chamar('/producao', { method: 'POST', body: { id_lote: idLote, id_usuario: 1, id_esteira: 1, turno: 'Manhã', status_producao: 'Em processamento', quantidade_entrada_kg: 12.5, quantidade_saida_kg: 0, rejeito_kg: 0, itens: [] } });
         expect(producao.status).toBe(201);
+        const idProducao = (await producao.json()).producao.id_producao;
+        const cadastrada = (await (await chamar('/producao')).json()).registros_producao.find((r) => r.id_producao === idProducao);
+        expect(cadastrada.status_producao).toBe('Disponível');
         expect((await chamar('/lotes', { method: 'POST', body: { pesoentrada_kg: 10 } })).status).toBe(422);
         expect(readFileSync(new URL('./db.json', import.meta.url), 'utf8')).toBe(fixtureOriginal);
     });

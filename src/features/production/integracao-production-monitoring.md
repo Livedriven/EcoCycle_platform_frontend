@@ -48,7 +48,7 @@ Legenda: **Decidida** = vem do escopo, do design ou do código existente. **Assu
 3. **D16:** qual o caminho da etapa 2, como o ID chega a ela, e ela valida o parâmetro?
 4. **D15:** a consulta (perfil `consulta`) pode ver esta tela?
 5. **D1/D2:** nome da pasta e o título da tela estão certos?
-6. **Mock:** não há produção com status Recebido ou Disponível, e a produção não tem `status`. Para testar, é preciso uma produção ligada a um lote com status Recebido (por exemplo, criada pela tela "Iniciar produção").
+6. **Mock:** a produção cadastrada pela tela "Iniciar produção" é guardada como `Disponível` (o mock converte o status inicial `Em processamento`); produções sem status herdam o do lote. O backend real pode se comportar de outra forma.
 7. **Relação com "Iniciar produção":** o design usa esse título. Esta lista substitui a tela de formulário, convive com ela ou é a etapa 1 do mesmo fluxo?
 8. **`classeStatus` (`ui.js`):** não li o arquivo. Se não tiver cor para "Recebido" e "Disponível", o selo sai com a cor padrão.
 
