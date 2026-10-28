@@ -8,8 +8,8 @@ vi.mock('../../shared/layout.js', () => ({
 }));
 
 let elementos;
-function entrar(perfil, exp = Math.floor(Date.now() / 1000) + 3600) {
-    const payload = Buffer.from(JSON.stringify({ nome: 'Teste', perfil, exp })).toString('base64url');
+function entrar(perfil, exp = Math.floor(Date.now() / 1000) + 3600, sub = '7') {
+    const payload = Buffer.from(JSON.stringify({ sub, nome: 'Teste', perfil, exp })).toString('base64url');
     saveSession('eyJhbGciOiJIUzI1NiJ9.' + payload + '.assinatura');
 }
 
@@ -59,7 +59,7 @@ beforeEach(() => {
     API.GET.mockReset().mockImplementation(async (rota) => ({
         '/lotes': [{ id: 1, status: 'Recebido', pesoentrada_kg: 10 }],
         '/fornecedores': [],
-        '/esteiras': [{ id: 2, nome_esteira: 'Esteira 2', status_esteira: 'Ativa' }]
+        '/equipamentos': [{ id: 2, nome_esteira: 'Esteira 2', status_esteira: 'LIGADA' }]
     })[rota]);
     API.POST.mockReset().mockResolvedValue({ id: 3 });
     clearSession();
@@ -82,11 +82,22 @@ describe('acesso a iniciar produção', () => {
     it.each(['administrador', 'gerente', 'operador'])('%s consegue carregar e iniciar produção', async (perfil) => {
         entrar(perfil);
         await abrir();
+        expect(API.GET).toHaveBeenCalledWith('/equipamentos');
+        expect(elementos.get('esteira').options).toHaveLength(2);
         await enviar();
         expect(location.replace).not.toHaveBeenCalled();
         expect(API.POST).toHaveBeenCalledExactlyOnceWith('/producao', expect.objectContaining({
-            id_lote: 1, id_esteira: 2, turno_producao: 'Manhã'
+            id_lote: 1, id_esteira: 2, id_usuario: 7, turno: 'Manhã',
+            status_producao: 'Em processamento', quantidade_entrada_kg: 10, quantidade_saida_kg: 0, rejeito_kg: 0, itens: []
         }));
+    });
+
+    it('não envia produção com sub não numérico, pois o schema exige id_usuario inteiro', async () => {
+        entrar('operador', undefined, 'login-antigo');
+        await abrir();
+        await enviar();
+        expect(API.POST).not.toHaveBeenCalled();
+        expect(elementos.get('aviso-envio').textContent).toContain('Entre novamente');
     });
 
     it.each(['ausente', 'invalida', 'expirada', 'consulta'])('barra entrada com sessão %s antes de buscar dados', async (estado) => {
