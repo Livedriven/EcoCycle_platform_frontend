@@ -1,5 +1,6 @@
 import { API_URL, API_TIMEOUT } from "./config";
 import { endSession, FORBIDDEN_URL } from "./session";
+import { caminhoApi, ROTAS_API, rotaPublica, normalizarResposta } from './api-contract.js';
 
 let redirecionando = false;
 
@@ -16,11 +17,11 @@ function abrirPaginaErro(destino) {
 /**
  * PADRONIZADORA
  * Recebe método, URL e corpo (opcional) e devolve a URL completa + as opções do fetch.
- * Só métodos com corpo (POST, PUT, PATCH, DELETE) enviam body; GET e HEAD nunca enviam.
+ * POST envia corpo em JSON quando informado; GET nunca envia corpo.
  */
-function padronizarRequisicao(metodo, url, corpo) {
+function padronizarRequisicao(metodo, url, corpo, autenticada) {
     const m = String(metodo || 'GET').toUpperCase();
-    const token = sessionStorage.getItem('token');
+    const token = autenticada ? sessionStorage.getItem('token') : null;
 
     const opcoes = {
         method: m,
@@ -51,7 +52,11 @@ function padronizarRequisicao(metodo, url, corpo) {
  * Chama a padronizadora, faz o fetch e devolve o JSON. Lança erro se falhar.
  */
 async function requisitar(metodo, url, corpo, { erroLocal = false } = {}) {
-    const req = padronizarRequisicao(metodo, url, corpo);
+    if (!ROTAS_API[caminhoApi(url)]?.includes(metodo)) {
+        throw new Error(`Operação não disponível na API: ${metodo} ${url}`);
+    }
+    const autenticada = !rotaPublica(url);
+    const req = padronizarRequisicao(metodo, url, corpo, autenticada);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), API_TIMEOUT);
     let respostaRecebida = false;
@@ -77,11 +82,14 @@ async function requisitar(metodo, url, corpo, { erroLocal = false } = {}) {
         }
 
         if (!resp.ok) {
+            if (resp.status >= 500 && resp.status <= 599) {
+                throw new Error('O serviço está temporariamente indisponível. Tente novamente em alguns instantes.');
+            }
             throw new Error('HTTP ' + resp.status);
         }
 
         // Status 204 significa "No Content", não tentamos ler o JSON.
-        return resp.status === 204 ? null : await resp.json();
+        return resp.status === 204 ? null : normalizarResposta(metodo, url, await resp.json());
 
     } catch (erro) {
         let msg = erro.message; // Ex: 'HTTP 404', 'HTTP 500'...
@@ -106,10 +114,7 @@ async function requisitar(metodo, url, corpo, { erroLocal = false } = {}) {
  */
 const API = {
     GET: (url, opcoes) => requisitar('GET', url, undefined, opcoes),
-    POST: (url, corpo) => requisitar('POST', url, corpo),
-    PUT: (url, corpo) => requisitar('PUT', url, corpo),
-    PATCH: (url, corpo) => requisitar('PATCH', url, corpo),
-    DELETE: (url) => requisitar('DELETE', url)
+    POST: (url, corpo, opcoes) => requisitar('POST', url, corpo, opcoes)
 };
 
 export default API;
