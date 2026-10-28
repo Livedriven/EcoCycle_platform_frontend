@@ -1,35 +1,32 @@
 // mocks/auth.cjs
 // Autenticação do mock: POST /login emite o JWT, POST /logout encerra o token e todas
-// as outras rotas exigem "Authorization: Bearer <token>". Ao validar, preenche
+// as outras rotas (exceto o diagnóstico público) exigem "Authorization: Bearer <token>". Ao validar, preenche
 // req.claims, que o rbac.cjs lê.
 // Ordem no json-server: auth.cjs primeiro, rbac.cjs depois.
 //
 // Dependências: npm i -D jsonwebtoken bcryptjs
 
-const fs = require("node:fs");
-const path = require("node:path");
+const { randomBytes, randomUUID } = require('node:crypto');
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 // Só para o mock. A API real tem o segredo dela, fora do código.
-const SEGREDO = process.env.JWT_SEGREDO ?? "ecocycle-segredo-de-desenvolvimento";
-// Para testar a queda de sessão: JWT_EXPIRA=15s npm run mock
-const EXPIRA_EM = process.env.JWT_EXPIRA ?? "8h";
-const ARQUIVO_DB = path.join(__dirname, "db.json"); // ajuste se o db.json estiver em outra pasta
+const SEGREDO = process.env.MOCK_JWT_SECRET ?? randomBytes(32).toString('hex');
+// Para testar a queda de sessão, configure MOCK_JWT_EXPIRA=15s.
+const EXPIRA_EM = process.env.MOCK_JWT_EXPIRA ?? "8h";
 
 // Tokens encerrados pelo POST /logout (token -> exp em segundos). Ficam só em
 // memória, até vencerem: reiniciar o mock limpa a lista.
 const revogados = new Map();
 
-// Lê o arquivo a cada login: simples, e enxerga usuários alterados com o servidor ligado.
-function buscarUsuario(login) {
-    const db = JSON.parse(fs.readFileSync(ARQUIVO_DB, "utf8"));
-    return db.usuarios.find((u) => u.login_usuario === login);
+// Consulta somente os usuários fictícios da instância em memória.
+function buscarUsuario(req, login) {
+    return req.app.db.get('usuarios').find((u) => u.login_usuario === login).value();
 }
 
 function tratarLogin(req, res) {
-    const { login, senha } = req.body ?? {};
-    const usuario = typeof login === "string" ? buscarUsuario(login) : undefined;
+    const { usuario: login, senha } = req.body ?? {};
+    const usuario = typeof login === "string" ? buscarUsuario(req, login) : undefined;
     const senhaOk =
         usuario && typeof senha === "string" && bcrypt.compareSync(senha, usuario.senha_hash);
 
@@ -40,11 +37,17 @@ function tratarLogin(req, res) {
 
     // Payload no formato que o front (session.js) lê: { sub, nome, perfil, iat, exp }
     const token = jwt.sign(
-        { nome: usuario.nome_usuario, perfil: usuario.nivel_acesso },
+        { nome: usuario.nome_usuario, usuario: usuario.login_usuario, perfil: usuario.nivel_acesso },
         SEGREDO,
-        { subject: String(usuario.id), expiresIn: EXPIRA_EM, algorithm: "HS256" }
+        { subject: String(usuario.id), expiresIn: EXPIRA_EM, algorithm: "HS256", jwtid: randomUUID() }
     );
-    return res.json({ token });
+    return res.json({
+        mensagem: 'Autenticação realizada com sucesso!',
+        access_token: token,
+        token_type: 'bearer',
+        perfil: usuario.nivel_acesso.toUpperCase(),
+        acesso_liberado: true,
+    });
 }
 
 /** Tira da lista os tokens que já venceram: depois disso o jwt.verify os recusa sozinho. */
@@ -61,6 +64,9 @@ function ehRota(req, rota) {
 
 module.exports = (req, res, next) => {
     if (req.method === "OPTIONS") return next();
+    if (req.method === 'GET' && ['/health/database', '/api/health/database'].includes(req.path)) {
+        return res.json({ status: 'ok', banco: 'mock em memória' });
+    }
 
     // O rewriter do routes.json pode ou não ter tirado o /api antes daqui.
     if (ehRota(req, "/login")) {
@@ -78,7 +84,7 @@ module.exports = (req, res, next) => {
         return res.status(401).json({ erro: "token inválido ou expirado" });
     }
 
-    if (revogados.has(token)) {
+    if (revogados.has(token) && !ehRota(req, '/logout')) {
         return res.status(401).json({ erro: "sessão encerrada" });
     }
 
@@ -86,7 +92,7 @@ module.exports = (req, res, next) => {
     if (ehRota(req, "/logout")) {
         limparRevogados();
         revogados.set(token, req.claims.exp);
-        return res.status(204).end();
+        return res.json({ mensagem: 'Sessão encerrada com sucesso.' });
     }
 
     return next();
