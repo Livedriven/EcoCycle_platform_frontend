@@ -1,3 +1,5 @@
+> Documento histórico de implementação. Para métodos, rotas, payloads e envelopes vigentes, consulte [o contrato da API](../../../docs/shared/api.md).
+
 # Cadastrar fornecedor: ajustes fora de `src/features/suppliers/`
 
 Branch: `feature/cadastrar-fornecedor`, criada a partir da `main`.
@@ -14,7 +16,7 @@ Arquivos novos da tela: `src/features/suppliers/new-supplier.html` e `new-suppli
 | `src/shared/layout.js` (`MENU`) | `href` do item "Cadastrar fornecedor" | Não | Baixo: linha diferente da `Iniciar produção` |
 | `src/shared/formatters.js` | `formatCnpj` e `formatTelefone` (opcional) | Não | Baixo |
 | `docs/shared/validators.md`, `docs/arquiteture.md` | Atualizar documentação | Sim (`validators.md`) | Médio |
-| `session.js`, `mocks/rbac.cjs` | **Nada**: `fornecedor.cadastrar` já existe (administrador e gerente) | Não | Nenhum |
+| `session.js` | **Nada**: `fornecedor.cadastrar` já existe (administrador e gerente) | Não | Nenhum |
 
 ## Ordem sugerida para não dar problema
 
@@ -237,13 +239,13 @@ Se entrar, acrescente testes em `formatters.test.js` (se existir) e uma linha em
 
 ## 7. O que **não** precisa mudar
 
-- **Permissão:** `fornecedor.cadastrar` já existe em `session.js` e em `mocks/rbac.cjs`. Use `montarLayout({ acao: 'fornecedor.cadastrar' })`. Operador e consulta caem na página 403.
-- **`api.js`:** `API.POST('/fornecedores', payload)`. O mock já libera para administrador e gerente.
+- **Permissão:** `fornecedor.cadastrar` já existe em `session.js`. Use `montarLayout({ acao: 'fornecedor.cadastrar' })`. Operador e consulta caem na página 403.
+- **`api.js`:** `API.POST('/fornecedores', payload)`. A permissão do portal libera para administrador e gerente.
 - **Estilos:** só Bootstrap e as classes da EcoCycle (`.btn-eco`, `.estado`, `.conteudo`), sem CSS novo.
 
-## 8. Pontos a combinar com a E2 e o dono do mock
+## 8. Pontos a combinar com a E2 responsável pelo backend
 
-- **CNPJ duplicado:** o mock grava CNPJ repetido sem reclamar. A API real deve recusar, provavelmente com `409`, e o `api.js` mostraria só "HTTP 409". Combine o formato da mensagem de erro.
+- **CNPJ duplicado:** a API deve recusar duplicidades; confira o status e a mensagem devolvidos pelo backend.
 - **Nomes dos campos (confirmado):** o banco grava `cnpj_fornecedor`, `nome_fornecedor`, `telefone_fornecedor`, `email_fornecedor` e `endereco_fornecedor`. O payload usa exatamente esses nomes.
 - **CNPJ sem máscara:** confirme que a API espera só dígitos.
 - **Responsável pela ação:** o `id_usuario` não vai no corpo; a API pega do token.
