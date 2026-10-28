@@ -8,8 +8,6 @@ import {
     totalRecebido,
     totalProduzido,
     totalPorMaterial,
-    producaoPorDia,
-    producaoPorMes,
     recebidoPorFornecedor,
     lotesPorStatus,
     alertasAtivos,
@@ -18,9 +16,7 @@ import {
 import {
     formatNumber,
     formatKg,
-    formatDateTime,
-    formatDayMonth,
-    formatMonth
+    formatDateTime
 } from '../../shared/formatters.js';
 import { createBarChart, createDoughnutChart, CORES } from '../../shared/charts.js';
 
@@ -35,21 +31,11 @@ const SESSAO = montarLayout();
 const INTERVALO_ATUALIZACAO_MS = 5000;
 let carregando = false;
 
-// Links "Testar estados" do dashboard.html: ?simular=vazio ou ?simular=erro
-const SIMULAR = new URLSearchParams(window.location.search).get('simular');
-const BLOCO_SIMULADO = new URLSearchParams(window.location.search).get('bloco');
-
 /* ---------- Busca de dados ---------- */
 
-function buscar(caminho, id) {
-    const simular = !BLOCO_SIMULADO || BLOCO_SIMULADO === id;
-    if (simular && SIMULAR === 'erro') {
-        return Promise.reject(new Error('Erro simulado para teste.'));
-    }
-    if (simular && SIMULAR === 'vazio') {
-        return Promise.resolve([]);
-    }
+function buscar(caminho) {
     return API.GET(caminho, { erroLocal: true }).then((dados) => {
+        if (caminho.startsWith('/producao/dashboard-')) return dados;
         if (dados == null) return [];
         if (!Array.isArray(dados)) throw new Error('Resposta inválida da API.');
         return dados;
@@ -151,14 +137,16 @@ function prepararIndicadores(lotes, producao, alertas) {
     return () => {
         const porMaterial = totalPorMaterial(producao, MATERIAIS);
         const ativos = alertasAtivos(alertas).length;
+        const detalhado = producao.length === 0 || producao.every((r) => r.tipo_material);
+        const pesoMaterial = (material) => detalhado ? formatKg(porMaterial[material]) : 'Não informado';
         const cards = [
             cardIndicador('ind-azul', 'Total recebido', formatKg(totalRecebido(lotes)), 'resumo'),
             cardIndicador('ind-info', 'Total processado', formatKg(totalProduzido(producao)), 'resumo'),
             cardIndicador(ativos > 0 ? 'ind-perigo' : 'ind-sucesso', 'Alertas ativos', String(ativos), 'resumo'),
-            cardIndicador('ind-azul', 'Plástico', formatKg(porMaterial['Plástico'])),
-            cardIndicador('ind-verde', 'Metal', formatKg(porMaterial['Metal'])),
-            cardIndicador('ind-info', 'Alumínio', formatKg(porMaterial['Alumínio'])),
-            cardIndicador('ind-info', 'Rejeito', formatKg(porMaterial['Rejeito']))
+            cardIndicador('ind-azul', 'Plástico', pesoMaterial('Plástico')),
+            cardIndicador('ind-verde', 'Metal', pesoMaterial('Metal')),
+            cardIndicador('ind-info', 'Alumínio', pesoMaterial('Alumínio')),
+            cardIndicador('ind-info', 'Rejeito', pesoMaterial('Rejeito'))
         ];
         document.querySelector('#bloco-indicadores .conteudo').replaceChildren(...cards);
         if (lotes.length === 0 && producao.length === 0 && alertas.length === 0) {
@@ -168,37 +156,19 @@ function prepararIndicadores(lotes, producao, alertas) {
     };
 }
 
-function datasetsPorMaterial(series) {
-    return MATERIAIS.map((material) => ({ label: material, data: series[material], cor: CORES[material] }));
-}
-
-function temProducao(series) {
-    return MATERIAIS.some((m) => series[m].some((v) => v > 0));
-}
-
-function prepararDiaria(producao) {
-    const { chaves, series } = producaoPorDia(producao, 7, new Date(), MATERIAIS);
-    if (!temProducao(series)) {
-        return null;
+function prepararConsolidado(dados, periodo) {
+    if (Array.isArray(dados) && dados.length === 0) return null;
+    const massas = dados?.balanco_massas_kg;
+    const valores = [massas?.total_material_entrada, massas?.total_produzido_saida, massas?.total_rejeitos_perdas];
+    if (valores.some((v) => v == null || !Number.isFinite(Number(v)) || Number(v) < 0)) {
+        throw new Error('Resposta inválida do dashboard de produção.');
     }
+    if (valores.every((v) => Number(v) === 0)) return null;
     return () => createBarChart(
-        document.getElementById('grafico-diaria'),
-        chaves.map(formatDayMonth),
-        datasetsPorMaterial(series),
-        { empilhado: true, rotuloY: 'kg', formatarValor: formatNumber }
-    );
-}
-
-function prepararMensal(producao) {
-    const { chaves, series } = producaoPorMes(producao, 6, new Date(), MATERIAIS);
-    if (!temProducao(series)) {
-        return null;
-    }
-    return () => createBarChart(
-        document.getElementById('grafico-mensal'),
-        chaves.map(formatMonth),
-        datasetsPorMaterial(series),
-        { empilhado: true, rotuloY: 'kg', formatarValor: formatNumber }
+        document.getElementById('grafico-' + periodo),
+        ['Entrada', 'Saída produzida', 'Rejeitos e perdas'],
+        [{ label: 'Peso (kg)', data: valores.map(Number), cor: CORES.info }],
+        { rotuloY: 'kg', formatarValor: formatNumber }
     );
 }
 
@@ -312,23 +282,35 @@ function prepararAlertas(alertas) {
 
 const BLOCOS = {
     'bloco-indicadores': { fontes: ['/lotes', '/producao', '/alertas'], preparar: prepararIndicadores },
-    'bloco-diaria': { fontes: ['/producao'], preparar: prepararDiaria },
-    'bloco-mensal': { fontes: ['/producao'], preparar: prepararMensal },
+    'bloco-diaria': { fontes: ['/producao/dashboard-diario'], preparar: (d) => prepararConsolidado(d, 'diaria') },
+    'bloco-mensal': { fontes: ['/producao/dashboard-mensal'], preparar: (d) => prepararConsolidado(d, 'mensal') },
+    'bloco-trimestral': { fontes: ['/producao/dashboard-trimestral'], preparar: (d) => prepararConsolidado(d, 'trimestral') },
     'bloco-co2': { fontes: ['/producao'], preparar: prepararCo2 },
     'bloco-fornecedores': { fontes: ['/lotes', '/fornecedores'], preparar: prepararFornecedores },
     'bloco-status-lotes': { fontes: ['/lotes'], preparar: prepararStatusLotes },
-    'bloco-esteira': { fontes: ['/esteiras'], preparar: prepararEsteira },
+    'bloco-esteira': { fontes: ['/equipamentos'], preparar: prepararEsteira },
     'bloco-alertas': { fontes: ['/alertas'], preparar: prepararAlertas }
 };
 const pendentes = new Map();
 
+function rotaDoPeriodo(caminho) {
+    const hoje = new Date();
+    if (caminho.endsWith('/dashboard-diario')) {
+        const data = [hoje.getDate(), hoje.getMonth() + 1, hoje.getFullYear()].map((v) => String(v).padStart(2, '0')).join('/');
+        return caminho + '?' + new URLSearchParams({ data });
+    }
+    if (caminho.endsWith('/dashboard-mensal')) return caminho + '?' + new URLSearchParams({ mes: hoje.getMonth() + 1, ano: hoje.getFullYear() });
+    if (caminho.endsWith('/dashboard-trimestral')) return caminho + '?' + new URLSearchParams({ trimestre: Math.floor(hoje.getMonth() / 3) + 1, ano: hoje.getFullYear() });
+    return caminho;
+}
+
 function carregarBloco(id, cache = new Map()) {
     if (pendentes.has(id)) return pendentes.get(id);
     const { fontes, preparar } = BLOCOS[id];
-    const requisicoes = fontes.map((caminho) => {
-        // Simulação por bloco não deve contaminar os demais consumidores da fonte.
-        const chave = BLOCO_SIMULADO === id ? id + caminho : caminho;
-        if (!cache.has(chave)) cache.set(chave, Promise.resolve().then(() => buscar(caminho, id)));
+    const requisicoes = fontes.map((fonte) => {
+        const caminho = rotaDoPeriodo(fonte);
+        const chave = caminho;
+        if (!cache.has(chave)) cache.set(chave, Promise.resolve().then(() => buscar(caminho)));
         return cache.get(chave);
     });
     const carga = montarBloco(id, requisicoes, preparar).finally(() => pendentes.delete(id));
