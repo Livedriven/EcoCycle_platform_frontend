@@ -24,15 +24,22 @@
       <!-- Gráficos de produção diária e mensal, lado a lado -->
       <div class="row g-3 mb-4">
         <div class="col-lg-6"><div class="card h-100 shadow-sm" id="bloco-diaria">
-          <div class="card-header">Produção diária (últimos 7 dias)</div>
+          <div class="card-header">Produção diária (hoje)</div>
           <div class="card-body"><div class="estado"></div>
             <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-diaria"></canvas></div></div></div>
         </div></div>
         <div class="col-lg-6"><div class="card h-100 shadow-sm" id="bloco-mensal">
-          <div class="card-header">Produção mensal (últimos 6 meses)</div>
+          <div class="card-header">Produção mensal (mês atual)</div>
           <div class="card-body"><div class="estado"></div>
             <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-mensal"></canvas></div></div></div>
         </div></div>
+      </div>
+
+      <div class="card shadow-sm mb-4" id="bloco-trimestral">
+        <div class="card-header">Produção trimestral (trimestre atual)</div>
+        <div class="card-body"><div class="estado"></div>
+          <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-trimestral"></canvas></div></div>
+        </div>
       </div>
 
       <!-- CO₂ evitado: total à esquerda e gráfico por material à direita -->
@@ -79,9 +86,6 @@
         </div></div>
       </div>
 
-      <!-- Simulações globais ou restritas a um bloco, lidas pelo dashboard.js -->
-      <p class="text-center small mt-4" style="color:var(--eco-texto-suave)">
-        Testar estados (dados simulados): <a href="?">normal</a> · <a href="?simular=vazio">vazio</a> · <a href="?simular=erro">erro</a> · <a href="?simular=erro&amp;bloco=bloco-diaria">erro apenas na produção diária</a> · <a href="?simular=vazio&amp;bloco=bloco-esteira">esteiras vazias</a></p>
     </main>
   </div>
   <script type="module" src="dashboard.js"></script>
