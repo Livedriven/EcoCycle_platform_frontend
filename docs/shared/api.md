@@ -1,110 +1,86 @@
-# api.js
+# Integração com a API EcoCycle
 
-Camada única de comunicação com a API. Em vez de chamar `fetch` em cada tela, o projeto usa o objeto `API`, que monta a URL, envia o token e o corpo em JSON, limita o tempo de espera e traduz os erros em mensagens prontas para mostrar ao usuário.
+`src/shared/api.js` centraliza HTTP, JWT, timeout e erros. O contrato de métodos, rotas e respostas fica em `src/shared/api-contract.js`, conferido nos routers, repositories e schemas do backend local.
 
-```js
-import API from '../../shared/api.js';   // export default
-```
+Configure `VITE_API_URL=http://localhost:8000/api`. Os caminhos abaixo são relativos a essa base; não acrescente `/api` nas chamadas das telas.
 
----
-
-## O objeto `API`
-
-| Método | Assinatura | Envia corpo? |
+| Método | Caminho | Acesso |
 |---|---|---|
-| `API.GET` | `API.GET(url)` | Não |
-| `API.POST` | `API.POST(url, corpo)` | Sim |
-| `API.PUT` | `API.PUT(url, corpo)` | Sim |
-| `API.PATCH` | `API.PATCH(url, corpo)` | Sim |
-| `API.DELETE` | `API.DELETE(url)` | Não |
+| POST | `/login` | Público |
+| POST | `/logout` | JWT |
+| GET | `/health/database` | Público |
+| GET, POST | `/materiais` | JWT |
+| GET, POST | `/fornecedores` | JWT |
+| GET, POST | `/lotes` | JWT |
+| GET | `/equipamentos` | JWT |
+| POST | `/equipamentos/status` | JWT |
+| GET, POST | `/producao` | JWT |
+| GET | `/producao/dashboard-diario` | JWT |
+| GET | `/producao/dashboard-mensal` | JWT |
+| GET | `/producao/dashboard-trimestral` | JWT |
+| POST | `/telemetria` | JWT |
+| GET | `/telemetria/historico` | JWT |
+| GET | `/alertas` | JWT |
 
-- `url` é só o caminho (ex.: `/lotes`, `/lotes/3`). O endereço base vem de `API_URL` (do `.env`).
-- `corpo` é um objeto JavaScript comum; a conversão para JSON é automática.
-- Todos devolvem uma `Promise` com o JSON já convertido, ou `null` quando a API responde `204`.
+Não há PUT/PATCH, DELETE ou consulta por `/:id` nesse contrato. O cliente recusa combinações de rota e método não previstas. O portal consulta equipamentos e telemetria; os comandos IoT são emitidos por outros clientes. Não é necessário criar uma tela para cada rota da API.
 
----
-
-## O que acontece em toda chamada
-
-1. A URL final é `API_URL + url`.
-2. Todas as requisições enviam `Accept: application/json`.
-3. Se houver sessão, envia `Authorization: Bearer <token>` (o token salvo pelo `session.js`).
-4. GET e HEAD nunca enviam corpo. Os demais enviam o corpo só se ele for informado, com `Content-Type: application/json`.
-5. Se a API não responder em `API_TIMEOUT` milissegundos (8000 por padrão), a requisição é cancelada.
-
----
-
-## Erros
-
-Quem chama `API.*` recebe sempre um `Error` cuja `message` já pode ser mostrada ao usuário.
-
-| Situação | `message` |
-|---|---|
-| `401` com token enviado (token inválido, expirado ou revogado) | Além do erro, **encerra a sessão e volta ao login** com o aviso "Sua sessão expirou". |
-| `403` (usuário autenticado sem permissão para a operação) | `Você não tem permissão para acessar estes dados.` e redireciona para a página de acesso negado. |
-| `404` | `HTTP 404` e redireciona para a página não encontrada. |
-| `500` a `599` | `HTTP <status>` e redireciona para serviço indisponível. |
-| Outros status de erro (como `400`, `409` e `422`) | `HTTP <status>`, sem redirecionamento. |
-| A API não respondeu a tempo | Mensagem com o limite configurado em segundos e redireciona para serviço indisponível. |
-| Servidor fora do ar, URL errada ou sem rede | `Não foi possível conectar à API. Confira se o servidor está rodando.` e redireciona para serviço indisponível. |
-
-O erro original fica em `erro.cause`, para depuração.
-
-> **Não envie `id_usuario` no corpo.** A API obtém o responsável pela ação a partir do token (Especificação MVP2) e não aceita esse campo enviado pelo front-end.
-
-Na página de serviço indisponível, **Tentar novamente** retorna à página em que a falha ocorreu (com filtros e âncora), sem reenviar automaticamente operações de escrita. Apenas destinos da mesma origem são aceitos. Falhas simultâneas provocam um único redirecionamento. As páginas de erro não fazem chamadas à API.
-
----
-
-## Exemplos
-
-### Buscar dados
+## Uso e autenticação
 
 ```js
-try {
-    const lotes = await API.GET('/lotes');
-    // ...
-} catch (erro) {
-    mostrarMensagem(erro.message);   // já é uma frase pronta
-}
+const lotes = await API.GET('/lotes', { erroLocal: true });
+const lote = await API.POST('/lotes', {
+    id_fornecedor: 1,
+    codigo_lote: 'L-001',
+    status_lote: 'Recebido',
+    peso_recebido_kg: 640.35,
+    data_entrada: '2026-10-27T10:00:00',
+});
 ```
 
-### Criar, alterar e remover
+GET não envia corpo. POST serializa o objeto em JSON com `Content-Type: application/json`. Todas as chamadas enviam `Accept` e, nas rotas protegidas, `Authorization: Bearer <token>` da sessão. Login e diagnóstico nunca enviam JWT, mesmo com uma sessão salva.
 
-```js
-const novo = await API.POST('/lotes', { id_fornecedor: 1, pesoentrada_kg: 640.35 });
-await API.PUT('/lotes/3', { ...loteCompleto });          // substitui o registro inteiro
-await API.PATCH('/lotes/3', { status: 'Finalizado' });   // altera só alguns campos
-await API.DELETE('/lotes/3');                            // normalmente devolve null (204)
-```
+O login recebe `{ usuario, senha }` e retorna `{ mensagem, access_token, token_type, perfil, acesso_liberado }`. O logout real retorna HTTP 200 com mensagem; também se aceita resposta 204. A revogação é mantida apenas na memória do processo do backend, sem compartilhamento entre workers ou persistência após reinício. O portal limpa a sessão local mesmo quando o aviso de logout falha.
 
-### Várias chamadas em paralelo
+## Respostas e campos
 
-```js
-const [lotes, fornecedores] = await Promise.all([API.GET('/lotes'), API.GET('/fornecedores')]);
-```
+O adaptador extrai as listas nomeadas e preserva o modelo interno das telas. Envelopes inválidos geram erro, em vez de serem exibidos como listas vazias.
 
----
+| Rota | Envelope | Principais adaptações |
+|---|---|---|
+| `/materiais` | `materiais` | `id_material → id`; catálogo de tipos, sem pesos |
+| `/fornecedores` | `fornecedores` | `id_fornecedor → id`, `cnpj → cnpj_fornecedor` |
+| `/lotes` | `lotes` | `id_lote → id`, `peso_recebido_kg → pesoentrada_kg`, `status_lote → status` |
+| `/equipamentos` | `equipamentos` | `id_esteira → id` |
+| `/producao` | `registros_producao` | `id_producao → id`, `data_inicio → data_hora`, `turno → turno_producao`, `quantidade_saida_kg → peso_kg`, `status_producao → status` |
+| `/telemetria/historico` | `historico` | `id_leitura_sensor → id`, `timestamp → datahora_leitura`, `temperatura → temperatura_leitura_c`, `peso → peso_leitura_kg`, `status_registrado → status_leitura` |
+| `/alertas` | `alertas` | `id_alerta → id`, `id_leitura_sensor → id_leitura`, `data_hora_alerta → datahora_alerta`; `SIM/NAO → boolean` |
 
-## Endpoints do mock
+Os cadastros retornam uma entidade (`lote`, `fornecedor`, `material`, `producao`), também extraída pelo cliente. Materiais, lotes e produção usam HTTP 201; fornecedores usa HTTP 200.
 
-O mock (`npm run mock`) responde tanto em `/lotes` quanto em `/api/lotes` (`mocks/routes.json`).
+O fornecedor exige `id_fornecedor` manual, `cnpj`, nome, telefone, e-mail e endereço. O lote envia `peso_recebido_kg` e `status_lote`, sem `id: null`.
 
-| Endpoint | Dados |
-|---|---|
-| `POST /login` | Recebe `{ login, senha }` e devolve `{ token }`. |
-| `POST /logout` | Revoga o token enviado (responde `204`). |
-| `/lotes`, `/producao`, `/fornecedores`, `/alertas`, `/esteiras`, `/leituras_sensor`, `/usuarios`, `/logs_sistema` | Coleções do `mocks/db.json` (GET, POST, PUT, PATCH e DELETE do json-server). |
+O início de produção envia `id_lote`, `id_usuario` (identificador numérico do `sub` do JWT), `id_esteira`, `turno`, `status_producao`, `quantidade_entrada_kg`, `quantidade_saida_kg`, `rejeito_kg`, `data_inicio` e `itens`. A entrada corresponde ao peso do lote selecionado; saída e rejeito começam em zero.
 
-Todas as rotas, exceto `/login`, exigem o token. As permissões por perfil ficam em `mocks/rbac.cjs`, com a mesma matriz do MVP descrita em [session.md](session.md#permissões):
+## Dashboards e limitações de dados
 
-| Requisição | Quem pode |
-|---|---|
-| `GET` em `/lotes`, `/fornecedores`, `/alertas`, `/producao`, `/esteiras`, `/leituras_sensor` | Todos os perfis |
-| `POST /fornecedores` | administrador, gerente |
-| `POST /lotes` | administrador, gerente, operador |
-| `POST /producao` (iniciar) e `PATCH /producao/:id` (finalizar) | administrador, gerente, operador |
-| `/usuarios` (qualquer método) | ninguém (fora do MVP) |
-| Qualquer outra (`PUT`, `DELETE`, `/logs_sistema`...) | ninguém |
+Os três gráficos usam `balanco_massas_kg` do backend: `total_material_entrada`, `total_produzido_saida` e `total_rejeitos_perdas`. As consultas usam o dia, mês e trimestre atuais:
 
-O resto recebe `403 { "erro": "sem permissão" }`. O administrador não tem passe livre: segue a matriz como os outros perfis.
+- Diário: `?data=DD/MM/AAAA`, codificada por `URLSearchParams`.
+- Mensal: `?mes=1..12&ano=AAAA`.
+- Trimestral: `?trimestre=1..4&ano=AAAA`.
+
+`GET /producao` atualmente não inclui composição por material nem os itens do ciclo. `GET /materiais` é um catálogo e não substitui esse detalhamento. Por isso, o relatório de materiais informa a indisponibilidade desses pesos e os cartões do dashboard mostram “Não informado”. A estimativa de CO₂ depende desse detalhamento. Listas antigas com `tipo_material`, `peso_kg` e `data_hora` continuam compatíveis.
+
+O histórico de telemetria não declara filtro por equipamento: o portal busca `/telemetria/historico` e filtra por `id_esteira` localmente.
+
+## Falhas
+
+401 com JWT encerra a sessão; 403 abre acesso negado. Falhas 404, de servidor, rede e timeout abrem as páginas de erro, exceto com `{ erroLocal: true }`, quando a tela mostra a falha localmente. Outros erros, como 409 e 422, ficam no formulário. O erro original é preservado em `cause`.
+
+Use a API real configurada em `VITE_API_URL` também durante o desenvolvimento.
+
+`api-contract.test.js` verifica os adaptadores e as rotas usadas pelo código.
+
+## Modo de demonstração
+
+Os mocks são opcionais: `npm run mock` inicia a API em memória, e `npm run dev:demo` abre o frontend na porta 5174 usando `.env.demo`. O frontend normal continua com a API real do `.env`. A troca é explícita, com sessões separadas por origem e identificação visual da demonstração. Veja [mocks/README.md](../../mocks/README.md).
