@@ -13,7 +13,7 @@ O front-end é organizado **por funcionalidades**:
 
 O portal é a interface de monitoramento da **E1** (dashboard, leituras e alertas). As outras equipes cuidam da API (E2), do banco (E3), do simulador do chão de fábrica (E4), do ERP e da tela de operação (E5) e do PWA de consulta (E6).
 
-O front-end conversa **somente com a API** (E2). Enquanto a API não está pronta, as telas usam o **mock** (`mocks/`, servido pelo json-server). Na integração, só muda a URL no `.env`.
+O front-end conversa **somente com a API** (E2), por padrão em `http://localhost:8000/api`.
 
 A API entrega os **registros**; o **front-end calcula os totais** (dashboard, produção e materiais), sempre pelo `shared/calculations.js`.
 
@@ -29,11 +29,6 @@ A API entrega os **registros**; o **front-end calcula os totais** (dashboard, pr
 ├── docs/
 │   ├── arquiteture.md            # este arquivo
 │   └── shared/                   # documentação dos módulos de src/shared
-├── mocks/
-│   ├── db.json                   # dados de teste
-│   ├── routes.json               # faz o mock responder também em /api/...
-│   ├── auth.cjs                  # POST /login (emite JWT), POST /logout (revoga) e exige o token
-│   └── rbac.cjs                  # matriz de permissões do MVP (403 para o que o perfil não pode)
 ├── public/img/logo.png
 └── src/
     ├── shared/
@@ -83,16 +78,16 @@ A API entrega os **registros**; o **front-end calcula os totais** (dashboard, pr
 | Pasta | Tela | Endpoint | Requisito |
 |---|---|---|---|
 | `login` | Login | `POST /login` | RF01 |
-| `dashboard` | Indicadores, gráficos, esteiras e alertas | `/lotes`, `/producao`, `/fornecedores`, `/alertas`, `/esteiras` | RF04, RF13 |
+| `dashboard` | Indicadores, gráficos, esteiras e alertas | `/lotes`, `/producao`, `/producao/dashboard-diario`, `/producao/dashboard-mensal`, `/producao/dashboard-trimestral`, `/fornecedores`, `/alertas`, `/equipamentos` | RF04, RF13 |
 | `production` | Produção diária com filtro por data | `/producao` | RF05 |
 | `batches` | Listagem, detalhes e cadastro de lotes | `/lotes` | RF06, RF07 |
 | `materials` | Relatório de plástico, metal, alumínio e rejeito por lote e dia, com totais, filtros e gráfico | `/producao` | RF08 |
 | `alerts` | Alertas ativos e histórico | `/alertas` | RF09 |
-| `users` | Reservada (gerenciar usuários está fora do MVP: todos os perfis veem "acesso negado") | `/usuarios` | RF10 |
-| `conveyor` | Consulta, detalhes em modal e status de múltiplas esteiras | `/esteiras`, `/leituras_sensor`, `/alertas` | RF12 |
+| `users` | Reservada (gerenciar usuários está fora do MVP: todos os perfis veem "acesso negado") | — (sem chamada à API) | RF10 |
+| `conveyor` | Consulta, detalhes em modal e status de múltiplas esteiras | `/equipamentos`, `/telemetria/historico`, `/alertas` | RF12 |
 | `errors` | Páginas 403, 404 e indisponibilidade | — | — |
 
-Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shared/session.js` (matriz `PERMISSOES`, `can` e a guarda `requireLogin`), no botão **Sair** do `layout.js` e no `mocks/rbac.cjs`.
+Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shared/session.js` (matriz `PERMISSOES`, `can` e a guarda `requireLogin`), no botão **Sair** do `layout.js`.
 
 ### Matriz de permissões (Especificação MVP2, seção 3)
 
@@ -101,12 +96,12 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
 | Login e consulta de dashboard, lotes, fornecedores, alertas e estoque | Sim | Sim | Sim | Sim |
 | Cadastrar fornecedor | Sim | Sim | Não | Não |
 | Registrar lote | Sim | Sim | Sim | Não |
-| Iniciar e finalizar produção | Sim | Sim | Sim | Não |
+| Iniciar produção (API atual sem rota de finalização) | Sim | Sim | Sim | Não |
 | Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
 
-- A matriz existe em dois lugares que precisam andar juntos: `PERMISSOES` em `src/shared/session.js` (interface) e `mocks/rbac.cjs` (mock da API).
+- A matriz da interface fica em `PERMISSOES`, em `src/shared/session.js`; a autorização de cada operação é aplicada pelo backend.
 - A interface pode esconder botões, mas a API verifica a permissão em cada operação protegida (RN12): `401` para token ausente, inválido ou expirado e `403` para usuário sem permissão.
-- A API obtém o responsável pela ação a partir da identidade autenticada: o front-end **não envia** `id_usuario` no corpo das requisições.
+- O schema atual de `POST /producao` exige `id_usuario`: o frontend usa o identificador numérico `sub` do JWT. Os demais cadastros não enviam esse campo. Veja o contrato em [api.md](shared/api.md).
 - O simulador (E4) não é usuário humano: usa credencial de dispositivo (ex.: `X-API-KEY`) nas rotas próprias, fora do portal.
 
 ---
@@ -114,7 +109,7 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
 ## 5. Regras de cálculo dos totais
 
 - O `calculations.js` recebe listas já carregadas e devolve números: não busca dados nem mexe na tela.
-- Os nomes dos campos da API ficam só em `CAMPOS`, no topo do arquivo. Se a API real usar outros nomes, só ali muda.
+- `api-contract.js` adapta envelopes e campos da API ao modelo das telas. `CAMPOS` descreve esse modelo interno para os cálculos. Os dashboards de massas usam os consolidados calculados pelo backend.
 - Somas com decimais são arredondadas **na saída** (2 casas).
 - A soma só está certa se a API devolver **todos** os registros do período. Respostas paginadas deixariam o total errado.
 - Os fatores de CO₂ (`FATORES_CO2`) são **provisórios** e precisam ser confirmados com o professor.
@@ -130,7 +125,7 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
   2. Tem validação onde há formulário.
   3. Trata erro da API e mostra mensagem clara.
   4. Respeita as permissões do perfil.
-  5. Totais calculados pelo `calculations.js` e conferidos com os dados do mock.
+  5. Totais calculados pelo `calculations.js` e conferidos com os registros retornados pela API.
   6. Funciona em celular, tablet e desktop.
   7. Passou no lint e nos testes.
   8. Foi revisada por outra pessoa.
@@ -144,7 +139,7 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
 2. Origem do status da esteira (RF12 e dashboard).
 3. Filtro por período nos endpoints de produção, lotes e materiais, e se devolvem todos os registros do filtro ou fazem paginação.
 4. Unidade dos pesos (kg ou t) e nomes dos campos.
-5. Formato da resposta do login (token, nome, perfil, expiração) e do logout.
+5. Formato da resposta do logout e campos opcionais de identificação no JWT (o login já usa `access_token`, `token_type`, `perfil` e `acesso_liberado`).
 6. Campo que diferencia alerta ativo de histórico.
 
 **Com a E5 e o professor**
