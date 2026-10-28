@@ -150,7 +150,7 @@ if (SESSAO) {
             const [registros, lotes, esteiras] = await Promise.all([
                 API.GET('/producao', { erroLocal: true }),
                 API.GET('/lotes', { erroLocal: true }),
-                API.GET('/esteiras', { erroLocal: true })
+                API.GET('/equipamentos', { erroLocal: true })
             ]);
             const novasProducoes = enriquecerProducoes(registros, lotes, esteiras);
             const assinatura = JSON.stringify(novasProducoes);
