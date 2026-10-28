@@ -22,6 +22,40 @@ afterEach(() => {
 });
 
 describe('tratamento de erros da API', () => {
+    it('mantém a falha da API real sem tentar outro servidor automaticamente', async () => {
+        fetch.mockRejectedValue(new TypeError('Failed to fetch'));
+        await expect(API.GET('/lotes')).rejects.toThrow('Não foi possível conectar');
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(fetch.mock.calls[0][0]).toBe('https://api.example.test/lotes');
+    });
+    it.each([['POST', '/login'], ['GET', '/health/database']])('não envia JWT em %s %s, mesmo com sessão', async (metodo, rota) => {
+        sessionStorage.getItem.mockReturnValue('jwt-salvo');
+        fetch.mockResolvedValue({ status: 200, ok: true, json: async () => ({ status: 'ok' }) });
+        await API[metodo](rota);
+        expect(fetch.mock.calls[0][1].headers.Authorization).toBeUndefined();
+    });
+    it('bloqueia rotas antigas e métodos inexistentes antes de chamar o backend', async () => {
+        await expect(API.GET('/esteiras')).rejects.toThrow('Operação não disponível');
+        await expect(API.GET('/leituras_sensor')).rejects.toThrow('Operação não disponível');
+        await expect(API.POST('/alertas', {})).rejects.toThrow('Operação não disponível');
+        expect(fetch).not.toHaveBeenCalled();
+    });
+    it('aceita HTTP 201 com envelope do cadastro de lote e envia JSON com JWT', async () => {
+        sessionStorage.getItem.mockReturnValue('jwt');
+        fetch.mockResolvedValue({ status: 201, ok: true, json: async () => ({ lote: { id_lote: 2 } }) });
+        const corpo = { id_fornecedor: 1, codigo_lote: 'L2', status_lote: 'Recebido', peso_recebido_kg: 10 };
+        await expect(API.POST('/lotes', corpo)).resolves.toMatchObject({ id: 2 });
+        expect(fetch.mock.calls[0][1]).toMatchObject({ method: 'POST', body: JSON.stringify(corpo), headers: { Authorization: 'Bearer jwt', 'Content-Type': 'application/json' } });
+    });
+    it('envia o access_token salvo como Bearer nas chamadas autenticadas', async () => {
+        sessionStorage.getItem.mockReturnValue('jwt-do-backend');
+        fetch.mockResolvedValue({ status: 200, ok: true, json: async () => [] });
+        await API.GET('/lotes');
+        expect(sessionStorage.getItem).toHaveBeenCalledWith('token');
+        expect(fetch).toHaveBeenCalledWith('https://api.example.test/lotes', expect.objectContaining({
+            headers: { Accept: 'application/json', Authorization: 'Bearer jwt-do-backend' },
+        }));
+    });
     it.each([
         [403, '403.html'], [404, '404.html'],
         [500, 'unavailable.html'], [502, 'unavailable.html'],
@@ -77,21 +111,25 @@ describe('tratamento de erros da API', () => {
         fetch.mockResolvedValueOnce({ status: 200, ok: true, json: async () => [{ id: 1 }] });
         await expect(API.GET('/lotes')).resolves.toEqual([{ id: 1 }]);
         fetch.mockResolvedValueOnce({ status: 204, ok: true });
-        await expect(API.DELETE('/lotes/1')).resolves.toBeNull();
+        await expect(API.POST('/logout')).resolves.toBeNull();
         expect(location.replace).not.toHaveBeenCalled();
     });
 });
 
 
 describe('erros locais dos blocos do dashboard', () => {
-    it.each([404, 500, 503])('rejeita HTTP %s sem sair do dashboard', async (status) => {
+    it.each([404, 500, 502, 503, 504])('rejeita HTTP %s sem sair do dashboard', async (status) => {
         fetch.mockResolvedValue({ status, ok: false });
-        await expect(API.GET('/producao', { erroLocal: true })).rejects.toThrow('HTTP ' + status);
+        await expect(API.GET('/producao', { erroLocal: true })).rejects.toThrow(
+            status >= 500
+                ? 'O serviço está temporariamente indisponível. Tente novamente em alguns instantes.'
+                : 'HTTP ' + status,
+        );
         expect(location.replace).not.toHaveBeenCalled();
     });
     it('mantém falhas de rede locais', async () => {
         fetch.mockRejectedValue(new TypeError('Failed to fetch'));
-        await expect(API.GET('/esteiras', { erroLocal: true })).rejects.toThrow('Não foi possível conectar');
+        await expect(API.GET('/equipamentos', { erroLocal: true })).rejects.toThrow('Não foi possível conectar');
         expect(location.replace).not.toHaveBeenCalled();
     });
     it('mantém timeout local', async () => {
@@ -99,7 +137,7 @@ describe('erros locais dos blocos do dashboard', () => {
         fetch.mockImplementation((url, { signal }) => new Promise((resolve, reject) => {
             signal.addEventListener('abort', () => reject(new DOMException('Timeout', 'AbortError')));
         }));
-        const resultado = expect(API.GET('/esteiras', { erroLocal: true })).rejects.toThrow('limite de 1.5 segundos');
+        const resultado = expect(API.GET('/equipamentos', { erroLocal: true })).rejects.toThrow('limite de 1.5 segundos');
         await vi.advanceTimersByTimeAsync(1500);
         await resultado;
         expect(location.replace).not.toHaveBeenCalled();
