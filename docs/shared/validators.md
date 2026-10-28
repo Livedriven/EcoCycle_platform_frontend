@@ -117,6 +117,8 @@ form.addEventListener('submit', async (evento) => {
 
     const dados = {
         id_fornecedor: inputFornecedor.value,
+        codigo_lote: inputCodigo.value,
+        data_entrada: inputData.value,
         pesoentrada_kg: inputPeso.value
     };
     const validacao = validarLote(dados);
@@ -126,7 +128,13 @@ form.addEventListener('submit', async (evento) => {
         return;
     }
 
-    await API.POST('/lotes', dados);
+    await API.POST('/lotes', {
+        id_fornecedor: Number(dados.id_fornecedor),
+        codigo_lote: inputCodigo.value.trim(),
+        peso_recebido_kg: Number(dados.pesoentrada_kg),
+        status_lote: 'Recebido',
+        data_entrada: inputData.value + 'T00:00:00',
+    });
 });
 ```
 
@@ -139,7 +147,7 @@ Definam em cada função se ela apenas valida ou também devolve um valor normal
 ```js
 const dados = {
     id_fornecedor: Number(inputFornecedor.value),
-    pesoentrada_kg: Number(inputPeso.value)
+    peso_recebido_kg: Number(inputPeso.value)
 };
 ```
 
@@ -176,3 +184,5 @@ it('rejeita peso zero', () => {
 5. Não envie a requisição se `valido` for `false`.
 6. Adicione ou atualize os testes de cada regra nova.
 7. Confirme que o backend continua validando o mesmo payload.
+
+O cadastro de lote limita código a 15 caracteres e peso a 99999999,99 kg com duas casas decimais, conforme o schema do backend. Os campos internos de validação são convertidos ao payload descrito em [api.md](api.md).
