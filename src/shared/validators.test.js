@@ -139,6 +139,13 @@ describe('validarLote', () => {
     it('aceita dados completos', () => {
         expect(validarLote(ok, { agora: AGORA })).toEqual({ valido: true, erros: {} });
     });
+    it('respeita os limites de código e decimal do schema PostgreSQL', () => {
+        expect(validarLote({ ...ok, codigo_lote: 'A'.repeat(16) }, { agora: AGORA }).erros.codigo_lote).toBeDefined();
+        for (const pesoentrada_kg of ['100000000', '1.234']) {
+            expect(validarLote({ ...ok, pesoentrada_kg }, { agora: AGORA }).erros.pesoentrada_kg).toBeDefined();
+        }
+        expect(validarLote({ ...ok, codigo_lote: 'A'.repeat(15), pesoentrada_kg: '99999999.99' }, { agora: AGORA }).valido).toBe(true);
+    });
     it('devolve todos os erros de uma vez', () => {
         const r = validarLote({ codigo_lote: '', id_fornecedor: '', pesoentrada_kg: '0', data_entrada: '' }, { agora: AGORA });
         expect(Object.keys(r.erros)).toEqual(['codigo_lote', 'id_fornecedor', 'pesoentrada_kg', 'data_entrada']);
