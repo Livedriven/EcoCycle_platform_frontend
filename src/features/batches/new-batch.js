@@ -104,18 +104,15 @@ function iniciarTela() {
         mostrarErros(validacao.erros);
         if (!validacao.valido) return;
 
-        // A data vem do calendário (só o dia) e a hora é a do cadastro, no formato do mock.
+        // A data vem do calendário (só o dia) e a hora é a do cadastro, em formato ISO local.
         // Sem id_usuario (a API pega do token). Todo lote começa com status Recebido.
-        // TODO(E2): confirmar o nome do campo do fornecedor (id_fornecedor) e se a API quer só a data.
         const payload = {
-            // null mantém a chave no JSON; o servidor gera o identificador no cadastro.
-            id: null,
             // Codigo do lote guardado como foi digitado, só sem espaços nas pontas (não é validação de formato).
             codigo_lote: dados.codigo_lote.trim(),
             id_fornecedor: Number(dados.id_fornecedor),
-            pesoentrada_kg: Number(dados.pesoentrada_kg),
+            peso_recebido_kg: Number(dados.pesoentrada_kg),
             data_entrada: dados.data_entrada + 'T' + horaAtual(),
-            status: 'Recebido'
+            status_lote: 'Recebido'
         };
         const nomeFornecedor = campos.id_fornecedor.selectedOptions[0].textContent;
 
@@ -124,7 +121,7 @@ function iniciarTela() {
         try {
             const criado = await API.POST('/lotes', payload);
             const codigo = criado && criado.id ? 'Lote ' + criado.id : 'Lote';
-            mostrarAviso('success', codigo + ' cadastrado com sucesso: ' + nomeFornecedor + ', ' + formatKg(payload.pesoentrada_kg) + '.');
+            mostrarAviso('success', codigo + ' cadastrado com sucesso: ' + nomeFornecedor + ', ' + formatKg(payload.peso_recebido_kg) + '.');
             form.reset();
             campos.id_fornecedor.focus();
         } catch (erro) {
