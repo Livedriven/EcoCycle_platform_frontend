@@ -1,3 +1,5 @@
+> Documento histórico de implementação. Para métodos, rotas, payloads e envelopes vigentes, consulte [o contrato da API](../../../docs/shared/api.md).
+
 # Ajustes fora da pasta `start-production/`
 
 ## 1. `src/shared/validators.js` (hoje vazio)
