@@ -29,6 +29,11 @@
 
           <form id="form-fornecedor" novalidate>
             <div class="mb-3">
+              <label for="codigo-fornecedor" class="form-label fw-semibold">Código do fornecedor <span class="text-danger" aria-hidden="true">*</span></label>
+              <input type="number" id="codigo-fornecedor" name="id_fornecedor" class="form-control" min="1" max="2147483647" step="1" required aria-describedby="erro-codigo-fornecedor">
+              <div id="erro-codigo-fornecedor" class="invalid-feedback"></div>
+            </div>
+            <div class="mb-3">
               <label for="nome" class="form-label fw-semibold">Nome do fornecedor <span class="text-danger" aria-hidden="true">*</span></label>
               <div class="input-group has-validation">
                 <span class="input-group-text" aria-hidden="true"><i class="bi bi-building"></i></span>
@@ -51,7 +56,7 @@
                 <label for="telefone" class="form-label fw-semibold">Telefone</label>
                 <div class="input-group has-validation">
                   <span class="input-group-text" aria-hidden="true"><i class="bi bi-telephone"></i></span>
-                  <input type="tel" id="telefone" name="telefone_fornecedor" class="form-control" placeholder="(00) 00000-0000" inputmode="tel" maxlength="15" autocomplete="tel" aria-describedby="erro-telefone">
+                  <input type="tel" id="telefone" name="telefone_fornecedor" class="form-control" placeholder="(00) 00000-0000" inputmode="tel" maxlength="15" autocomplete="tel" required aria-describedby="erro-telefone">
                   <div id="erro-telefone" class="invalid-feedback"></div>
                 </div>
               </div>
@@ -59,7 +64,7 @@
                 <label for="email" class="form-label fw-semibold">E-mail</label>
                 <div class="input-group has-validation">
                   <span class="input-group-text" aria-hidden="true"><i class="bi bi-envelope"></i></span>
-                  <input type="email" id="email" name="email_fornecedor" class="form-control" placeholder="exemplo@empresa.com.br" maxlength="254" autocomplete="email" aria-describedby="erro-email">
+                  <input type="email" id="email" name="email_fornecedor" class="form-control" placeholder="exemplo@empresa.com.br" maxlength="100" autocomplete="email" required aria-describedby="erro-email">
                   <div id="erro-email" class="invalid-feedback"></div>
                 </div>
               </div>
@@ -87,7 +92,7 @@
               <label for="endereco" class="form-label fw-semibold">Endereço completo</label>
               <div class="input-group has-validation">
                 <span class="input-group-text align-items-start" aria-hidden="true"><i class="bi bi-geo-alt"></i></span>
-                <textarea id="endereco" name="endereco_fornecedor" class="form-control" rows="4" placeholder="Rua, número, complemento, bairro, cidade - UF..." maxlength="200" autocomplete="street-address" aria-describedby="erro-endereco"></textarea>
+                <textarea id="endereco" name="endereco_fornecedor" class="form-control" rows="4" placeholder="Rua, número, complemento, bairro, cidade - UF..." maxlength="100" autocomplete="street-address" required aria-describedby="erro-endereco"></textarea>
                 <div id="erro-endereco" class="invalid-feedback"></div>
               </div>
             </div>
