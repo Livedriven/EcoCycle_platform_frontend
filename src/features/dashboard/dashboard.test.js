@@ -25,7 +25,7 @@ function elemento() {
         style: {}
     };
 }
-const ids = ['indicadores', 'diaria', 'mensal', 'co2', 'fornecedores', 'status-lotes', 'esteira', 'alertas'];
+const ids = ['indicadores', 'diaria', 'mensal', 'trimestral', 'co2', 'fornecedores', 'status-lotes', 'esteira', 'alertas'];
 let elementos, intervalo;
 const obter = (id) => {
     if (!elementos.has(id)) elementos.set(id, elemento());
@@ -38,8 +38,10 @@ const dados = {
     '/producao': [{ tipo_material: 'Metal', peso_kg: 10, data_hora: '2026-10-24' }],
     '/fornecedores': [{ id: 1, nome_fornecedor: 'Fornecedor' }],
     '/alertas': [{ resolvido: false, tipo_alerta: 'Teste', datahora_alerta: '2026-10-24' }],
-    '/esteiras': [{ nome_esteira: 'Esteira 1', status_esteira: 'Ativa' }]
+    '/equipamentos': [{ nome_esteira: 'Esteira 1', status_esteira: 'Ativa' }]
 };
+const consolidado = { balanco_massas_kg: { total_material_entrada: 100, total_produzido_saida: 80, total_rejeitos_perdas: 20 } };
+const dadosDaRota = (rota) => rota.startsWith('/producao/dashboard-') ? consolidado : dados[rota];
 beforeEach(() => {
     vi.resetModules();
     vi.resetAllMocks();
@@ -48,7 +50,7 @@ beforeEach(() => {
     elementos = new Map();
     ids.forEach((id) => conteudo(id).classList.add('d-none'));
     mocks.layout.mockReturnValue({ perfil: 'consulta' });
-    mocks.get.mockImplementation(async (rota) => dados[rota]);
+    mocks.get.mockImplementation(async (rota) => dadosDaRota(rota));
     vi.stubGlobal('window', { location: { search: '' } });
     vi.stubGlobal('document', {
         getElementById: obter, createElement: elemento,
@@ -70,7 +72,7 @@ describe('disponibilidade do dashboard', () => {
             expect(estado(id).textContent).toContain('Carregando...');
             expect(obter('bloco-' + id).getAttribute('aria-busy')).toBe('true');
         });
-        expect(mocks.get).toHaveBeenCalledTimes(5);
+        expect(mocks.get).toHaveBeenCalledTimes(8);
         expect(mocks.get).toHaveBeenCalledWith('/producao', { erroLocal: true });
         resolver([]);
         await concluir();
@@ -78,9 +80,9 @@ describe('disponibilidade do dashboard', () => {
     it('mantém outros blocos disponíveis mesmo com erro e outra fonte pendente', async () => {
         let resolver;
         mocks.get.mockImplementation((rota) => {
-            if (rota === '/esteiras') return Promise.reject(new Error('HTTP 503'));
+            if (rota === '/equipamentos') return Promise.reject(new Error('HTTP 503'));
             if (rota === '/fornecedores') return new Promise((resolve) => { resolver = resolve; });
-            return Promise.resolve(dados[rota]);
+            return Promise.resolve(dadosDaRota(rota));
         });
         await iniciar();
         expect(estado('esteira').textContent).toContain('Tentar novamente');
@@ -91,17 +93,17 @@ describe('disponibilidade do dashboard', () => {
     });
     it('tenta novamente somente o bloco com erro e evita requisições duplicadas', async () => {
         mocks.get.mockImplementation(async (rota) => {
-            if (rota === '/esteiras') throw new Error('HTTP 500');
-            return dados[rota];
+            if (rota === '/equipamentos') throw new Error('HTTP 500');
+            return dadosDaRota(rota);
         });
         await iniciar();
         const botao = estado('esteira').children.at(-1);
-        mocks.get.mockResolvedValue(dados['/esteiras']);
+        mocks.get.mockResolvedValue(dados['/equipamentos']);
         mocks.get.mockClear();
         botao.click();
         botao.click();
         await concluir();
-        expect(mocks.get).toHaveBeenCalledExactlyOnceWith('/esteiras', { erroLocal: true });
+        expect(mocks.get).toHaveBeenCalledExactlyOnceWith('/equipamentos', { erroLocal: true });
         expect(conteudo('esteira').classList.contains('d-none')).toBe(false);
         expect(estado('esteira').textContent).toBe('');
     });
@@ -114,26 +116,39 @@ describe('disponibilidade do dashboard', () => {
         expect(cards.find((c) => c.textContent.includes('Rejeito')).textContent).toContain('0');
         expect(mocks.bar).not.toHaveBeenCalled();
     });
-    it('inclui categorias sem dados nos gráficos e soma novos registros de alumínio e rejeito', async () => {
+    it('consulta os três períodos com os parâmetros do backend e desenha o balanço de massas', async () => {
         await iniciar();
-        let series = mocks.bar.mock.calls.find(([canvas]) => canvas === obter('grafico-diaria'))[2];
-        expect(series.map((s) => s.label)).toEqual(['Plástico', 'Metal', 'Alumínio', 'Rejeito']);
-        expect(series[2].data).toEqual(Array(7).fill(0));
-        mocks.get.mockImplementation(async (rota) => rota === '/producao' ? [
-            { tipo_material: 'Alumínio', peso_kg: 8, data_hora: '2026-10-24' },
-            { tipo_material: 'Rejeito', peso_kg: 3, data_hora: '2026-10-24' }
-        ] : dados[rota]);
+        expect(mocks.get).toHaveBeenCalledWith('/producao/dashboard-diario?data=24%2F10%2F2026', { erroLocal: true });
+        expect(mocks.get).toHaveBeenCalledWith('/producao/dashboard-mensal?mes=10&ano=2026', { erroLocal: true });
+        expect(mocks.get).toHaveBeenCalledWith('/producao/dashboard-trimestral?trimestre=4&ano=2026', { erroLocal: true });
+        for (const periodo of ['diaria', 'mensal', 'trimestral']) {
+            const chamada = mocks.bar.mock.calls.find(([canvas]) => canvas === obter('grafico-' + periodo));
+            expect(chamada[1]).toEqual(['Entrada', 'Saída produzida', 'Rejeitos e perdas']);
+            expect(chamada[2][0].data).toEqual([100, 80, 20]);
+        }
+        mocks.get.mockImplementation(async (rota) => rota.includes('dashboard-diario')
+            ? { balanco_massas_kg: { total_material_entrada: 120, total_produzido_saida: 90, total_rejeitos_perdas: 30 } }
+            : dadosDaRota(rota));
         intervalo();
         await concluir();
-        series = mocks.bar.mock.calls.filter(([canvas]) => canvas === obter('grafico-diaria')).at(-1)[2];
-        expect(series[2].data.at(-1)).toBe(8);
-        expect(series[3].data.at(-1)).toBe(3);
+        const ultima = mocks.bar.mock.calls.filter(([canvas]) => canvas === obter('grafico-diaria')).at(-1);
+        expect(ultima[2][0].data).toEqual([120, 90, 30]);
     });
-    it.each(['erro', 'vazio'])('simula %s apenas no bloco escolhido', async (modo) => {
-        window.location.search = '?simular=' + modo + '&bloco=bloco-diaria';
+    it('isola resposta inválida de um consolidado e não desenha totais inventados', async () => {
+        mocks.get.mockImplementation(async (rota) => rota.includes('dashboard-diario') ? {} : dadosDaRota(rota));
         await iniciar();
-        expect(estado('diaria').textContent).toContain(modo === 'erro' ? 'Tentar novamente' : 'Sem dados no período');
+        expect(estado('diaria').textContent).toContain('Tentar novamente');
         expect(conteudo('mensal').classList.contains('d-none')).toBe(false);
+    });
+    it('informa a falta de composição quando a API devolve somente ciclos', async () => {
+        mocks.get.mockImplementation(async (rota) => rota === '/producao'
+            ? [{ id: 1, peso_kg: 80, data_hora: '2026-10-24' }] : dadosDaRota(rota));
+        await iniciar();
+        const cards = conteudo('indicadores').children;
+        for (const material of ['Plástico', 'Metal', 'Alumínio', 'Rejeito']) {
+            expect(cards.find((c) => c.textContent.includes(material)).textContent).toContain('Não informado');
+        }
+        expect(cards.find((c) => c.textContent.includes('Total processado')).textContent).toContain('80 kg');
     });
     it('isola também erros de renderização', async () => {
         mocks.bar.mockImplementation((canvas) => { if (canvas === obter('grafico-diaria')) throw new Error('Canvas'); });
@@ -165,7 +180,7 @@ describe('disponibilidade do dashboard', () => {
         const chamadas = mocks.bar.mock.calls.length;
         intervalo();
         await concluir();
-        expect(mocks.get).toHaveBeenCalledTimes(10);
+        expect(mocks.get).toHaveBeenCalledTimes(16);
         expect(mocks.bar).toHaveBeenCalledTimes(chamadas);
     });
 
