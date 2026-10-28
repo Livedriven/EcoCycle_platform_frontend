@@ -8,6 +8,7 @@ node_modules/
 
 # Arquivos de build e compilados
 dist/
+dist-demo/
 build/
 
 
