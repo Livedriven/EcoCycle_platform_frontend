@@ -86,7 +86,7 @@ const mensal = producaoPorMes(producao, 6);
 
 ### `alertasAtivos(alertas)`
 
-Devolve só os alertas não resolvidos. Aceita `resolvido` como booleano ou texto (`"true"`/`"false"`, como o mock manda).
+Devolve só os alertas não resolvidos. Aceita `resolvido` como booleano ou texto (`"true"`/`"false"`).
 
 ---
 
