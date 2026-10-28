@@ -27,9 +27,9 @@ Simulador do chão de fábrica (E4) ──┘
 | Tela | O que mostra |
 |---|---|
 | **Login** | Entrada com usuário e senha; a sessão usa um token JWT. |
-| **Dashboard** | Indicadores (total recebido, processado, plástico, metal, alertas ativos), produção diária e mensal, CO₂ evitado, recebimento por fornecedor, lotes por status, status das esteiras e alertas ativos. |
+| **Dashboard** | Indicadores (total recebido, processado, plástico, metal, alertas ativos), balanço de massas diário, mensal e trimestral, CO₂ evitado, recebimento por fornecedor, lotes por status, status das esteiras e alertas ativos. |
 | **Produção do dia** | Registros de produção com filtro por data. |
-| **Materiais produzidos** | Totais de plástico e metal e a lista de materiais. |
+| **Materiais produzidos** | Relatório por material quando o detalhamento estiver disponível; a API atual ainda não fornece esses pesos. |
 | **Alertas** | Alertas gerados pelas leituras dos sensores. |
 | **Esteiras** | Consulta com busca e cartões; detalhes de cada esteira em modal, dentro de Equipamentos. |
 | **Status das esteiras** | Visão geral de todas as esteiras e seleção individual para velocidade, temperatura, leituras e alertas. |
@@ -47,7 +47,7 @@ Há quatro perfis. Todos veem os mesmos dados; a diferença está nas ações qu
 | Login e consulta de dashboard, lotes, fornecedores, alertas e estoque | Sim | Sim | Sim | Sim |
 | Cadastrar fornecedor | Sim | Sim | Não | Não |
 | Registrar lote | Sim | Sim | Sim | Não |
-| Iniciar e finalizar produção | Sim | Sim | Sim | Não |
+| Iniciar produção (finalização sem rota na API atual) | Sim | Sim | Sim | Não |
 | Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
 
 No portal, o menu esconde e as telas barram (página "acesso negado") o que o perfil não pode fazer. Quem garante a regra é a API: token ausente, inválido ou expirado recebe `401`, e usuário sem permissão recebe `403`.
@@ -63,7 +63,6 @@ No portal, o menu esconde e as telas barram (página "acesso negado") o que o pe
 - **Grid.js**: tabelas com busca, ordenação e paginação.
 - **Day.js**: datas no padrão brasileiro.
 - **jwt-decode**: leitura do token de sessão.
-- **json-server** com middlewares próprios (`auth.cjs` e `rbac.cjs`): API de teste com login, logout e permissões por perfil.
 - **Vitest** e **ESLint**: testes e padronização do código.
 
 ---
@@ -74,17 +73,18 @@ Requer Node.js 22.12 ou mais recente (exigência do Vitest).
 
 ```bash
 npm install
-cp .env.example .env          # VITE_API_URL=http://localhost:3000 e VITE_API_TIMEOUT=8000
-npm run mock                  # API de teste em http://localhost:3000
+cp .env.example .env          # VITE_API_URL=http://localhost:8000/api e VITE_API_TIMEOUT=8000
 npm run dev                   # abre o portal no navegador (http://localhost:5173)
 ```
 
-Os usuários de teste ficam em `mocks/db.json` (`admin`, `gerente1`, `operador1`).
+O backend real deve estar rodando em `http://localhost:8000`, com as rotas em `/api` (base padrão mesmo sem `.env`). O `login.js` monta `{ usuario, senha }` e passa os dados para `API.POST`, que envia a requisição diretamente para `VITE_API_URL`. Reinicie o Vite após alterar a configuração. O contrato de rotas, envelopes e payloads está documentado em [API](docs/shared/api.md).
+
+As chamadas usam diretamente `VITE_API_URL` em desenvolvimento e produção; o backend deve permitir a origem do frontend via CORS.
+
 
 | Comando | O que faz |
 |---|---|
 | `npm run dev` | Abre o portal em modo de desenvolvimento. |
-| `npm run mock` | Sobe a API de teste com os dados de `mocks/db.json`. |
 | `npm test` | Roda os testes automáticos. |
 | `npm run lint` | Confere o padrão do código. |
 | `npm run build` | Gera a versão final em `dist/`. |
@@ -95,7 +95,6 @@ Os usuários de teste ficam em `mocks/db.json` (`admin`, `gerente1`, `operador1`
 
 ```
 ├── index.html          # redireciona para o login ou para o dashboard
-├── mocks/              # API de teste: dados, rotas, login/logout e permissões
 ├── public/img/         # logo
 ├── docs/               # documentação técnica
 └── src/
@@ -109,3 +108,11 @@ Os usuários de teste ficam em `mocks/db.json` (`admin`, `gerente1`, `operador1`
 
 - [Arquitetura do front-end](docs/arquiteture.md): regras da organização, telas e alinhamentos pendentes com as outras equipes.
 - [Módulos compartilhados (`src/shared/`)](docs/shared/README.md): o que cada arquivo faz e as funções que podem ser reaproveitadas nas telas.
+
+## Demonstração opcional
+
+Para apresentar o frontend com dados fictícios quando a API estiver indisponível, execute `npm run mock` em um terminal e `npm run dev:demo` em outro. A demonstração abre na porta 5174, com aviso visível e sessão separada da aplicação normal.
+
+Use `admin`, `gerente1` ou `operador1`, com senha `ecocycle123`. O `.env` da API real é preservado, e os dados dos mocks ficam em memória. Reinicie o mock para restaurar os exemplos.
+
+`npm run build:demo` gera a demonstração em `dist-demo/`. O build normal continua em `dist/`. Veja [as instruções dos mocks](mocks/README.md).
