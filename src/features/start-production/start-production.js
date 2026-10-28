@@ -1,6 +1,6 @@
 import API from '../../shared/api.js';
 import { montarLayout } from '../../shared/layout.js';
-import { HOME_URL, requireLogin } from '../../shared/session.js';
+import { HOME_URL, requireLogin, decodeToken } from '../../shared/session.js';
 import { formatKg } from '../../shared/formatters.js';
 import { validarProducao } from '../../shared/validators.js';
 
@@ -10,9 +10,9 @@ const SESSAO = montarLayout({ acao: ACAO });
 
 // TODO(E2/E5): confirmar com a API o status que significa "Disponível" para o lote.
 const STATUS_LOTE_DISPONIVEL = 'Recebido';
-// TODO(E2/E5): confirmar quais esteiras podem receber produção (mock: status_esteira "Ativa").
-const STATUS_ESTEIRA_ATIVA = 'Ativa';
-// TODO(E5): confirmar a lista de valores de turno_producao aceitos pela API.
+// O backend registra LIGADA; fixtures antigos usam Ativa.
+const STATUS_ESTEIRA_ATIVA = ['ATIVA', 'LIGADA'];
+// Opções oferecidas pelo portal; o payload envia o campo turno.
 const TURNOS = ['Manhã', 'Tarde', 'Noite'];
 
 if (SESSAO) {
@@ -27,6 +27,7 @@ function iniciarTela() {
     const aviso = document.getElementById('aviso-envio');
     const btnIniciar = document.getElementById('btn-iniciar');
     let enviando = false;
+    let lotesDisponiveis = [];
 
     function validarAcesso() {
         if (requireLogin(ACAO)) return true;
@@ -64,7 +65,7 @@ function iniciarTela() {
             const [lotes, fornecedores, esteiras] = await Promise.all([
                 API.GET('/lotes'),
                 API.GET('/fornecedores'),
-                API.GET('/esteiras')
+                API.GET('/equipamentos')
             ]);
             if (!validarAcesso()) return;
             preencherLotes(lotes, fornecedores);
@@ -81,6 +82,7 @@ function iniciarTela() {
     }
 
     function preencherLotes(lotes, fornecedores) {
+        lotesDisponiveis = lotes.filter((lote) => lote.status === STATUS_LOTE_DISPONIVEL);
         const nomes = new Map(fornecedores.map((f) => [f.id, f.nome_fornecedor]));
         lotes
             .filter((lote) => lote.status === STATUS_LOTE_DISPONIVEL)
@@ -97,7 +99,7 @@ function iniciarTela() {
 
     function preencherEsteiras(esteiras) {
         esteiras
-            .filter((esteira) => esteira.status_esteira === STATUS_ESTEIRA_ATIVA)
+            .filter((esteira) => STATUS_ESTEIRA_ATIVA.includes(String(esteira.status_esteira).trim().toUpperCase()))
             .forEach((esteira) => campos.id_esteira.add(new Option(esteira.nome_esteira, esteira.id)));
         if (campos.id_esteira.options.length === 1) {
             campos.id_esteira.options[0].textContent = 'Nenhuma esteira disponível';
@@ -120,13 +122,24 @@ function iniciarTela() {
         mostrarErros(validacao.erros);
         if (!validacao.valido) return;
 
-        // Sem id_usuario: a API identifica o usuário pelo token e autoriza
-        // administrador, gerente e operador pela ação producao.operar.
+        const lote = lotesDisponiveis.find((item) => String(item.id) === dados.id_lote);
+        const idUsuario = Number(decodeToken(SESSAO.token)?.sub);
+        if (!lote || !Number.isInteger(idUsuario) || idUsuario <= 0) {
+            mostrarAviso('danger', 'Não foi possível identificar o lote ou o usuário da sessão. Entre novamente.');
+            return;
+        }
+        // O ciclo começa sem saída nem rejeito; a entrada é o peso recebido do lote.
         const payload = {
             id_lote: Number(dados.id_lote),
+            id_usuario: idUsuario,
             id_esteira: Number(dados.id_esteira),
-            turno_producao: dados.turno_producao,
-            data_hora: agoraIso()
+            turno: dados.turno_producao,
+            status_producao: 'Em processamento',
+            quantidade_entrada_kg: Number(lote.pesoentrada_kg),
+            quantidade_saida_kg: 0,
+            rejeito_kg: 0,
+            data_inicio: agoraIso(),
+            itens: []
         };
 
         enviando = true;
@@ -176,7 +189,7 @@ function iniciarTela() {
     }
 }
 
-// Mesmo formato dos registros do mock: 2026-08-03T07:15:00 (sem fuso e sem milissegundos).
+// Formato ISO local: 2026-08-03T07:15:00 (sem fuso e sem milissegundos).
 function agoraIso() {
     const d = new Date();
     const dois = (n) => String(n).padStart(2, '0');
