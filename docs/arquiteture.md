@@ -13,7 +13,7 @@ O front-end é organizado **por funcionalidades**:
 
 O portal é a interface de monitoramento da **E1** (dashboard, leituras e alertas). As outras equipes cuidam da API (E2), do banco (E3), do simulador do chão de fábrica (E4), do ERP e da tela de operação (E5) e do PWA de consulta (E6).
 
-O front-end conversa **somente com a API** (E2). Enquanto a API não está pronta, as telas usam o **mock** (`mocks/`, servido pelo json-server). Na integração, só muda a URL no `.env`.
+O front-end conversa **somente com a API** (E2), por padrão em `http://localhost:8000/api`. Configure `VITE_API_URL` no `.env` para apontar para o backend.
 
 A API entrega os **registros**; o **front-end calcula os totais** (dashboard, produção e materiais), sempre pelo `shared/calculations.js`.
 
@@ -29,11 +29,6 @@ A API entrega os **registros**; o **front-end calcula os totais** (dashboard, pr
 ├── docs/
 │   ├── arquiteture.md            # este arquivo
 │   └── shared/                   # documentação dos módulos de src/shared
-├── mocks/
-│   ├── db.json                   # dados de teste
-│   ├── routes.json               # faz o mock responder também em /api/...
-│   ├── auth.cjs                  # POST /login (emite JWT), POST /logout (revoga) e exige o token
-│   └── rbac.cjs                  # matriz de permissões do MVP (403 para o que o perfil não pode)
 ├── public/img/logo.png
 └── src/
     ├── shared/
@@ -92,7 +87,7 @@ A API entrega os **registros**; o **front-end calcula os totais** (dashboard, pr
 | `conveyor` | Consulta, detalhes em modal e status de múltiplas esteiras | `/esteiras`, `/leituras_sensor`, `/alertas` | RF12 |
 | `errors` | Páginas 403, 404 e indisponibilidade | — | — |
 
-Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shared/session.js` (matriz `PERMISSOES`, `can` e a guarda `requireLogin`), no botão **Sair** do `layout.js` e no `mocks/rbac.cjs`.
+Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shared/session.js` (matriz `PERMISSOES`, `can` e a guarda `requireLogin`), no botão **Sair** do `layout.js`.
 
 ### Matriz de permissões (Especificação MVP2, seção 3)
 
@@ -104,7 +99,7 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
 | Iniciar e finalizar produção | Sim | Sim | Sim | Não |
 | Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
 
-- A matriz existe em dois lugares que precisam andar juntos: `PERMISSOES` em `src/shared/session.js` (interface) e `mocks/rbac.cjs` (mock da API).
+- A matriz da interface fica em `PERMISSOES`, em `src/shared/session.js`; a autorização de cada operação é aplicada pelo backend.
 - A interface pode esconder botões, mas a API verifica a permissão em cada operação protegida (RN12): `401` para token ausente, inválido ou expirado e `403` para usuário sem permissão.
 - A API obtém o responsável pela ação a partir da identidade autenticada: o front-end **não envia** `id_usuario` no corpo das requisições.
 - O simulador (E4) não é usuário humano: usa credencial de dispositivo (ex.: `X-API-KEY`) nas rotas próprias, fora do portal.
@@ -130,7 +125,7 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
   2. Tem validação onde há formulário.
   3. Trata erro da API e mostra mensagem clara.
   4. Respeita as permissões do perfil.
-  5. Totais calculados pelo `calculations.js` e conferidos com os dados do mock.
+  5. Totais calculados pelo `calculations.js` e conferidos com os registros retornados pela API.
   6. Funciona em celular, tablet e desktop.
   7. Passou no lint e nos testes.
   8. Foi revisada por outra pessoa.

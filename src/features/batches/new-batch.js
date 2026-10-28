@@ -104,7 +104,7 @@ function iniciarTela() {
         mostrarErros(validacao.erros);
         if (!validacao.valido) return;
 
-        // A data vem do calendário (só o dia) e a hora é a do cadastro, no formato do mock.
+        // A data vem do calendário (só o dia) e a hora é a do cadastro, em formato ISO local.
         // Sem id_usuario (a API pega do token). Todo lote começa com status Recebido.
         // TODO(E2): confirmar o nome do campo do fornecedor (id_fornecedor) e se a API quer só a data.
         const payload = {

@@ -10,7 +10,7 @@ const SESSAO = montarLayout({ acao: ACAO });
 
 // TODO(E2/E5): confirmar com a API o status que significa "Disponível" para o lote.
 const STATUS_LOTE_DISPONIVEL = 'Recebido';
-// TODO(E2/E5): confirmar quais esteiras podem receber produção (mock: status_esteira "Ativa").
+// TODO(E2/E5): confirmar quais esteiras podem receber produção (status_esteira ativo).
 const STATUS_ESTEIRA_ATIVA = 'Ativa';
 // TODO(E5): confirmar a lista de valores de turno_producao aceitos pela API.
 const TURNOS = ['Manhã', 'Tarde', 'Noite'];
@@ -176,7 +176,7 @@ function iniciarTela() {
     }
 }
 
-// Mesmo formato dos registros do mock: 2026-08-03T07:15:00 (sem fuso e sem milissegundos).
+// Formato ISO local: 2026-08-03T07:15:00 (sem fuso e sem milissegundos).
 function agoraIso() {
     const d = new Date();
     const dois = (n) => String(n).padStart(2, '0');

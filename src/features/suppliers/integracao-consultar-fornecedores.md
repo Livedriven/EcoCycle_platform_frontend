@@ -4,7 +4,7 @@ Branch sugerida: `feature/consultar-fornecedores`, criada a partir da `main` atu
 Arquivos novos da tela, em `src/features/suppliers/` (a pasta já existe):
 `suppliers.html`, `suppliers.js`, `suppliers-filter.js` e `suppliers-filter.test.js`.
 
-Os PRs do cadastro de fornecedor e do mock já estão na `main`, então **nada aqui depende de PR pendente**.
+Os PRs do cadastro de fornecedor já estão na `main`, então **nada aqui depende de PR pendente**.
 O conflito só aparece se alguém tiver outro PR aberto nos mesmos arquivos.
 
 ## Resumo
@@ -17,7 +17,7 @@ O conflito só aparece se alguém tiver outro PR aberto nos mesmos arquivos.
 | `src/shared/formatters.test.js` | Testes dessas duas funções | Médio, pelo mesmo motivo |
 | `docs/shared/formatters.md` | Documentar as duas funções | Médio |
 | `docs/arquiteture.md` | Linha da tela na tabela de telas | Baixo |
-| `session.js`, `api.js`, `table.js`, `mocks/*` | **Nada**: consultar vale para todos os perfis e o mock já libera `GET /fornecedores` | Nenhum |
+| `session.js`, `api.js`, `table.js` | **Nada**: consultar vale para todos os perfis | Nenhum |
 
 ## 0. Confira antes: as funções de formatação já existem?
 
@@ -102,7 +102,7 @@ Hoje o **Cancelar** de `new-supplier.js` volta ao dashboard. Para voltar à list
 
 ## 7. Decisões de design (citar no PR)
 
-- **Coluna Ações:** só o desenho do wireframe (ícones de editar e excluir, sem função). Editar e excluir fornecedor estão fora do MVP, e o mock recusa `PUT` e `DELETE` com 403.
+- **Coluna Ações:** só o desenho do wireframe (ícones de editar e excluir, sem função). Editar e excluir fornecedor estão fora do MVP, e a API não oferece `PUT` e `DELETE` com 403.
 - **Filtro de cidade:** não há campo de cidade, então ela é lida do **fim do endereço** em `Cidade/UF` ou `Cidade - UF`. Endereços fora desse padrão aparecem em "Todas", mas não nas cidades. Se isso incomodar, a saída é pedir um campo próprio à E2.
 - **"Ordenado por: Mais recentes":** não há data de cadastro, então ordena por `id` decrescente. Por isso a ordenação por clique nas colunas ficou desligada.
 - **Busca:** por nome, e-mail, CNPJ e telefone, sem diferenciar acento e maiúsculas. CNPJ e telefone comparam só os dígitos, a partir de 3 digitados.

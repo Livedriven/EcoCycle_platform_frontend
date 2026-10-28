@@ -28,7 +28,7 @@ export function urlStatus(id) {
 }
 
 // O vínculo alerta → leitura → esteira evita misturar registros de equipamentos.
-// A API pode usar IDs como strings, enquanto o mock usa números.
+// A API pode representar identificadores como strings ou números.
 export function dadosDaEsteira(id, todasLeituras, todosAlertas) {
     const leituras = todasLeituras.filter((leitura) => String(leitura.id_esteira) === String(id))
         .sort((a, b) => String(b.datahora_leitura ?? '').localeCompare(String(a.datahora_leitura ?? '')));

@@ -106,7 +106,7 @@ O ícone, o `aria-expanded` e o `aria-label` ("Abrir menu" / "Fechar menu") acom
 
 ## Botão Sair
 
-1. Chama `API.POST('/logout')`, para a API (ou o mock) recusar o token daqui em diante.
+1. Chama `API.POST('/logout')`, para a API recusar o token daqui em diante.
 2. Chama `logout()` (de `session.js`), que apaga o token e volta ao login.
 
 Se a API não responder, a sessão é encerrada no navegador do mesmo jeito.

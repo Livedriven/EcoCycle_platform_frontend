@@ -63,7 +63,6 @@ No portal, o menu esconde e as telas barram (página "acesso negado") o que o pe
 - **Grid.js**: tabelas com busca, ordenação e paginação.
 - **Day.js**: datas no padrão brasileiro.
 - **jwt-decode**: leitura do token de sessão.
-- **json-server** com middlewares próprios (`auth.cjs` e `rbac.cjs`): API de teste com login, logout e permissões por perfil.
 - **Vitest** e **ESLint**: testes e padronização do código.
 
 ---
@@ -74,17 +73,14 @@ Requer Node.js 22.12 ou mais recente (exigência do Vitest).
 
 ```bash
 npm install
-cp .env.example .env          # VITE_API_URL=http://localhost:3000 e VITE_API_TIMEOUT=8000
-npm run mock                  # API de teste em http://localhost:3000
+cp .env.example .env          # VITE_API_URL=http://localhost:8000/api e VITE_API_TIMEOUT=8000
 npm run dev                   # abre o portal no navegador (http://localhost:5173)
 ```
 
-Os usuários de teste ficam em `mocks/db.json` (`admin`, `gerente1`, `operador1`).
 
 | Comando | O que faz |
 |---|---|
 | `npm run dev` | Abre o portal em modo de desenvolvimento. |
-| `npm run mock` | Sobe a API de teste com os dados de `mocks/db.json`. |
 | `npm test` | Roda os testes automáticos. |
 | `npm run lint` | Confere o padrão do código. |
 | `npm run build` | Gera a versão final em `dist/`. |
@@ -95,7 +91,6 @@ Os usuários de teste ficam em `mocks/db.json` (`admin`, `gerente1`, `operador1`
 
 ```
 ├── index.html          # redireciona para o login ou para o dashboard
-├── mocks/              # API de teste: dados, rotas, login/logout e permissões
 ├── public/img/         # logo
 ├── docs/               # documentação técnica
 └── src/
