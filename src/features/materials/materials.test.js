@@ -73,6 +73,13 @@ async function iniciar() {
 }
 
 describe('controlador do relatório de materiais', () => {
+    it('informa quando os ciclos da API não disponibilizam composição por material', async () => {
+        mocks.get.mockResolvedValue([{ id: 1, id_lote: 1, peso_kg: 12, data_hora: '2026-10-27' }]);
+        await iniciar();
+        expect(estado.textContent).toContain('não disponibiliza os pesos separados por material');
+        expect(mocks.grafico).not.toHaveBeenCalled();
+        expect(mocks.criarTabela).not.toHaveBeenCalled();
+    });
     it('mostra spinner e bloqueia controles enquanto a API está pendente', async () => {
         let concluir;
         mocks.get.mockReturnValue(new Promise((resolve) => { concluir = resolve; }));
