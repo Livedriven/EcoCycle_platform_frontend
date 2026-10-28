@@ -1,5 +1,5 @@
 // shared/session.test.js
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   decodeToken, saveSession, getSession, getUser, isLoggedIn,
   logout, requireLogin, can, LOGIN_URL, FORBIDDEN_URL,
@@ -78,6 +78,87 @@ describe("logout", () => {
     logout();
     expect(sessionStorage.getItem("token")).toBeNull();
     expect(destinos).toEqual([LOGIN_URL]);
+  });
+});
+
+describe("resposta de autenticação do backend", () => {
+  const respostaLogin = (extra = {}) => ({
+    mensagem: "Autenticação realizada com sucesso!",
+    access_token: fazerToken({ sub: "operador1", exp: agora() + 3600 }),
+    token_type: "bearer",
+    perfil: "OPERADOR",
+    acesso_liberado: true,
+    ...extra,
+  });
+
+  it("aceita perfil fora do JWT e usa sub quando o token não tem nome", () => {
+    const resposta = respostaLogin();
+    saveSession(resposta);
+    expect(sessionStorage.getItem("token")).toBe(resposta.access_token);
+    expect(getUser()).toEqual({ nome: "operador1", perfil: "operador" });
+    expect(can("producao.operar")).toBe(true);
+    expect(can("fornecedor.cadastrar")).toBe(false);
+  });
+  it("mostra o login do claim usuario quando sub é o identificador numérico", () => {
+    saveSession(respostaLogin({ access_token: fazerToken({ sub: '7', usuario: 'operador1', perfil: 'OPERADOR', exp: agora() + 3600 }) }));
+    expect(getUser()).toEqual({ nome: 'operador1', perfil: 'operador' });
+  });
+  it("preserva o perfil ao carregar outra página", async () => {
+    saveSession(respostaLogin());
+    vi.resetModules();
+    const sessaoNovaPagina = await import("./session.js");
+    expect(sessaoNovaPagina.getUser()).toEqual({ nome: "operador1", perfil: "operador" });
+  });
+  it("prioriza o perfil da resposta e preserva o nome do JWT", () => {
+    saveSession(respostaLogin({ access_token: tokenValido({ perfil: "administrador" }) }));
+    expect(getUser()).toEqual({ nome: "Patrícia Lima", perfil: "operador" });
+  });
+  it("aceita JWT sem nome ou sub e mantém a sessão sem exp até a API recusá-la", () => {
+    saveSession(respostaLogin({ access_token: fazerToken({}) }));
+    expect(getUser()).toEqual({ nome: "Usuário", perfil: "operador" });
+    expect(getSession().exp).toBeNull();
+  });
+  it("não libera sessão quando acesso_liberado é false e apaga a sessão anterior", () => {
+    saveSession(respostaLogin());
+    expect(() => saveSession(respostaLogin({ acesso_liberado: false }))).toThrow("Acesso não liberado");
+    expect(sessionStorage.getItem("token")).toBeNull();
+    expect(sessionStorage.getItem("autenticacao")).toBeNull();
+    expect(isLoggedIn()).toBe(false);
+  });
+  it.each([
+    { access_token: undefined }, { access_token: "token inválido" },
+    { token_type: "basic" }, { token_type: undefined },
+    { perfil: "VISITANTE" }, { perfil: undefined },
+    { acesso_liberado: undefined }, { acesso_liberado: "true" },
+  ])("recusa resposta inválida: %j", (extra) => {
+    expect(() => saveSession(respostaLogin(extra))).toThrow("Token de sessão inválido");
+    expect(sessionStorage.getItem("token")).toBeNull();
+    expect(sessionStorage.getItem("autenticacao")).toBeNull();
+  });
+  it("preserva a expiração do JWT com o novo contrato", () => {
+    saveSession(respostaLogin({ access_token: fazerToken({ exp: agora() - 1 }) }));
+    expect(requireLogin()).toBeNull();
+    expect(destinos).toEqual([`${LOGIN_URL}?motivo=expirada`]);
+    expect(sessionStorage.getItem("autenticacao")).toBeNull();
+  });
+  it("não associa os dados de autenticação a outro token", () => {
+    saveSession(respostaLogin());
+    sessionStorage.setItem("token", tokenValido());
+    expect(getSession()).toBeNull();
+  });
+  it("recusa metadados corrompidos", () => {
+    saveSession(respostaLogin());
+    sessionStorage.setItem("autenticacao", "{inválido");
+    expect(getSession()).toBeNull();
+  });
+  it("limpa os dados do login ao sair e permite voltar aos tokens antigos", () => {
+    saveSession(respostaLogin());
+    logout();
+    expect(sessionStorage.getItem("autenticacao")).toBeNull();
+    saveSession(respostaLogin());
+    saveSession(tokenValido());
+    expect(sessionStorage.getItem("autenticacao")).toBeNull();
+    expect(getUser().perfil).toBe("gerente");
   });
 });
 
