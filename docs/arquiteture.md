@@ -91,13 +91,14 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
 
 ### Matriz de permissões (Especificação MVP2, seção 3)
 
-| Ação | Administrador | Gerente | Operador | Consulta |
-|---|---|---|---|---|
-| Login e consulta de dashboard, lotes, fornecedores, alertas e estoque | Sim | Sim | Sim | Sim |
-| Cadastrar fornecedor | Sim | Sim | Não | Não |
-| Registrar lote | Sim | Sim | Sim | Não |
-| Iniciar e finalizar produção | Sim | Sim | Sim | Não |
-| Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
+| Ação | Administrador | Gerente | Operador | Técnico | Consulta |
+|---|---|---|---|---|---|
+| Login e consulta de dashboard, lotes, fornecedores, alertas e estoque | Sim | Sim | Sim | Sim | Sim |
+| Cadastrar fornecedor | Sim | Sim | Não | Não | Não |
+| Registrar lote | Sim | Sim | Sim | Não | Não |
+| Iniciar e finalizar produção | Sim | Sim | Sim | Não | Não |
+| Desligar esteira manualmente | Sim | Sim | Não | Sim | Não |
+| Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
 
 - A matriz da interface fica em `PERMISSOES`, em `src/shared/session.js`; a autorização de cada operação é aplicada pelo backend.
 - A interface pode esconder botões, mas a API verifica a permissão em cada operação protegida (RN12): `401` para token ausente, inválido ou expirado e `403` para usuário sem permissão.

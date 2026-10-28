@@ -189,6 +189,7 @@ describe("can (matriz de permissões do MVP)", () => {
     ["fornecedor.cadastrar", true, true, false, false, false],
     ["lote.registrar", true, true, true, false, false],
     ["producao.operar", true, true, true, false, false],
+    ["esteira.operar", true, true, false, true, false],
     ["usuarios.gerenciar", false, false, false, false, false],
   ];
   const perfis = ["administrador", "gerente", "operador", "tecnico", "consulta"];

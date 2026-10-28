@@ -19,6 +19,8 @@ export const PERMISSOES = {
     "fornecedor.cadastrar": ["administrador", "gerente"],
     "lote.registrar": ["administrador", "gerente", "operador"],
     "producao.operar": ["administrador", "gerente", "operador"],
+    // Mesmos perfis que o backend aceita em PATCH /esteiras/:id.
+    "esteira.operar": ["administrador", "gerente", "tecnico"],
     // Gerenciar usuários pela interface está fora do MVP.
     "usuarios.gerenciar": [],
 };

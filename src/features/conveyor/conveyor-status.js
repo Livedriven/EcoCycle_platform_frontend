@@ -8,6 +8,7 @@ import { classeStatus, classeAlerta, classeContadorAlertas } from "../../shared/
 import { formatNumber } from '../../shared/formatters.js';
 import { dadosDaEsteira, dataHora } from './conveyor-data.js';
 import { criarCartaoEsteira } from './conveyor-cards.js';
+import { desligarEsteira, podeDesligar } from './conveyor-shutdown.js';
 import './conveyor.css';
 
 // Monta topo e menu e redireciona para o login se não houver sessão válida.
@@ -27,6 +28,33 @@ const blocos = {
 const seletor = document.querySelector("#seletor-esteira");
 const textoAtualizacao = document.querySelector("#ultima-atualizacao");
 const contadorAlertas = document.querySelector("#contador-alertas");
+const botaoDesligar = document.querySelector("#btn-desligar-esteira");
+const aviso = document.querySelector("#aviso-esteira");
+let desligando = false;
+
+function mostrarAviso(tipo, texto) {
+    aviso.className = texto ? 'alert alert-' + tipo + ' py-2' : 'd-none';
+    aviso.textContent = texto;
+}
+
+// Desligamento manual da esteira selecionada; a próxima carga mostra o novo status.
+async function desligarSelecionada() {
+    const esteira = esteirasAtuais.find((item) => String(item.id) === esteiraId);
+    if (!esteira || desligando) return;
+    desligando = true;
+    botaoDesligar.disabled = true;
+    try {
+        if (!(await desligarEsteira(esteira))) return;
+        mostrarAviso('success', 'Esteira desligada.');
+        await carregar({ silencioso: true });
+    } catch (erro) {
+        mostrarAviso('danger', 'Não foi possível desligar a esteira: ' + erro.message);
+    } finally {
+        desligando = false;
+        botaoDesligar.disabled = false;
+    }
+}
+botaoDesligar.addEventListener('click', desligarSelecionada);
 
 // ---------- Estado da tela ----------
 let esteiraId = new URLSearchParams(window.location.search).get('esteira');
@@ -141,6 +169,7 @@ function selecionarEsteira(id) {
     const url = new URL(window.location.href);
     url.searchParams.set('esteira', esteiraId);
     window.history.replaceState(null, '', url);
+    mostrarAviso('', '');
     desenharVisaoGeral(esteirasAtuais);
     carregar();
 }
@@ -276,6 +305,7 @@ async function carregar({ silencioso = false } = {}) {
             contadorAlertas.className = "badge b-suave";
             assinaturaDados = undefined;
             esteiraId = null;
+            botaoDesligar.classList.add('d-none');
             desenharVisaoGeral([]);
             textoAtualizacao.textContent = '';
             document.getElementById('nome-esteira').textContent = 'Detalhes da esteira';
@@ -294,6 +324,7 @@ async function carregar({ silencioso = false } = {}) {
             mostrarEstadoEmTodos('carregando');
         }
         const esteira = esteiras.find((item) => String(item.id) === esteiraId);
+        botaoDesligar.classList.toggle('d-none', !podeDesligar(esteira));
         desenharVisaoGeral(esteiras);
         document.getElementById('nome-esteira').textContent = esteira.nome_esteira || 'Esteira ' + esteira.id;
 

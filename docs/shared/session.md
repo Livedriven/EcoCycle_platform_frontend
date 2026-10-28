@@ -45,6 +45,7 @@ Nas telas protegidas, normalmente basta o `montarLayout()` (de `layout.js`), que
 | `fornecedor.cadastrar` | administrador, gerente |
 | `lote.registrar` | administrador, gerente, operador |
 | `producao.operar` (iniciar e finalizar produção) | administrador, gerente, operador |
+| `esteira.operar` (desligar esteira manualmente) | administrador, gerente, tecnico |
 | `usuarios.gerenciar` | ninguém (fora do MVP) |
 
 Os três usos da matriz:

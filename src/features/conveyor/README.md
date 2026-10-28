@@ -17,3 +17,5 @@ Dados opcionais ausentes são exibidos como não informados; não são deduzidos
 
 Falhas de atualização preservam os dados anteriores com aviso. A carga inicial oferece nova tentativa.
 A interface suporta qualquer quantidade de esteiras retornada pela API.
+
+O botão **Desligar esteira** (modal de detalhes e tela de status) aparece para quem tem `esteira.operar` (administrador, gerente e técnico) quando a esteira não está desligada. Após confirmação, envia `PATCH /esteiras/:id` com `{ status_esteira: 'DESLIGADA' }` (`conveyor-shutdown.js`); o status novo aparece na atualização seguinte. Religar a esteira não faz parte desta tela.

@@ -5,6 +5,7 @@ import { criarElemento } from '../../shared/dom.js';
 import { classeStatus } from '../../shared/ui.js';
 import { filtrarEsteiras, numeroComUnidade, dataManutencao, urlStatus } from './conveyor-data.js';
 import { criarCartaoEsteira } from './conveyor-cards.js';
+import { desligarEsteira, podeDesligar } from './conveyor-shutdown.js';
 import './conveyor.css';
 
 if (montarLayout()) {
@@ -21,6 +22,32 @@ if (montarLayout()) {
     let assinatura;
     let selecionada = null;
     let origemModal = null;
+    let desligando = false;
+    const botaoDesligar = document.getElementById('btn-desligar-esteira');
+    const aviso = document.getElementById('aviso-esteira');
+
+    function mostrarAviso(tipo, texto) {
+        aviso.className = texto ? 'alert alert-' + tipo + ' w-100 mb-2' : 'd-none';
+        aviso.textContent = texto;
+    }
+
+    async function desligarSelecionada() {
+        const esteira = esteiras.find((item) => String(item.id) === selecionada);
+        if (!esteira || desligando) return;
+        desligando = true;
+        botaoDesligar.disabled = true;
+        try {
+            const atualizada = await desligarEsteira(esteira);
+            if (!atualizada) return;
+            mostrarAviso('success', 'Esteira desligada.');
+            await carregar();
+        } catch (erro) {
+            mostrarAviso('danger', 'Não foi possível desligar a esteira: ' + erro.message);
+        } finally {
+            desligando = false;
+            botaoDesligar.disabled = false;
+        }
+    }
 
     function mensagem(texto, erro = false) {
         estado.replaceChildren();
@@ -63,11 +90,13 @@ if (montarLayout()) {
         document.getElementById('detalhes-esteira').replaceChildren(status, campos);
         document.getElementById('link-status-esteira').href = urlStatus(esteira.id);
         document.getElementById('link-status-esteira').hidden = false;
+        botaoDesligar.classList.toggle('d-none', !podeDesligar(esteira));
     }
 
     function abrirDetalhes(esteira, botao) {
         selecionada = String(esteira.id);
         origemModal = botao;
+        mostrarAviso('', '');
         preencherDetalhes(esteira);
         modal.show();
     }
@@ -104,6 +133,7 @@ if (montarLayout()) {
                 else {
                     document.getElementById('detalhes-esteira').textContent = 'Esta esteira não está mais disponível.';
                     document.getElementById('link-status-esteira').hidden = true;
+                    botaoDesligar.classList.add('d-none');
                 }
             }
         } catch (erro) {
@@ -116,6 +146,7 @@ if (montarLayout()) {
     }
 
     busca.addEventListener('input', () => { if (carregou) desenhar(); });
+    botaoDesligar.addEventListener('click', desligarSelecionada);
     modalElemento.addEventListener('hidden.bs.modal', () => {
         const id = selecionada;
         selecionada = null;

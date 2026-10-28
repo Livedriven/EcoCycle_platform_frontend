@@ -34,8 +34,12 @@
         <div class="d-flex align-items-center gap-2">
           <span id="ultima-atualizacao" class="small" style="color:var(--eco-texto-suave)"></span>
           <select id="seletor-esteira" class="form-select form-select-sm w-auto d-none" aria-label="Escolher esteira para consultar leituras e alertas"></select>
+          <button type="button" id="btn-desligar-esteira" class="btn btn-sm btn-outline-danger d-none">
+            <i class="bi bi-power me-1" aria-hidden="true"></i>Desligar esteira
+          </button>
         </div>
       </div>
+      <div id="aviso-esteira" class="d-none" role="alert"></div>
 
       <!-- Indicadores da esteira: situação, velocidade, temperatura e alertas ativos -->
       <section id="bloco-indicadores" class="mb-4">

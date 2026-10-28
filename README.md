@@ -48,6 +48,7 @@ Há cinco perfis, os mesmos níveis de acesso do backend. Todos veem os mesmos d
 | Cadastrar fornecedor | Sim | Sim | Não | Não | Não |
 | Registrar lote | Sim | Sim | Sim | Não | Não |
 | Iniciar e finalizar produção | Sim | Sim | Sim | Não | Não |
+| Desligar esteira manualmente | Sim | Sim | Não | Sim | Não |
 | Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
 
 No portal, o menu esconde e as telas barram (página "acesso negado") o que o perfil não pode fazer. Quem garante a regra é a API: token ausente, inválido ou expirado recebe `401`, e usuário sem permissão recebe `403`.
