@@ -5,12 +5,7 @@
 
 const TIMEOUT_PADRAO = 8000; // milissegundos
 
-const urlDoEnv = import.meta.env.VITE_API_URL?.trim();
-
-// Falha cedo e com mensagem clara, em vez de gerar chamadas para "undefined/lotes".
-if (!urlDoEnv) {
-  throw new Error("VITE_API_URL não definida no arquivo .env");
-}
+const urlDoEnv = import.meta.env.VITE_API_URL?.trim() || "http://localhost:8000/api";
 
 // Tira a "/" do final para que API_URL + "/lotes" nunca vire "//lotes".
 export const API_URL = urlDoEnv.replace(/\/+$/, "");
