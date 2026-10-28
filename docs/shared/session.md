@@ -1,6 +1,6 @@
 # session.js
 
-Guarda quem está logado, define **o que cada perfil pode fazer** e protege as páginas. A sessão é o **token JWT** devolvido pelo login, salvo no `sessionStorage` (chave `token`). O `session.js` só **lê** o token (nome, perfil e validade); quem confere a assinatura é a API.
+Guarda quem está logado, define **o que cada perfil pode fazer** e protege as páginas. O `access_token` devolvido pelo login é salvo no `sessionStorage` (chave `token`). Os dados de autenticação ficam na chave `autenticacao`, vinculados ao mesmo token para preservar o perfil entre páginas. O `session.js` só **lê** o JWT; quem confere a assinatura é a API.
 
 ```js
 import { getUser, can, logout } from '../../shared/session.js';
@@ -19,7 +19,7 @@ Nas telas protegidas, normalmente basta o `montarLayout()` (de `layout.js`), que
 | `getUser()` | `{ nome, perfil }` ou `null` | Usuário logado. Útil para mostrar o nome ou decidir o que exibir pelo perfil. |
 | `getSession()` | `{ token, nome, perfil, exp }` ou `null` | Sessão completa. `null` se ausente, inválida ou vencida. |
 | `isLoggedIn()` | `true` / `false` | Se há sessão válida agora. Não redireciona. |
-| `saveSession(token)` | — | Grava a sessão após o login. Lança erro se o token não tiver `nome` e `perfil` válidos. |
+| `saveSession(resposta)` | — | Grava a resposta do login com `access_token`, `token_type: "bearer"`, `perfil` válido e `acesso_liberado: true`. Também aceita JWTs legados com `nome` e `perfil` no payload. |
 | `logout()` | — | Encerra a sessão e volta ao login. |
 | `endSession(motivo)` | — | Igual ao `logout`, mas com aviso no login. Com `"expirada"`, o login mostra "Sua sessão expirou". |
 | `clearSession()` | — | Apaga a sessão sem redirecionar. |
@@ -62,23 +62,33 @@ if (can('fornecedor.cadastrar')) {
 { rotulo: 'Cadastrar lote', href: '...', acao: 'lote.registrar' }
 ```
 
-Para uma ação nova, acrescente uma chave em `PERMISSOES`, um caso em `session.test.js` e a mesma regra no mock (`mocks/rbac.cjs`, que tem uma cópia da matriz e liga cada ação às requisições).
+Para uma ação nova, acrescente uma chave em `PERMISSOES`, cubra a regra em `session.test.js` e alinhe a autorização correspondente no backend.
 
 > Esconder ou barrar na interface é só conforto: a API verifica a permissão em cada operação protegida e responde `403`. Ação com nome errado em `can` devolve `false`, então o recurso some em vez de aparecer para todos.
 
 ---
 
-## Formato do token
+## Resposta do login e JWT
 
-O payload precisa ter:
+O login devolve:
 
 ```json
-{ "sub": "1", "nome": "Marina Costa", "perfil": "administrador", "iat": 1792775286, "exp": 1792804086 }
+{
+  "mensagem": "Autenticação realizada com sucesso!",
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "token_type": "bearer",
+  "perfil": "OPERADOR",
+  "acesso_liberado": true
+}
 ```
 
-- `perfil` precisa ser um dos `PERFIS` (maiúsculas e minúsculas tanto faz).
-- Sem `exp`, só a API (com `401`) derruba a sessão.
-- Se a API real usar outro formato, só a função interna `lerToken` muda.
+- `access_token` deve ser um JWT legível. O exemplo acima abrevia seu conteúdo.
+- `perfil` vem da resposta, precisa ser um dos `PERFIS` e é normalizado para minúsculas.
+- `acesso_liberado` precisa ser `true`; `false` apaga a sessão anterior e impede a entrada.
+- `token_type` deve ser `bearer`. As chamadas usam `Authorization: Bearer <access_token>`.
+- O nome exibido vem de `nome` no JWT; na ausência dele, usa `sub` ou `Usuário`.
+- A validade vem de `exp` no JWT (segundos). Sem `exp`, só a API (com `401`) derruba a sessão.
+- JWTs legados com `nome` e `perfil` no payload continuam aceitos por `saveSession(token)`.
 
 ---
 
