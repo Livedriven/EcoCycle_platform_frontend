@@ -155,12 +155,19 @@ export function validarLote(dados, { agora = new Date() } = {}) {
     // O código varia de empresa para empresa: só é obrigatório, sem regra de formato.
     const codigo = validarObrigatorio(dados.codigo_lote, 'Código do lote');
     if (!codigo.valido) erros.codigo_lote = codigo.mensagem;
+    else if (String(dados.codigo_lote).trim().length > 15) erros.codigo_lote = 'Código do lote deve ter no máximo 15 caracteres.';
 
     const fornecedor = validarObrigatorio(dados.id_fornecedor, 'Fornecedor');
     if (!fornecedor.valido) erros.id_fornecedor = fornecedor.mensagem;
 
     const peso = validarPeso(dados.pesoentrada_kg);
     if (!peso.valido) erros.pesoentrada_kg = peso.mensagem;
+    else {
+        const numero = Number(dados.pesoentrada_kg);
+        if (numero > 99999999.99 || Math.abs(numero * 100 - Math.round(numero * 100)) > 0.000001) {
+            erros.pesoentrada_kg = 'Informe um peso de até 99999999,99 kg, com no máximo duas casas decimais.';
+        }
+    }
 
     const obrigatoria = validarObrigatorio(dados.data_entrada, 'Data de entrada');
     if (!obrigatoria.valido) erros.data_entrada = obrigatoria.mensagem;
