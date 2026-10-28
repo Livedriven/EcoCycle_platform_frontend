@@ -36,7 +36,7 @@
                 <label for="codigo" class="form-label fw-semibold">Código do lote <span class="text-danger" aria-hidden="true">*</span></label>
                 <div class="input-group has-validation">
                   <span class="input-group-text" aria-hidden="true"><i class="bi bi-upc-scan"></i></span>
-                  <input type="text" id="codigo" name="codigo_lote" class="form-control" placeholder="Informe o código do lote recebido" autocomplete="off" required aria-describedby="ajuda-codigo erro-codigo">
+                  <input type="text" id="codigo" name="codigo_lote" class="form-control" placeholder="Informe o código do lote recebido" maxlength="15" autocomplete="off" required aria-describedby="ajuda-codigo erro-codigo">
                   <div id="erro-codigo" class="invalid-feedback"></div>
                 </div>
                 <div id="ajuda-codigo" class="form-text">Use o código que acompanha o lote. O formato varia de empresa para empresa.</div>
@@ -58,7 +58,7 @@
                 <label for="peso" class="form-label fw-semibold">Peso (kg) <span class="text-danger" aria-hidden="true">*</span></label>
                 <div class="input-group has-validation">
                   <span class="input-group-text" aria-hidden="true"><i class="bi bi-speedometer2"></i></span>
-                  <input type="number" id="peso" name="pesoentrada_kg" class="form-control" placeholder="Informe o peso do lote (ex: 1250.50)" min="0.01" step="0.01" inputmode="decimal" required aria-describedby="erro-peso">
+                  <input type="number" id="peso" name="pesoentrada_kg" class="form-control" placeholder="Informe o peso do lote (ex: 1250.50)" min="0.01" max="99999999.99" step="0.01" inputmode="decimal" required aria-describedby="erro-peso">
                   <span class="input-group-text">kg</span>
                   <div id="erro-peso" class="invalid-feedback"></div>
                 </div>
