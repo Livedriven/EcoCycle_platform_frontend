@@ -1,7 +1,7 @@
 import API from '../../shared/api.js';
 import { montarLayout } from '../../shared/layout.js';
 import { HOME_URL } from '../../shared/session.js';
-import { validarFornecedor } from '../../shared/validators.js';
+import { validarCadastroFornecedor, montarPayloadFornecedor } from './supplier-payload.js';
 import { buscarCep, validarCep } from './cep.js';
 import { aplicarMascarasFornecedor } from './input-masks.js';
 
@@ -18,6 +18,7 @@ function iniciarTela() {
     const btnSalvar = document.getElementById('btn-salvar');
     // As chaves são as mesmas do payload e das chaves de erro de validarFornecedor.
     const campos = {
+        id_fornecedor: document.getElementById('codigo-fornecedor'),
         nome_fornecedor: document.getElementById('nome'),
         cnpj_fornecedor: document.getElementById('cnpj'),
         telefone_fornecedor: document.getElementById('telefone'),
@@ -25,6 +26,7 @@ function iniciarTela() {
         endereco_fornecedor: document.getElementById('endereco')
     };
     const feedbacks = {
+        id_fornecedor: document.getElementById('erro-codigo-fornecedor'),
         nome_fornecedor: document.getElementById('erro-nome'),
         cnpj_fornecedor: document.getElementById('erro-cnpj'),
         telefone_fornecedor: document.getElementById('erro-telefone'),
@@ -74,11 +76,11 @@ function iniciarTela() {
         Object.entries(campos).forEach(([nome, campo]) => {
             dados[nome] = campo.value;
         });
-        const validacao = validarFornecedor(dados);
+        const validacao = validarCadastroFornecedor(dados);
         mostrarErros(validacao.erros);
         if (!validacao.valido) return;
 
-        const payload = montarPayload(dados);
+        const payload = montarPayloadFornecedor(dados);
 
         btnSalvar.disabled = true;
         btnSalvar.textContent = 'Salvando...';
@@ -148,23 +150,6 @@ function iniciarTela() {
     function mostrarStatusCep(mensagem, classe = '') {
         statusCep.className = ('form-text ' + classe).trim();
         statusCep.textContent = mensagem;
-    }
-
-    // Normaliza antes de enviar: o banco guarda CNPJ e telefone só com dígitos.
-    // Sem id_usuario: a API identifica quem cadastrou pelo token.
-    // TODO(E2): confirmar se campos opcionais vazios devem ser omitidos (como aqui) ou enviados como "" / null.
-    function montarPayload(dados) {
-        const payload = {
-            nome_fornecedor: dados.nome_fornecedor.trim(),
-            cnpj_fornecedor: dados.cnpj_fornecedor.replace(/\D/g, '')
-        };
-        const telefone = dados.telefone_fornecedor.replace(/\D/g, '');
-        const email = dados.email_fornecedor.trim();
-        const endereco = dados.endereco_fornecedor.trim();
-        if (telefone) payload.telefone_fornecedor = telefone;
-        if (email) payload.email_fornecedor = email;
-        if (endereco) payload.endereco_fornecedor = endereco;
-        return payload;
     }
 
     // TODO(E2): confirmar o status que a API devolve para CNPJ já cadastrado (aqui, 409).
