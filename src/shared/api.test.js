@@ -35,10 +35,20 @@ describe('tratamento de erros da API', () => {
         expect(fetch.mock.calls[0][1].headers.Authorization).toBeUndefined();
     });
     it('bloqueia rotas antigas e métodos inexistentes antes de chamar o backend', async () => {
-        await expect(API.GET('/esteiras')).rejects.toThrow('Operação não disponível');
+        await expect(API.GET('/equipamentos')).rejects.toThrow('Operação não disponível');
         await expect(API.GET('/leituras_sensor')).rejects.toThrow('Operação não disponível');
         await expect(API.POST('/alertas', {})).rejects.toThrow('Operação não disponível');
+        await expect(API.PATCH('/fornecedores/1', {})).rejects.toThrow('Operação não disponível');
+        await expect(API.PATCH('/producao/abc', {})).rejects.toThrow('Operação não disponível');
         expect(fetch).not.toHaveBeenCalled();
+    });
+    it('envia PATCH com corpo JSON e JWT e devolve a entidade atualizada', async () => {
+        sessionStorage.getItem.mockReturnValue('jwt');
+        fetch.mockResolvedValue({ status: 200, ok: true, json: async () => ({ producao: { id_producao: 7, status_producao: 'Finalizado' } }) });
+        const corpo = { status_producao: 'Finalizado' };
+        await expect(API.PATCH('/producao/7', corpo)).resolves.toMatchObject({ id: 7, status: 'Finalizado' });
+        expect(fetch.mock.calls[0][0]).toBe('https://api.example.test/producao/7');
+        expect(fetch.mock.calls[0][1]).toMatchObject({ method: 'PATCH', body: JSON.stringify(corpo), headers: { Authorization: 'Bearer jwt', 'Content-Type': 'application/json' } });
     });
     it('aceita HTTP 201 com envelope do cadastro de lote e envia JSON com JWT', async () => {
         sessionStorage.getItem.mockReturnValue('jwt');
@@ -129,7 +139,7 @@ describe('erros locais dos blocos do dashboard', () => {
     });
     it('mantém falhas de rede locais', async () => {
         fetch.mockRejectedValue(new TypeError('Failed to fetch'));
-        await expect(API.GET('/equipamentos', { erroLocal: true })).rejects.toThrow('Não foi possível conectar');
+        await expect(API.GET('/esteiras', { erroLocal: true })).rejects.toThrow('Não foi possível conectar');
         expect(location.replace).not.toHaveBeenCalled();
     });
     it('mantém timeout local', async () => {
@@ -137,7 +147,7 @@ describe('erros locais dos blocos do dashboard', () => {
         fetch.mockImplementation((url, { signal }) => new Promise((resolve, reject) => {
             signal.addEventListener('abort', () => reject(new DOMException('Timeout', 'AbortError')));
         }));
-        const resultado = expect(API.GET('/equipamentos', { erroLocal: true })).rejects.toThrow('limite de 1.5 segundos');
+        const resultado = expect(API.GET('/esteiras', { erroLocal: true })).rejects.toThrow('limite de 1.5 segundos');
         await vi.advanceTimersByTimeAsync(1500);
         await resultado;
         expect(location.replace).not.toHaveBeenCalled();

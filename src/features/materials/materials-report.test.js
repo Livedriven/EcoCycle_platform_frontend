@@ -1,8 +1,98 @@
 import { describe, expect, it } from 'vitest';
-import { prepararMateriais, filtrarMateriais, validarPeriodo } from './materials-report.js';
-import { materiaisPorLoteDia, totalPorMaterial } from '../../shared/calculations.js';
+import { prepararMateriais, prepararProducaoMateriais, filtrarMateriais, validarPeriodo } from './materials-report.js';
+import { MATERIAIS_RELATORIO, materiaisPorLoteDia, totalPorMaterial } from '../../shared/calculations.js';
+import { normalizarResposta } from '../../shared/api-contract.js';
 
 const registro = { id_lote: 1, tipo_material: 'Plástico', peso_kg: 12.5, data_hora: '2026-10-20T08:00:00' };
+
+const catalogo = [
+    { id_material: 7, tipo_material: 'plastico' },
+    { id_material: 4, tipo_material: 'metal' },
+    { id_material: 12, tipo_material: 'aluminio' },
+];
+const ciclo = {
+    id_producao: 10, id_lote: 2, data_inicio: '2026-10-20T08:00:00',
+    quantidade_entrada_kg: 100.25, quantidade_saida_kg: 90, rejeito_kg: 10.25,
+    itens: [
+        { id_item_producao: 1, id_producao: 10, id_material: 7, peso_kg: 50, data_hora: '2026-10-20T08:01:00' },
+        { id_item_producao: 2, id_producao: 10, id_material: 4, peso_kg: 30, data_hora: '2026-10-20T08:02:00' },
+        { id_item_producao: 3, id_producao: 10, id_material: 12, peso_kg: 10, data_hora: null },
+    ],
+};
+
+describe('integração entre ciclos, catálogo e relatório', () => {
+    it('usa itens e catálogo reais após o adaptador HTTP, contando rejeito uma vez', () => {
+        const original = structuredClone(ciclo);
+        const producoes = normalizarResposta('GET', '/producao', { registros_producao: [ciclo] });
+        const materiais = normalizarResposta('GET', '/materiais', { materiais: catalogo });
+        const dados = prepararProducaoMateriais(producoes, materiais);
+        expect(dados.pendencias).toEqual([]);
+        expect(dados.descartados).toBe(0);
+        expect(totalPorMaterial(dados.registros, MATERIAIS_RELATORIO)).toEqual({
+            'Plástico': 50, Metal: 30, 'Alumínio': 10, Rejeito: 10.25,
+        });
+        expect(materiaisPorLoteDia(dados.registros)).toEqual([
+            { id_lote: '2', data: '2026-10-20', plastico: 50, metal: 30, aluminio: 10, rejeito: 10.25 },
+        ]);
+        expect(ciclo).toEqual(original);
+    });
+    it('preserva a data dos itens e atribui rejeito ao início do ciclo', () => {
+        const dados = prepararProducaoMateriais([{ ...ciclo, itens: [
+            { id_material: 7, peso_kg: 90, data_hora: '2026-10-21T01:00:00' },
+        ] }], catalogo);
+        expect(totalPorMaterial(filtrarMateriais(dados.registros, { inicio: '2026-10-21' }), MATERIAIS_RELATORIO))
+            .toEqual({ 'Plástico': 90, Metal: 0, 'Alumínio': 0, Rejeito: 0 });
+        expect(totalPorMaterial(filtrarMateriais(dados.registros, { fim: '2026-10-20' }), MATERIAIS_RELATORIO).Rejeito).toBe(10.25);
+    });
+    it.each([[], undefined, null])('mantém rejeito e sinaliza ciclo sem itens: %j', (itens) => {
+        const dados = prepararProducaoMateriais([{ ...ciclo, itens }], catalogo);
+        expect(totalPorMaterial(dados.registros, MATERIAIS_RELATORIO)).toEqual({
+            'Plástico': 0, Metal: 0, 'Alumínio': 0, Rejeito: 10.25,
+        });
+        expect(filtrarMateriais(dados.pendencias, { lote: '2', fim: '2026-10-20' })).toHaveLength(1);
+    });
+    it('sinaliza composição parcial e não distribui a saída que falta', () => {
+        const dados = prepararProducaoMateriais([{ ...ciclo, itens: [ciclo.itens[0]] }], catalogo);
+        expect(dados.pendencias).toHaveLength(1);
+        expect(totalPorMaterial(dados.registros, MATERIAIS_RELATORIO)['Plástico']).toBe(50);
+    });
+    it('descarta material desconhecido e peso inválido, preservando os demais pesos', () => {
+        const dados = prepararProducaoMateriais([{ ...ciclo, itens: [
+            ciclo.itens[0], { id_material: 999, peso_kg: 20 }, { id_material: 4, peso_kg: -1 }, null,
+        ] }], catalogo);
+        expect(dados.descartados).toBe(3);
+        expect(dados.pendencias).toHaveLength(1);
+        expect(totalPorMaterial(dados.registros, MATERIAIS_RELATORIO)).toEqual({
+            'Plástico': 50, Metal: 0, 'Alumínio': 0, Rejeito: 10.25,
+        });
+    });
+    it('não soma rejeito dos itens mesmo se um catálogo incompatível tentar defini-lo', () => {
+        const dados = prepararProducaoMateriais([{ ...ciclo, itens: [...ciclo.itens, { id_material: 99, peso_kg: 10.25 }] }],
+            [...catalogo, { id_material: 99, tipo_material: 'Rejeito' }]);
+        expect(totalPorMaterial(dados.registros, MATERIAIS_RELATORIO).Rejeito).toBe(10.25);
+        expect(dados.pendencias).toHaveLength(1);
+    });
+    it('aceita IDs numéricos em texto e nomes acentuados sem fixar os IDs dos materiais', () => {
+        const dados = prepararProducaoMateriais([{ ...ciclo, itens: [{ id_material: '42', peso_kg: '90' }] }],
+            [{ id: '42', tipo_material: ' PLÁSTICO ' }]);
+        expect(totalPorMaterial(dados.registros, MATERIAIS_RELATORIO)['Plástico']).toBe(90);
+        expect(dados.pendencias).toEqual([]);
+    });
+    it('mantém pesos zero explícitos e não substitui rejeito ausente por zero', () => {
+        const dados = prepararProducaoMateriais([{ ...ciclo, quantidade_saida_kg: 0, rejeito_kg: null,
+            itens: [{ id_material: 7, peso_kg: 0 }] }], catalogo);
+        expect(dados.registros).toEqual([{ id_lote: '2', data_hora: '2026-10-20', tipo_material: 'Plástico', peso_kg: 0 }]);
+        expect(dados.pendencias).toEqual([]);
+    });
+    it('não trata o peso total normalizado de ciclos antigos como material separado', () => {
+        const dados = prepararProducaoMateriais([{ id_lote: 2, data_hora: '2026-10-20', peso_kg: 100 }], catalogo);
+        expect(dados.registros).toEqual([]);
+        expect(dados.pendencias).toHaveLength(1);
+    });
+    it.each([[{}, []], [[], null]])('recusa formato inválido de ciclos ou catálogo', (producoes, materiais) => {
+        expect(() => prepararProducaoMateriais(producoes, materiais)).toThrow('formato inválido');
+    });
+});
 
 describe('validação dos materiais recebidos', () => {
     it('normaliza números, mantém o dia informado e copia somente os campos do relatório', () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     lerIdDaUrl, lerData, duracaoEmSegundos, formatarDuracao, calcularProgresso,
-    ultimaLeitura, contarAlertasAtivos, montarMonitoramento
+    ultimaLeitura, contarAlertasAtivos, montarMonitoramento, validarFinalizacao
 } from './production-progress-data.js';
 
 describe('lerIdDaUrl', () => {
@@ -119,7 +119,8 @@ describe('montarMonitoramento', () => {
 
     it('monta produção, lote, progresso, esteira, sensores e materiais', () => {
         expect(montarMonitoramento(DADOS, 11)).toEqual({
-            producao: { id: 11, id_lote: 8, turno: 'Manhã', inicio: '2026-10-26T09:20:00' },
+            producao: { id: 11, id_lote: 8, turno: 'Manhã', inicio: '2026-10-26T09:20:00',
+                status: '', entrada_kg: null, itens_kg: 0, encerrada: false },
             lote: { id: 8, codigo: 'LT-0008', pesoTotal: 640.35, status: 'Recebido' },
             progresso: { total: 640.35, processado: 160.5, restante: 479.85, percentual: 25, excedeu: false },
             esteira: { nome: 'Esteira 01 - Triagem', status: 'Ativa', velocidade_kmh: 2.4, temperatura_c: 38.5 },
@@ -155,5 +156,43 @@ describe('montarMonitoramento', () => {
         const copia = JSON.stringify(DADOS);
         montarMonitoramento(DADOS, 11);
         expect(JSON.stringify(DADOS)).toBe(copia);
+    });
+    it('com o catálogo, soma os materiais pelos itens dos ciclos do lote', () => {
+        const dados = {
+            ...DADOS,
+            producoes: [{ id: 30, id_lote: 8, id_esteira: 1, data_hora: '2026-10-26T09:20:00', peso_kg: 90,
+                quantidade_entrada_kg: 100, rejeito_kg: 10, status: 'Em processamento',
+                itens: [{ id_material: 1, peso_kg: 60, data_hora: '2026-10-26T10:00:00' }, { id_material: 3, peso_kg: 30 }] }],
+            materiais: [{ id_material: 1, tipo_material: 'plastico' }, { id_material: 3, tipo_material: 'aluminio' }]
+        };
+        const resultado = montarMonitoramento(dados, 30);
+        expect(resultado.materiais).toEqual([
+            { material: 'Plástico', peso: 60 }, { material: 'Metal', peso: 0 },
+            { material: 'Alumínio', peso: 30 }, { material: 'Rejeito', peso: 10 }
+        ]);
+        expect(resultado.progresso.processado).toBe(90);
+        expect(resultado.producao).toMatchObject({ entrada_kg: 100, itens_kg: 90, encerrada: false });
+    });
+    it('considera encerrada pelo status da produção ou do lote', () => {
+        const producoes = [{ ...DADOS.producoes[0], status: 'Finalizado' }];
+        expect(montarMonitoramento({ ...DADOS, producoes }, 11).producao.encerrada).toBe(true);
+        const lotes = [{ ...DADOS.lotes[0], status: 'finalizado ' }];
+        expect(montarMonitoramento({ ...DADOS, lotes }, 11).producao.encerrada).toBe(true);
+    });
+});
+
+describe('validarFinalizacao', () => {
+    it.each([
+        [80, 20, 100, { erro: '', saida: 80, rejeito: 20 }],
+        ['79.995', '0', '100', { erro: '', saida: 80, rejeito: 0 }],
+        [80, 20, null, { erro: '', saida: 80, rejeito: 20 }],
+    ])('aceita saída %s e rejeito %s com entrada %s', (saida, rejeito, entrada, esperado) => {
+        expect(validarFinalizacao(saida, rejeito, entrada)).toEqual(esperado);
+    });
+    it.each([['', 0], [10, ''], [-1, 0], [0, -1], ['abc', 0]])('recusa saída %s e rejeito %s', (saida, rejeito) => {
+        expect(validarFinalizacao(saida, rejeito, 100).erro).toContain('maiores ou iguais a zero');
+    });
+    it('recusa saída e rejeito acima da entrada do ciclo', () => {
+        expect(validarFinalizacao(90, 20, 100).erro).toContain('100 kg');
     });
 });

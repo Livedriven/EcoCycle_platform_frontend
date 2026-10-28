@@ -29,7 +29,7 @@ Simulador do chão de fábrica (E4) ──┘
 | **Login** | Entrada com usuário e senha; a sessão usa um token JWT. |
 | **Dashboard** | Indicadores (total recebido, processado, plástico, metal, alertas ativos), balanço de massas diário, mensal e trimestral, CO₂ evitado, recebimento por fornecedor, lotes por status, status das esteiras e alertas ativos. |
 | **Produção do dia** | Registros de produção com filtro por data. |
-| **Materiais produzidos** | Relatório por material quando o detalhamento estiver disponível; a API atual ainda não fornece esses pesos. |
+| **Materiais produzidos** | Pesos dos itens de produção por material, lote e dia, com rejeito contado por ciclo e aviso de composição incompleta. |
 | **Alertas** | Alertas gerados pelas leituras dos sensores. |
 | **Esteiras** | Consulta com busca e cartões; detalhes de cada esteira em modal, dentro de Equipamentos. |
 | **Status das esteiras** | Visão geral de todas as esteiras e seleção individual para velocidade, temperatura, leituras e alertas. |
@@ -40,15 +40,15 @@ Todas as telas, exceto login e páginas de erro, têm o mesmo layout: topo com o
 
 ### Perfis de acesso
 
-Há quatro perfis. Todos veem os mesmos dados; a diferença está nas ações que cada um pode executar (Especificação MVP2, seção 3):
+Há cinco perfis, os mesmos níveis de acesso do backend. Todos veem os mesmos dados; a diferença está nas ações que cada um pode executar (Especificação MVP2, seção 3):
 
-| Ação | Administrador | Gerente | Operador | Consulta |
-|---|---|---|---|---|
-| Login e consulta de dashboard, lotes, fornecedores, alertas e estoque | Sim | Sim | Sim | Sim |
-| Cadastrar fornecedor | Sim | Sim | Não | Não |
-| Registrar lote | Sim | Sim | Sim | Não |
-| Iniciar produção (finalização sem rota na API atual) | Sim | Sim | Sim | Não |
-| Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
+| Ação | Administrador | Gerente | Operador | Técnico | Consulta |
+|---|---|---|---|---|---|
+| Login e consulta de dashboard, lotes, fornecedores, alertas e estoque | Sim | Sim | Sim | Sim | Sim |
+| Cadastrar fornecedor | Sim | Sim | Não | Não | Não |
+| Registrar lote | Sim | Sim | Sim | Não | Não |
+| Iniciar e finalizar produção | Sim | Sim | Sim | Não | Não |
+| Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
 
 No portal, o menu esconde e as telas barram (página "acesso negado") o que o perfil não pode fazer. Quem garante a regra é a API: token ausente, inválido ou expirado recebe `401`, e usuário sem permissão recebe `403`.
 

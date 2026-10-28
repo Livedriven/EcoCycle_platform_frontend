@@ -99,6 +99,14 @@ describe("resposta de autenticação do backend", () => {
     expect(can("producao.operar")).toBe(true);
     expect(can("fornecedor.cadastrar")).toBe(false);
   });
+  it.each(["ADMINISTRADOR", "GERENTE", "OPERADOR", "TECNICO", "CONSULTA"])(
+    "aceita o nível %s devolvido pelo login do backend",
+    (perfil) => {
+      const token = fazerToken({ sub: "7", usuario: "u1", perfil, exp: agora() + 3600 });
+      saveSession(respostaLogin({ access_token: token, perfil }));
+      expect(getUser()).toEqual({ nome: "u1", perfil: perfil.toLowerCase() });
+    },
+  );
   it("mostra o login do claim usuario quando sub é o identificador numérico", () => {
     saveSession(respostaLogin({ access_token: fazerToken({ sub: '7', usuario: 'operador1', perfil: 'OPERADOR', exp: agora() + 3600 }) }));
     expect(getUser()).toEqual({ nome: 'operador1', perfil: 'operador' });
@@ -176,14 +184,14 @@ describe("requireLogin", () => {
 });
 
 describe("can (matriz de permissões do MVP)", () => {
-  // [ação, administrador, gerente, operador, consulta]
+  // [ação, administrador, gerente, operador, tecnico, consulta]
   const matriz = [
-    ["fornecedor.cadastrar", true, true, false, false],
-    ["lote.registrar", true, true, true, false],
-    ["producao.operar", true, true, true, false],
-    ["usuarios.gerenciar", false, false, false, false],
+    ["fornecedor.cadastrar", true, true, false, false, false],
+    ["lote.registrar", true, true, true, false, false],
+    ["producao.operar", true, true, true, false, false],
+    ["usuarios.gerenciar", false, false, false, false, false],
   ];
-  const perfis = ["administrador", "gerente", "operador", "consulta"];
+  const perfis = ["administrador", "gerente", "operador", "tecnico", "consulta"];
 
   it.each(matriz)("%s segue a especificação", (acao, ...esperado) => {
     expect(perfis.map((perfil) => can(acao, perfil))).toEqual(esperado);

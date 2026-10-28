@@ -5,7 +5,7 @@ import { CAMPOS, MATERIAIS_RELATORIO, totalPorMaterial, materiaisPorLoteDia } fr
 import { formatDate, formatKg, formatNumber, formatToneladas } from '../../shared/formatters.js';
 import { createTable, updateTable } from '../../shared/table.js';
 import { createDoughnutChart, CORES } from '../../shared/charts.js';
-import { prepararMateriais, filtrarMateriais, validarPeriodo } from './materials-report.js';
+import { prepararProducaoMateriais, filtrarMateriais, validarPeriodo } from './materials-report.js';
 import './materials.css';
 
 // Página protegida: sem sessão válida, montarLayout() já redireciona ao login.
@@ -23,6 +23,7 @@ if (SESSAO) {
     const textoAtualizacao = document.getElementById('ultima-atualizacao');
     const canvas = document.getElementById('grafico-materiais');
     let registros = [];
+    let pendencias = [];
     let tabela;
     let grafico;
     let carregando = false;
@@ -55,6 +56,12 @@ if (SESSAO) {
         }
 
         const filtrados = filtrarMateriais(registros, filtros);
+        const ciclosPendentes = filtrarMateriais(pendencias, filtros).length;
+        const aviso = document.getElementById('aviso-materiais');
+        aviso.classList.toggle('d-none', !ciclosPendentes);
+        aviso.textContent = ciclosPendentes
+            ? `${formatNumber(ciclosPendentes, 0)} ciclo(s) sem composição completa por material. Os totais incluem apenas os pesos informados. A saída total desses ciclos não foi distribuída entre os materiais.`
+            : '';
         const totais = totalPorMaterial(filtrados, MATERIAIS_RELATORIO);
         const linhas = materiaisPorLoteDia(filtrados);
         document.getElementById('total-plastico').textContent = formatKg(totais['Plástico']);
@@ -118,26 +125,20 @@ if (SESSAO) {
         }
         bloco.setAttribute('aria-busy', 'true');
         try {
-            const resposta = await API.GET('/producao', { erroLocal: true });
+            const [resposta, materiais] = await Promise.all([
+                API.GET('/producao', { erroLocal: true }),
+                API.GET('/materiais', { erroLocal: true }),
+            ]);
             if (!requireLogin()) return;
-            if (resposta.length && resposta.every((r) => !r.tipo_material)) {
-                registros = [];
-                dadosCarregados = false;
-                assinaturaDados = undefined;
-                grafico?.destroy();
-                grafico = null;
-                mostrarEstado('A API de produção ainda não disponibiliza os pesos separados por material. O catálogo /materiais não contém esses pesos.');
-                textoAtualizacao.textContent = '';
-                return;
-            }
-            const dados = prepararMateriais(resposta);
+            const dados = prepararProducaoMateriais(resposta, materiais);
             textoAtualizacao.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
-            const assinatura = JSON.stringify(dados.registros);
+            const assinatura = JSON.stringify([dados.registros, dados.pendencias]);
             if (assinatura === assinaturaDados) return;
             registros = dados.registros;
+            pendencias = dados.pendencias;
             const selecionado = lote.value;
             lote.replaceChildren(new Option('Todos os lotes', ''));
-            const lotes = [...new Set(registros.map((registro) => registro[CAMPOS.idLoteProducao]))]
+            const lotes = [...new Set([...registros, ...pendencias].map((registro) => registro[CAMPOS.idLoteProducao]))]
                 .sort((a, b) => Number(a) - Number(b));
             for (const id of lotes) lote.add(new Option('Lote ' + id, id));
             lote.value = lotes.includes(selecionado) ? selecionado : '';

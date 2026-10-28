@@ -75,7 +75,7 @@ function iniciarTela() {
             const [producoes, lotes, esteiras] = await Promise.all([
                 API.GET('/producao', { erroLocal: true }),
                 API.GET('/lotes', { erroLocal: true }),
-                API.GET('/equipamentos', { erroLocal: true })
+                API.GET('/esteiras', { erroLocal: true })
             ]);
             linhas = montarLinhas(
                 Array.isArray(producoes) ? producoes : [],

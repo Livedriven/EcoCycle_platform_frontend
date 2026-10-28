@@ -1,34 +1,26 @@
 # Materiais separados
 
-Relatório de consulta de **Plástico, Metal, Alumínio e Rejeito** separados na produção, baseado em `GET /producao`. **Limitação atual do backend:** `GET /producao` retorna ciclos com balanço de massas, sem composição por material. Nessa resposta a tela informa que o detalhamento está indisponível. `GET /materiais` contém apenas o catálogo de tipos. O relatório abaixo se aplica a respostas que disponibilizem os pesos separados.
+Relatório de **Plástico, Metal, Alumínio e Rejeito** por lote e dia. Consulta `GET /producao` e `GET /materiais` a cada 5 segundos, preservando filtros e dados durante as atualizações.
 
-O peso de entrada de um lote não informa a composição dos materiais e não entra neste relatório.
+## Origem e cálculo dos pesos
 
-- Exibe todo o histórico por padrão, com filtros por data inicial, data final e lote. As datas são inclusivas e o dia informado pela API é preservado.
-- Os filtros alimentam a mesma lista usada por cartões (kg e toneladas), gráfico de rosca e tabela. Cada linha soma todos os turnos e esteiras de um lote no mesmo dia.
-- Os totais consideram todos os registros filtrados, incluindo as demais páginas da tabela. A ordenação e a paginação do Grid.js não alteram os totais.
-- Os dados são consultados automaticamente a cada 5 segundos, preservando os filtros e o conteúdo durante as requisições. Não há operações de escrita.
-- Os quatro materiais têm cartões em kg e toneladas, colunas próprias na tabela e categorias no gráfico. Materiais sem registros aparecem com zero, sem gerar dados fictícios. Alumínio e rejeito já estão preparados para receber registros quando a API passar a fornecê-los.
-- Durante a consulta, exibe spinner e texto de carregamento, oculta o relatório e bloqueia os controles. Sem registros, mantém os cartões zerados e mostra mensagens próprias no lugar do gráfico e da tabela. Se os filtros não encontrarem resultados, oferece **Limpar filtros**. Registros válidos com peso zero continuam na tabela, mesmo sem gráfico para desenhar.
+- Cada ciclo de produção contém `itens`, com `id_material`, `peso_kg` e `data_hora`. O catálogo relaciona o ID ao tipo `plastico`, `metal` ou `aluminio`, apresentado com o nome em português e acentuação.
+- Os pesos recicláveis são exclusivamente os pesos dos itens. Entrada do lote e saída total do ciclo não indicam sua composição e nunca são distribuídas entre materiais.
+- `rejeito_kg` é somado uma vez por ciclo. Rejeito não é um material do catálogo nem um peso a replicar em cada item.
+- O dia do material é o dia de `item.data_hora`, com fallback para `data_inicio` do ciclo quando a data do item é nula. O rejeito usa o dia de `data_inicio`.
+- Os filtros por lote e período são inclusivos e alimentam os mesmos registros usados pelos cartões, gráfico e tabela. Todos os turnos e esteiras de um lote/dia são somados; paginação e ordenação da tabela não afetam os totais.
+- Ciclos sem itens, com itens inválidos/desconhecidos ou cuja soma difere da saída por mais de 0,005 kg geram um aviso de composição incompleta, filtrado pela data de início e lote. Os demais pesos informados, inclusive rejeito, permanecem disponíveis. Zero indica ausência de peso registrado, não uma composição estimada.
 
-## Reutilização
+`prepararProducaoMateriais` adapta os ciclos e catálogo antes de chamar `prepararMateriais`. A validação exige peso numérico finito não negativo, ID de lote inteiro positivo seguro e dia existente no calendário. Textos externos usam `textContent` e `Option`. Registros planos antigos permanecem compatíveis; ciclos com `itens` sempre usam os itens como fonte.
 
-`layout.js` e `session.js` protegem a tela; `api.js` envia o token e trata os erros; `calculations.js` calcula e agrupa os valores; `formatters.js` formata pesos e datas; `table.js` cria a tabela paginada; `shared/charts.js` compartilha a implementação de gráficos com o dashboard.
+O adaptador HTTP compartilhado preserva os ciclos: expandir itens globalmente duplicaria pesos totais nas demais telas. Nenhuma leitura de telemetria é tratada como peso de produção.
 
-## Validação e segurança
+## Estados e acesso
 
-Todos os perfis autenticados do MVP podem consultar. Sem sessão, a tela não busca dados; a validade da sessão é conferida novamente antes de exibir uma resposta e ao aplicar filtros. A autorização real continua sendo responsabilidade da API.
+Todos os perfis autenticados podem consultar; autorização real pertence à API. Sem sessão a tela não busca dados e revalida a sessão antes de exibir respostas. Há estados de carregamento, erro, histórico vazio e filtros sem resultados. Falhas de atualização preservam os últimos dados e são sinalizadas. As duas consultas precisam concluir antes de substituir o relatório.
 
-`materials-report.js` exige uma lista, aceita os quatro materiais de `MATERIAIS_RELATORIO` (Plástico, Metal, Alumínio e Rejeito), lote com ID inteiro positivo seguro, peso numérico finito e não negativo e dia existente no calendário. Somente os campos do relatório são copiados. Registros incompletos (incluindo produções iniciadas sem material/peso) são desconsiderados sem aviso na tela, sem estimar valores. Formato de resposta inválido mostra erro e permite tentar novamente.
+O endpoint deve devolver todo o histórico acessível ao usuário. Se houver paginação no servidor, será necessário carregar todas as páginas ou usar uma agregação. Não há gravação, alteração do fluxo de início de produção ou geração automática de itens: os pesos precisam estar registrados no backend.
 
-Textos externos usam `textContent`/`Option` e as colunas de texto do Grid.js, sem interpolação em HTML. Períodos inválidos suspendem a exibição até serem corrigidos ou limpos. Falhas HTTP, de rede e timeout seguem o tratamento central do `api.js`.
+## Verificação
 
-## Contrato de integração
-
-O endpoint deve devolver a lista completa. Se a API real introduzir paginação no servidor, será necessário buscar todas as páginas ou usar um endpoint de agregação antes de apresentar totais globais.
-
-Campos utilizados: `id_lote`, `tipo_material`, `peso_kg` e `data_hora`, centralizados em `CAMPOS`. Não são necessários outros endpoints nem acesso a dados de usuários.
-
-O campo `tipo_material` deve usar um dos nomes canônicos: `Plástico`, `Metal`, `Alumínio` ou `Rejeito`. Metal e alumínio são categorias separadas: um peso não é inferido nem duplicado na outra categoria. Zeros indicam ausência de registros no filtro aplicado, quando há detalhamento por material disponível.
-
-Testes: `materials-report.test.js` cobre validação e filtros; `materials.test.js` cobre o controlador, proteção de sessão, filtros sincronizados, estados vazios, erros e nova tentativa; as novas funções compartilhadas são testadas em `calculations.test.js` e `formatters.test.js`.
+`materials-report.test.js` cobre o contrato real normalizado, catálogo, agrupamento, datas, pesos parciais, rejeito sem duplicação, validação e filtros. `materials.test.js` cobre o controlador, consultas, sessão, falhas, atualização e aviso filtrado. As funções de cálculo compartilhadas permanecem testadas em `calculations.test.js`.

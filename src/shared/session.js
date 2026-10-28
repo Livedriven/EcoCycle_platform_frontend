@@ -6,12 +6,13 @@ const CHAVE_AUTENTICACAO = "autenticacao";
 export const LOGIN_URL = "/src/features/login/login.html";
 export const HOME_URL = "/src/features/dashboard/dashboard.html";
 export const FORBIDDEN_URL = "/src/features/errors/403.html";
-export const PERFIS = ["administrador", "gerente", "operador", "consulta"];
+// Mesmos níveis aceitos pelo backend (models/usuario.py NIVEIS_ACESSO), em minúsculas.
+export const PERFIS = ["administrador", "gerente", "operador", "tecnico", "consulta"];
 
 /**
  * Matriz de permissões do MVP (Especificação MVP2, seção 3): quem pode executar
  * cada ação. Consultar dashboard, lotes, fornecedores, alertas e estoque vale
- * para os 4 perfis e não precisa de ação aqui. Lista vazia = ninguém.
+ * para todos os perfis e não precisa de ação aqui. Lista vazia = ninguém.
  * A interface só esconde e barra; quem garante a regra é a API (401 e 403).
  */
 export const PERMISSOES = {

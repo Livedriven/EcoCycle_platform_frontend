@@ -89,7 +89,7 @@ if (montarLayout()) {
         lista.setAttribute('aria-busy', 'true');
         if (!carregou) mensagem('Carregando esteiras...');
         try {
-            const dados = await API.GET('/equipamentos', { erroLocal: true });
+            const dados = await API.GET('/esteiras', { erroLocal: true });
             if (!Array.isArray(dados)) throw new Error('Resposta inválida ao consultar esteiras.');
             const novaAssinatura = JSON.stringify(dados);
             const mudou = assinatura !== novaAssinatura;

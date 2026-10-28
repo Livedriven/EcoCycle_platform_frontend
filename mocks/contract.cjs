@@ -3,9 +3,9 @@ const COLECOES = {
     '/fornecedores': ['fornecedores', 'fornecedores', 'fornecedor', 'id_fornecedor'],
     '/lotes': ['lotes', 'lotes', 'lote', 'id_lote'],
     '/producao': ['producao', 'registros_producao', 'producao', 'id_producao'],
-    '/equipamentos': ['esteiras', 'equipamentos', null, 'id_esteira'],
+    '/esteiras': ['esteiras', 'esteiras', 'esteira', 'id_esteira'],
     '/telemetria/historico': ['leituras_sensor', 'historico', null, 'id_leitura_sensor'],
-    '/alertas': ['alertas', 'alertas', null, 'id_alerta'],
+    '/alertas': ['alertas', 'alertas', 'alerta', 'id_alerta'],
     '/materiais': ['materiais', 'materiais', 'material', 'id_material'],
 };
 const OBRIGATORIOS = {
@@ -13,8 +13,19 @@ const OBRIGATORIOS = {
     '/lotes': ['id_fornecedor', 'codigo_lote', 'status_lote', 'peso_recebido_kg'],
     '/producao': ['id_lote', 'id_usuario', 'id_esteira', 'turno', 'status_producao', 'quantidade_entrada_kg', 'quantidade_saida_kg', 'rejeito_kg'],
     '/materiais': ['tipo_material'],
+    '/esteiras': ['nome_esteira'],
 };
-const OPCIONAIS = { '/lotes': ['data_entrada'], '/producao': ['data_inicio', 'data_fim', 'itens'] };
+const OPCIONAIS = {
+    '/lotes': ['data_entrada'], '/producao': ['data_inicio', 'data_fim', 'itens'],
+    '/esteiras': ['status_esteira', 'velocidade_esteira_kmh', 'temperatura_esteira_c'],
+};
+// Campos aceitos pelo PATCH de cada rota com identificador (atualização parcial).
+const EDITAVEIS = {
+    '/esteiras': ['nome_esteira', 'status_esteira', 'velocidade_esteira_kmh', 'temperatura_esteira_c'],
+    '/lotes': ['codigo_lote', 'status_lote', 'peso_recebido_kg'],
+    '/producao': ['status_producao', 'turno', 'data_fim', 'quantidade_saida_kg', 'rejeito_kg', 'itens'],
+    '/alertas': ['resolvido'],
+};
 
 function registroApi(caminho, registro) {
     const chave = COLECOES[caminho][3];
@@ -31,7 +42,7 @@ function registroApi(caminho, registro) {
         r.quantidade_entrada_kg ??= r.quantidade_saida_kg;
         r.rejeito_kg ??= 0;
         r.status_producao ??= 'Finalizado';
-        // Os fixtures mantêm composição para demonstrar o relatório de materiais.
+        r.itens ??= [];
     }
     if (caminho === '/telemetria/historico') {
         mover('datahora_leitura', 'timestamp'); mover('temperatura_leitura_c', 'temperatura');
@@ -90,10 +101,45 @@ module.exports = (req, res) => {
         const novo = { ...dados, [contrato[3]]: id };
         if (caminho === '/lotes') novo.data_entrada ??= new Date().toISOString();
         if (caminho === '/producao') novo.data_inicio ??= new Date().toISOString();
+        if (caminho === '/esteiras') Object.assign(novo, { status_esteira: 'DESLIGADA', velocidade_esteira_kmh: 0, temperatura_esteira_c: 0, ...dados });
         salvar(contrato[0], novo);
         return res.status(caminho === '/fornecedores' ? 200 : 201).json({ mensagem: 'Cadastro realizado com sucesso.', [contrato[2]]: novo });
     }
-    if (req.method === 'POST' && ['/equipamentos/status', '/telemetria'].includes(caminho)) {
+    const alvo = /^\/(esteiras|lotes|producao|alertas)\/([1-9]\d*)$/.exec(caminho);
+    if (alvo && (req.method === 'PATCH' || (req.method === 'GET' && alvo[1] === 'esteiras'))) {
+        const rota = '/' + alvo[1];
+        const [colecao, , entidade, chave] = COLECOES[rota];
+        const registro = db.get(colecao).find((r) => Number(r[chave] ?? r.id) === Number(alvo[2])).value();
+        if (req.method === 'GET') {
+            return registro ? res.json({ esteira: registroApi(rota, registro) }) : res.status(404).json({ detail: 'Esteira não encontrada.' });
+        }
+        const dados = req.body;
+        const campos = dados && typeof dados === 'object' && !Array.isArray(dados) ? Object.keys(dados) : [];
+        if (!campos.length || !campos.every((c) => EDITAVEIS[rota].includes(c))
+            || (rota === '/alertas' && typeof dados.resolvido !== 'boolean')) {
+            return res.status(422).json({ detail: 'Informe ao menos um campo válido para atualizar.' });
+        }
+        if (!registro) return res.status(404).json({ detail: 'Registro não encontrado.' });
+        const atual = registroApi(rota, registro);
+        const mudancas = rota === '/alertas' ? { resolvido: dados.resolvido ? 'SIM' : 'NAO' } : { ...dados };
+        if (rota === '/producao') {
+            const saida = Number(dados.quantidade_saida_kg ?? atual.quantidade_saida_kg ?? 0);
+            const rejeito = Number(dados.rejeito_kg ?? atual.rejeito_kg ?? 0);
+            if (saida + rejeito > Number(atual.quantidade_entrada_kg) + 0.005) {
+                return res.status(422).json({ detail: 'Saída e rejeito somados não podem exceder a entrada do ciclo.' });
+            }
+            // Itens são acrescentados ao ciclo, como no backend.
+            const todos = listar('/producao').flatMap((p) => p.itens ?? []);
+            let proximo = Math.max(0, ...todos.map((i) => Number(i.id_item_producao) || 0));
+            mudancas.itens = [...(atual.itens ?? []), ...(dados.itens ?? []).map((item) => ({
+                id_item_producao: ++proximo, id_producao: atual.id_producao, id_material: item.id_material,
+                peso_kg: item.peso_kg, data_hora: new Date().toISOString(),
+            }))];
+        }
+        Object.assign(registro, mudancas);
+        return res.json({ mensagem: 'Atualização realizada com sucesso.', [entidade]: registroApi(rota, registro) });
+    }
+    if (req.method === 'POST' && ['/esteiras/status', '/telemetria'].includes(caminho)) {
         const dados = req.body;
         const campos = ['id_esteira', 'temperatura_esteira_c', 'velocidade_esteira_kmh', 'peso_atual_kg', 'travada'];
         if (caminho === '/telemetria') campos.push('id_producao');
@@ -103,9 +149,9 @@ module.exports = (req, res) => {
         const tipos = [dados.peso_atual_kg > 500 && 'SOBRECARGA', dados.temperatura_esteira_c > 50 && 'TEMPERATURA_ALTA', dados.velocidade_esteira_kmh > 10 && 'VELOCIDADE_ALTA', dados.travada && 'TRAVAMENTO'].filter(Boolean);
         const estado = tipos.length ? 'ESTEIRA DESLIGADA' : 'LIGADA';
         const alertas = tipos.map((tipo) => ({ mensagem: tipo, datahora_alerta: new Date().toISOString() }));
-        if (caminho === '/equipamentos/status') {
+        if (caminho === '/esteiras/status') {
             Object.assign(esteira, { status_esteira: estado, temperatura_esteira_c: dados.temperatura_esteira_c, velocidade_esteira_kmh: dados.velocidade_esteira_kmh });
-            return res.json({ mensagem: 'Leitura simulada atualizada.', estado_atual: registroApi('/equipamentos', esteira), alertas_seguranca: alertas, acao_tomada: estado });
+            return res.json({ mensagem: 'Leitura simulada atualizada.', estado_atual: registroApi('/esteiras', esteira), alertas_seguranca: alertas, acao_tomada: estado });
         }
         if (!listar('/producao').some((r) => r.id_producao === dados.id_producao && r.id_esteira === dados.id_esteira)) return res.status(404).json({ detail: 'Produção não encontrada para esta esteira.' });
         const leitura = salvar('leituras_sensor', { id_leitura_sensor: novoId('/telemetria/historico'), id_esteira: dados.id_esteira, id_producao: dados.id_producao, id_usuario: Number(req.claims.sub), temperatura: dados.temperatura_esteira_c, peso: dados.peso_atual_kg, status_registrado: estado, material_leitura: dados.material_leitura, timestamp: new Date().toISOString() });

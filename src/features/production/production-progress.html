@@ -68,11 +68,30 @@
                 <button type="button" id="btn-iniciar" class="btn btn-primary" disabled title="A produção já foi iniciada quando foi cadastrada.">
                   <i class="bi bi-play me-1" aria-hidden="true"></i>Iniciar produção
                 </button>
-                <button type="button" id="btn-finalizar" class="btn btn-outline-secondary" disabled title="Finalização ainda não disponível: a operação não está definida no contrato da API.">
+                <button type="button" id="btn-finalizar" class="btn btn-outline-danger" aria-controls="form-finalizar" aria-expanded="false">
                   <i class="bi bi-stop-circle me-1" aria-hidden="true"></i>Finalizar produção
                 </button>
               </div>
-              <div class="form-text">Iniciar produção já foi feito no cadastro. Finalizar produção ainda não está disponível.</div>
+              <div class="form-text" id="ajuda-acoes">Iniciar produção já foi feito no cadastro.</div>
+
+              <form id="form-finalizar" class="border rounded p-3 mt-3 d-none" novalidate>
+                <p class="small text-body-secondary mb-3">Informe os pesos finais do ciclo. Saída e rejeito, somados, não podem passar da entrada.</p>
+                <div class="row g-3">
+                  <div class="col-sm-6">
+                    <label for="saida-kg" class="form-label">Saída produzida (kg)</label>
+                    <input type="number" id="saida-kg" class="form-control" min="0" step="0.01" inputmode="decimal" required>
+                  </div>
+                  <div class="col-sm-6">
+                    <label for="rejeito-kg" class="form-label">Rejeito (kg)</label>
+                    <input type="number" id="rejeito-kg" class="form-control" min="0" step="0.01" inputmode="decimal" required>
+                  </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <button type="submit" id="btn-confirmar-finalizar" class="btn btn-danger">Confirmar finalização</button>
+                  <button type="button" id="btn-cancelar-finalizar" class="btn btn-outline-secondary">Cancelar</button>
+                </div>
+              </form>
+              <div id="aviso-finalizar" class="d-none" role="alert"></div>
             </div>
           </div>
         </section>

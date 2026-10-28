@@ -31,7 +31,7 @@ Nas telas protegidas, normalmente basta o `montarLayout()` (de `layout.js`), que
 | `LOGIN_URL` | `/src/features/login/login.html` |
 | `FORBIDDEN_URL` | `/src/features/errors/403.html` (acesso negado) |
 | `HOME_URL` | `/src/features/dashboard/dashboard.html` |
-| `PERFIS` | `['administrador', 'gerente', 'operador', 'consulta']` |
+| `PERFIS` | `['administrador', 'gerente', 'operador', 'tecnico', 'consulta']` (os níveis do backend, em minúsculas) |
 | `PERMISSOES` | Matriz de permissões (veja abaixo). |
 
 ---

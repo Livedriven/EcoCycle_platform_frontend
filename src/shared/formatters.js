@@ -31,6 +31,11 @@ export function formatDateTime(data) {
     return dayjs(data).format('DD/MM/YYYY HH:mm');
 }
 
+/** Data -> "2026-08-03T07:15:00": ISO local, sem fuso e sem milissegundos (como o backend grava). */
+export function formatIsoLocal(data = new Date()) {
+    return dayjs(data).format('YYYY-MM-DDTHH:mm:ss');
+}
+
 /** "2026-10-20" -> "20/10" */
 export function formatDayMonth(data) {
     return dayjs(data).format('DD/MM');

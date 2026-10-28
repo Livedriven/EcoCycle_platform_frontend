@@ -1,7 +1,7 @@
 import API from '../../shared/api.js';
 import { montarLayout } from '../../shared/layout.js';
 import { HOME_URL, requireLogin, decodeToken } from '../../shared/session.js';
-import { formatKg } from '../../shared/formatters.js';
+import { formatIsoLocal, formatKg } from '../../shared/formatters.js';
 import { validarProducao } from '../../shared/validators.js';
 
 // Administrador, gerente e operador usam a mesma ação da matriz PERMISSOES.
@@ -10,6 +10,8 @@ const SESSAO = montarLayout({ acao: ACAO });
 
 // TODO(E2/E5): confirmar com a API o status que significa "Disponível" para o lote.
 const STATUS_LOTE_DISPONIVEL = 'Recebido';
+// Ao iniciar, o lote sai da lista de disponíveis (cada lote tem uma única produção).
+const STATUS_LOTE_EM_PROCESSAMENTO = 'Em processamento';
 // O backend registra LIGADA; fixtures antigos usam Ativa.
 const STATUS_ESTEIRA_ATIVA = ['ATIVA', 'LIGADA'];
 // Opções oferecidas pelo portal; o payload envia o campo turno.
@@ -65,7 +67,7 @@ function iniciarTela() {
             const [lotes, fornecedores, esteiras] = await Promise.all([
                 API.GET('/lotes'),
                 API.GET('/fornecedores'),
-                API.GET('/equipamentos')
+                API.GET('/esteiras')
             ]);
             if (!validarAcesso()) return;
             preencherLotes(lotes, fornecedores);
@@ -138,7 +140,7 @@ function iniciarTela() {
             quantidade_entrada_kg: Number(lote.pesoentrada_kg),
             quantidade_saida_kg: 0,
             rejeito_kg: 0,
-            data_inicio: agoraIso(),
+            data_inicio: formatIsoLocal(),
             itens: []
         };
 
@@ -148,7 +150,13 @@ function iniciarTela() {
         try {
             await API.POST('/producao', payload);
             if (!validarAcesso()) return;
-            mostrarAviso('success', 'Produção cadastrada com sucesso.');
+            try {
+                await API.PATCH(`/lotes/${payload.id_lote}`, { status_lote: STATUS_LOTE_EM_PROCESSAMENTO });
+                mostrarAviso('success', 'Produção cadastrada com sucesso.');
+            } catch (erro) {
+                // A produção já existe: avisa sem desfazê-la.
+                mostrarAviso('warning', 'Produção cadastrada, mas o status do lote não foi atualizado: ' + erro.message);
+            }
             form.reset();
             campos.id_lote.querySelector('option[value="' + payload.id_lote + '"]')?.remove();
         } catch (erro) {
@@ -187,12 +195,4 @@ function iniciarTela() {
         aviso.className = 'd-none';
         aviso.textContent = '';
     }
-}
-
-// Formato ISO local: 2026-08-03T07:15:00 (sem fuso e sem milissegundos).
-function agoraIso() {
-    const d = new Date();
-    const dois = (n) => String(n).padStart(2, '0');
-    return d.getFullYear() + '-' + dois(d.getMonth() + 1) + '-' + dois(d.getDate())
-        + 'T' + dois(d.getHours()) + ':' + dois(d.getMinutes()) + ':' + dois(d.getSeconds());
 }

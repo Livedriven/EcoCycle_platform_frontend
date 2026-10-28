@@ -3,6 +3,30 @@
 import {
     CAMPOS, MATERIAIS_RELATORIO, arredondar, totalPorMaterial, totalProduzido, alertasAtivos
 } from '../../shared/calculations.js';
+import { prepararProducaoMateriais } from '../materials/materials-report.js';
+
+// TODO(E2): confirmar o valor de status que indica produção encerrada (aqui, "Finalizado").
+export const STATUS_FINALIZADO = 'Finalizado';
+
+export function estaFinalizado(status) {
+    return String(status ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase() === 'finalizado';
+}
+
+function numeroInformado(valor) {
+    return valor !== null && valor !== undefined && String(valor).trim() !== '' && Number.isFinite(Number(valor));
+}
+
+/** Confere saída e rejeito antes de finalizar: não negativos e, juntos, até a entrada do ciclo. */
+export function validarFinalizacao(saida, rejeito, entrada) {
+    if (!numeroInformado(saida) || !numeroInformado(rejeito) || Number(saida) < 0 || Number(rejeito) < 0) {
+        return { erro: 'Informe a saída e o rejeito em kg, com valores maiores ou iguais a zero.' };
+    }
+    const valores = { saida: arredondar(saida), rejeito: arredondar(rejeito) };
+    if (numeroInformado(entrada) && arredondar(valores.saida + valores.rejeito) > arredondar(entrada)) {
+        return { erro: 'Saída e rejeito somados não podem passar da entrada do ciclo (' + arredondar(entrada) + ' kg).' };
+    }
+    return { erro: '', ...valores };
+}
 
 // ?producao=12 -> 12. Só inteiro positivo, sem zeros à esquerda; qualquer outra coisa vira null
 // e a tela nem consulta a API.
@@ -79,8 +103,9 @@ export function contarAlertasAtivos(alertas, leituras, idEsteira) {
 }
 
 // Junta tudo o que a tela mostra. Devolve null se a produção não existir.
-// Materiais e peso processado = registros de producao do mesmo lote (não há id_producao nos registros).
-export function montarMonitoramento({ producoes, lotes, esteiras, leituras, alertas }, id) {
+// Peso processado = saída dos ciclos do mesmo lote. Com o catálogo de materiais, os pesos por
+// material vêm dos itens de cada ciclo; sem ele, de registros planos antigos com tipo_material.
+export function montarMonitoramento({ producoes, lotes, esteiras, leituras, alertas, materiais }, id) {
     const producao = (producoes ?? []).find((p) => String(p.id) === String(id));
     if (!producao) return null;
 
@@ -88,14 +113,21 @@ export function montarMonitoramento({ producoes, lotes, esteiras, leituras, aler
     const lote = (lotes ?? []).find((l) => String(l.id) === String(idLote)) ?? null;
     const esteira = (esteiras ?? []).find((e) => String(e.id) === String(producao.id_esteira)) ?? null;
     const doLote = (producoes ?? []).filter((p) => String(p[CAMPOS.idLoteProducao]) === String(idLote));
-    const totais = totalPorMaterial(doLote, MATERIAIS_RELATORIO);
+    const registros = Array.isArray(materiais) ? prepararProducaoMateriais(doLote, materiais).registros : doLote;
+    const totais = totalPorMaterial(registros, MATERIAIS_RELATORIO);
+    const itens = Array.isArray(producao.itens) ? producao.itens : [];
 
     return {
         producao: {
             id: producao.id,
             id_lote: idLote,
             turno: producao.turno_producao ?? '',
-            inicio: producao[CAMPOS.dataProducao] ?? ''
+            inicio: producao[CAMPOS.dataProducao] ?? '',
+            status: producao.status ?? '',
+            entrada_kg: producao.quantidade_entrada_kg ?? null,
+            // Soma dos itens do ciclo: sugestão de saída ao finalizar.
+            itens_kg: arredondar(itens.reduce((total, item) => total + (Number(item?.peso_kg) || 0), 0)),
+            encerrada: estaFinalizado(producao.status) || estaFinalizado(lote?.[CAMPOS.statusLote])
         },
         lote: lote && {
             id: lote.id,

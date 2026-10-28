@@ -1,10 +1,11 @@
 import API from '../../shared/api.js';
 import { montarLayout } from '../../shared/layout.js';
 import { can } from '../../shared/session.js';
-import { formatDate, formatDateTime, formatKg, formatNumber } from '../../shared/formatters.js';
+import { formatDate, formatDateTime, formatIsoLocal, formatKg, formatNumber } from '../../shared/formatters.js';
 import { classeStatus, classeContadorAlertas } from '../../shared/ui.js';
 import {
-    lerIdDaUrl, lerData, duracaoEmSegundos, formatarDuracao, montarMonitoramento
+    lerIdDaUrl, lerData, duracaoEmSegundos, formatarDuracao, montarMonitoramento,
+    validarFinalizacao, STATUS_FINALIZADO
 } from './production-progress-data.js';
 
 // Consultar vale para todos os perfis; só os botões exigem `producao.operar`.
@@ -31,9 +32,8 @@ function iniciarTela() {
         return;
     }
 
-    // Os botões só aparecem para quem pode operar produção. Ambos ficam desabilitados (veja o HTML):
-    // iniciar já aconteceu no cadastro, e a operação de finalizar não está no contrato.
-    // TODO(E2/E5): contrato de finalizar (PATCH /producao/:id; o corpo ainda não está definido).
+    // Os botões só aparecem para quem pode operar produção. Iniciar fica desabilitado (já
+    // aconteceu no cadastro); finalizar envia PATCH /producao/:id e marca o lote como finalizado.
     el('acoes-producao').classList.toggle('d-none', !can('producao.operar'));
 
     let assinatura; // undefined até a primeira carga com sucesso
@@ -41,6 +41,13 @@ function iniciarTela() {
     let inicio = '';
     let encerrada = false;
     let ultimaAtualizacao = '';
+    let atual = null; // produção exibida: base para a finalização
+    let finalizando = false;
+
+    const formFinalizar = el('form-finalizar');
+    el('btn-finalizar').addEventListener('click', abrirFinalizacao);
+    el('btn-cancelar-finalizar').addEventListener('click', fecharFinalizacao);
+    formFinalizar.addEventListener('submit', finalizar);
 
     carregar();
     setInterval(() => {
@@ -56,17 +63,18 @@ function iniciarTela() {
 
         try {
             // erroLocal: o erro aparece aqui, sem redirecionar para as páginas de erro (como production.js).
-            const [producoes, lotes, esteiras, leituras, alertas] = await Promise.all([
+            const [producoes, lotes, esteiras, leituras, alertas, materiais] = await Promise.all([
                 API.GET('/producao', { erroLocal: true }),
                 API.GET('/lotes', { erroLocal: true }),
-                API.GET('/equipamentos', { erroLocal: true }),
+                API.GET('/esteiras', { erroLocal: true }),
                 API.GET('/telemetria/historico', { erroLocal: true }),
-                API.GET('/alertas', { erroLocal: true })
+                API.GET('/alertas', { erroLocal: true }),
+                API.GET('/materiais', { erroLocal: true })
             ]);
             const lista = (valor) => (Array.isArray(valor) ? valor : []);
             const dados = montarMonitoramento({
                 producoes: lista(producoes), lotes: lista(lotes), esteiras: lista(esteiras),
-                leituras: lista(leituras), alertas: lista(alertas)
+                leituras: lista(leituras), alertas: lista(alertas), materiais: lista(materiais)
             }, idProducao);
 
             if (!dados) {
@@ -127,8 +135,13 @@ function iniciarTela() {
         const lida = lerData(producao.inicio);
         el('inicio-producao').textContent = lida ? (lida.temHora ? formatDateTime(producao.inicio) : formatDate(producao.inicio)) : NAO_INFORMADO;
         inicio = producao.inicio;
-        // TODO(E2): confirmar o valor de status que indica produção encerrada (aqui, "Finalizado").
-        encerrada = String(lote?.status ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'finalizado';
+        encerrada = producao.encerrada;
+        atual = producao;
+        el('btn-finalizar').disabled = encerrada;
+        el('ajuda-acoes').textContent = encerrada
+            ? 'Produção finalizada.'
+            : 'Iniciar produção já foi feito no cadastro.';
+        if (encerrada) fecharFinalizacao();
         atualizarRelogio();
 
         // Esteira e sensores
@@ -162,6 +175,68 @@ function iniciarTela() {
             item.append(nome, valor);
             return item;
         }));
+    }
+
+    // Sugere a soma dos itens como saída e o restante da entrada como rejeito; o operador ajusta.
+    function abrirFinalizacao() {
+        if (!atual || encerrada) return;
+        const entrada = Number(atual.entrada_kg);
+        const temEntrada = atual.entrada_kg !== null && Number.isFinite(entrada);
+        el('saida-kg').value = String(atual.itens_kg);
+        el('rejeito-kg').value = temEntrada ? String(Math.max(0, Math.round((entrada - atual.itens_kg) * 100) / 100)) : '0';
+        mostrarAvisoFinalizar('', '');
+        formFinalizar.classList.remove('d-none');
+        el('btn-finalizar').setAttribute('aria-expanded', 'true');
+        el('saida-kg').focus();
+    }
+
+    function fecharFinalizacao() {
+        formFinalizar.classList.add('d-none');
+        el('btn-finalizar').setAttribute('aria-expanded', 'false');
+    }
+
+    function mostrarAvisoFinalizar(tipo, mensagem) {
+        const aviso = el('aviso-finalizar');
+        aviso.className = mensagem ? 'alert alert-' + tipo + ' mt-3 mb-0' : 'd-none';
+        aviso.textContent = mensagem;
+    }
+
+    async function finalizar(evento) {
+        evento.preventDefault();
+        if (!atual || encerrada || finalizando) return;
+        const validacao = validarFinalizacao(el('saida-kg').value, el('rejeito-kg').value, atual.entrada_kg);
+        if (validacao.erro) {
+            mostrarAvisoFinalizar('danger', validacao.erro);
+            return;
+        }
+        finalizando = true;
+        const botao = el('btn-confirmar-finalizar');
+        botao.disabled = true;
+        botao.textContent = 'Finalizando...';
+        try {
+            await API.PATCH(`/producao/${atual.id}`, {
+                status_producao: STATUS_FINALIZADO,
+                data_fim: formatIsoLocal(),
+                quantidade_saida_kg: validacao.saida,
+                rejeito_kg: validacao.rejeito
+            }, { erroLocal: true });
+        } catch (erro) {
+            mostrarAvisoFinalizar('danger', 'Não foi possível finalizar a produção: ' + erro.message);
+            return;
+        } finally {
+            finalizando = false;
+            botao.disabled = false;
+            botao.textContent = 'Confirmar finalização';
+        }
+        fecharFinalizacao();
+        try {
+            // O status do lote é o que as listas de lotes e de produção exibem.
+            await API.PATCH(`/lotes/${atual.id_lote}`, { status_lote: STATUS_FINALIZADO }, { erroLocal: true });
+            mostrarAvisoFinalizar('success', 'Produção finalizada.');
+        } catch (erro) {
+            mostrarAvisoFinalizar('warning', 'Produção finalizada, mas o status do lote não foi atualizado: ' + erro.message);
+        }
+        await carregar();
     }
 
     function definirSelo(elemento, texto, classeDe) {

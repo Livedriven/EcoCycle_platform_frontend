@@ -78,13 +78,13 @@ A API entrega os **registros**; o **front-end calcula os totais** (dashboard, pr
 | Pasta | Tela | Endpoint | Requisito |
 |---|---|---|---|
 | `login` | Login | `POST /login` | RF01 |
-| `dashboard` | Indicadores, gráficos, esteiras e alertas | `/lotes`, `/producao`, `/producao/dashboard-diario`, `/producao/dashboard-mensal`, `/producao/dashboard-trimestral`, `/fornecedores`, `/alertas`, `/equipamentos` | RF04, RF13 |
+| `dashboard` | Indicadores, gráficos, esteiras e alertas | `/lotes`, `/producao`, `/producao/dashboard-diario`, `/producao/dashboard-mensal`, `/producao/dashboard-trimestral`, `/fornecedores`, `/alertas`, `/esteiras`, `/materiais` | RF04, RF13 |
 | `production` | Produção diária com filtro por data | `/producao` | RF05 |
 | `batches` | Listagem, detalhes e cadastro de lotes | `/lotes` | RF06, RF07 |
-| `materials` | Relatório de plástico, metal, alumínio e rejeito por lote e dia, com totais, filtros e gráfico | `/producao` | RF08 |
+| `materials` | Relatório de plástico, metal, alumínio e rejeito por lote e dia, com totais, filtros e gráfico | `/producao`, `/materiais` | RF08 |
 | `alerts` | Alertas ativos e histórico | `/alertas` | RF09 |
 | `users` | Reservada (gerenciar usuários está fora do MVP: todos os perfis veem "acesso negado") | — (sem chamada à API) | RF10 |
-| `conveyor` | Consulta, detalhes em modal e status de múltiplas esteiras | `/equipamentos`, `/telemetria/historico`, `/alertas` | RF12 |
+| `conveyor` | Consulta, detalhes em modal e status de múltiplas esteiras | `/esteiras`, `/telemetria/historico`, `/alertas` | RF12 |
 | `errors` | Páginas 403, 404 e indisponibilidade | — | — |
 
 Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shared/session.js` (matriz `PERMISSOES`, `can` e a guarda `requireLogin`), no botão **Sair** do `layout.js`.
@@ -96,7 +96,7 @@ Logout (RF02) e perfis de acesso (RF03) não têm pasta própria: vivem em `shar
 | Login e consulta de dashboard, lotes, fornecedores, alertas e estoque | Sim | Sim | Sim | Sim |
 | Cadastrar fornecedor | Sim | Sim | Não | Não |
 | Registrar lote | Sim | Sim | Sim | Não |
-| Iniciar produção (API atual sem rota de finalização) | Sim | Sim | Sim | Não |
+| Iniciar e finalizar produção | Sim | Sim | Sim | Não |
 | Gerenciar usuários pela interface | Fora do MVP | Fora do MVP | Fora do MVP | Fora do MVP |
 
 - A matriz da interface fica em `PERMISSOES`, em `src/shared/session.js`; a autorização de cada operação é aplicada pelo backend.

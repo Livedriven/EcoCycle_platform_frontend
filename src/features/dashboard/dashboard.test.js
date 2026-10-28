@@ -35,10 +35,12 @@ const estado = (id) => obter('bloco-' + id).querySelector('.estado');
 const conteudo = (id) => obter('bloco-' + id).querySelector('.conteudo');
 const dados = {
     '/lotes': [{ id_fornecedor: 1, pesoentrada_kg: 100, status: 'Recebido' }],
-    '/producao': [{ tipo_material: 'Metal', peso_kg: 10, data_hora: '2026-10-24' }],
+    '/producao': [{ id: 1, id_lote: 1, data_hora: '2026-10-24T08:00:00', peso_kg: 10, quantidade_saida_kg: 10, rejeito_kg: 2,
+        itens: [{ id_material: 2, peso_kg: 10, data_hora: '2026-10-24T09:00:00' }] }],
+    '/materiais': [{ id: 1, id_material: 1, tipo_material: 'plastico' }, { id: 2, id_material: 2, tipo_material: 'metal' }],
     '/fornecedores': [{ id: 1, nome_fornecedor: 'Fornecedor' }],
     '/alertas': [{ resolvido: false, tipo_alerta: 'Teste', datahora_alerta: '2026-10-24' }],
-    '/equipamentos': [{ nome_esteira: 'Esteira 1', status_esteira: 'Ativa' }]
+    '/esteiras': [{ nome_esteira: 'Esteira 1', status_esteira: 'Ativa' }]
 };
 const consolidado = { balanco_massas_kg: { total_material_entrada: 100, total_produzido_saida: 80, total_rejeitos_perdas: 20 } };
 const dadosDaRota = (rota) => rota.startsWith('/producao/dashboard-') ? consolidado : dados[rota];
@@ -72,7 +74,7 @@ describe('disponibilidade do dashboard', () => {
             expect(estado(id).textContent).toContain('Carregando...');
             expect(obter('bloco-' + id).getAttribute('aria-busy')).toBe('true');
         });
-        expect(mocks.get).toHaveBeenCalledTimes(8);
+        expect(mocks.get).toHaveBeenCalledTimes(9);
         expect(mocks.get).toHaveBeenCalledWith('/producao', { erroLocal: true });
         resolver([]);
         await concluir();
@@ -80,7 +82,7 @@ describe('disponibilidade do dashboard', () => {
     it('mantém outros blocos disponíveis mesmo com erro e outra fonte pendente', async () => {
         let resolver;
         mocks.get.mockImplementation((rota) => {
-            if (rota === '/equipamentos') return Promise.reject(new Error('HTTP 503'));
+            if (rota === '/esteiras') return Promise.reject(new Error('HTTP 503'));
             if (rota === '/fornecedores') return new Promise((resolve) => { resolver = resolve; });
             return Promise.resolve(dadosDaRota(rota));
         });
@@ -93,17 +95,17 @@ describe('disponibilidade do dashboard', () => {
     });
     it('tenta novamente somente o bloco com erro e evita requisições duplicadas', async () => {
         mocks.get.mockImplementation(async (rota) => {
-            if (rota === '/equipamentos') throw new Error('HTTP 500');
+            if (rota === '/esteiras') throw new Error('HTTP 500');
             return dadosDaRota(rota);
         });
         await iniciar();
         const botao = estado('esteira').children.at(-1);
-        mocks.get.mockResolvedValue(dados['/equipamentos']);
+        mocks.get.mockResolvedValue(dados['/esteiras']);
         mocks.get.mockClear();
         botao.click();
         botao.click();
         await concluir();
-        expect(mocks.get).toHaveBeenCalledExactlyOnceWith('/equipamentos', { erroLocal: true });
+        expect(mocks.get).toHaveBeenCalledExactlyOnceWith('/esteiras', { erroLocal: true });
         expect(conteudo('esteira').classList.contains('d-none')).toBe(false);
         expect(estado('esteira').textContent).toBe('');
     });
@@ -139,6 +141,16 @@ describe('disponibilidade do dashboard', () => {
         await iniciar();
         expect(estado('diaria').textContent).toContain('Tentar novamente');
         expect(conteudo('mensal').classList.contains('d-none')).toBe(false);
+    });
+    it('soma os materiais pelos itens dos ciclos e o tipo do catálogo, inclusive no CO₂', async () => {
+        await iniciar();
+        const cards = conteudo('indicadores').children;
+        expect(cards.find((c) => c.textContent.includes('Metal')).textContent).toContain('10 kg');
+        expect(cards.find((c) => c.textContent.includes('Rejeito')).textContent).toContain('2 kg');
+        expect(cards.find((c) => c.textContent.includes('Plástico')).textContent).toContain('0 kg');
+        const co2 = mocks.bar.mock.calls.find(([canvas]) => canvas === obter('grafico-co2'));
+        expect(co2[1]).toEqual(['Plástico', 'Metal']);
+        expect(co2[2][0].data).toEqual([0, 0.04]);
     });
     it('informa a falta de composição quando a API devolve somente ciclos', async () => {
         mocks.get.mockImplementation(async (rota) => rota === '/producao'
@@ -180,7 +192,7 @@ describe('disponibilidade do dashboard', () => {
         const chamadas = mocks.bar.mock.calls.length;
         intervalo();
         await concluir();
-        expect(mocks.get).toHaveBeenCalledTimes(16);
+        expect(mocks.get).toHaveBeenCalledTimes(18);
         expect(mocks.bar).toHaveBeenCalledTimes(chamadas);
     });
 

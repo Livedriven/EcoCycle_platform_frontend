@@ -41,7 +41,7 @@ describe('aplicarPermissoes', () => {
         entrarComo(perfil);
         const botao = elemento('producao.operar');
         aplicarPermissoes(elemento(undefined, [botao]));
-        expect(botao.classes.has('d-none')).toBe(perfil === 'consulta');
+        expect(botao.classes.has('d-none')).toBe(['tecnico', 'consulta'].includes(perfil));
         expect(botao.classes.has('btn')).toBe(true);
     });
 

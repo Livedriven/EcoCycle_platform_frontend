@@ -1,6 +1,6 @@
 import { API_URL, API_TIMEOUT } from "./config";
 import { endSession, FORBIDDEN_URL } from "./session";
-import { caminhoApi, ROTAS_API, rotaPublica, normalizarResposta } from './api-contract.js';
+import { rotaApi, ROTAS_API, rotaPublica, normalizarResposta } from './api-contract.js';
 
 let redirecionando = false;
 
@@ -17,7 +17,7 @@ function abrirPaginaErro(destino) {
 /**
  * PADRONIZADORA
  * Recebe método, URL e corpo (opcional) e devolve a URL completa + as opções do fetch.
- * POST envia corpo em JSON quando informado; GET nunca envia corpo.
+ * POST e PATCH enviam corpo em JSON quando informado; GET nunca envia corpo.
  */
 function padronizarRequisicao(metodo, url, corpo, autenticada) {
     const m = String(metodo || 'GET').toUpperCase();
@@ -52,7 +52,7 @@ function padronizarRequisicao(metodo, url, corpo, autenticada) {
  * Chama a padronizadora, faz o fetch e devolve o JSON. Lança erro se falhar.
  */
 async function requisitar(metodo, url, corpo, { erroLocal = false } = {}) {
-    if (!ROTAS_API[caminhoApi(url)]?.includes(metodo)) {
+    if (!ROTAS_API[rotaApi(url)]?.includes(metodo)) {
         throw new Error(`Operação não disponível na API: ${metodo} ${url}`);
     }
     const autenticada = !rotaPublica(url);
@@ -114,7 +114,8 @@ async function requisitar(metodo, url, corpo, { erroLocal = false } = {}) {
  */
 const API = {
     GET: (url, opcoes) => requisitar('GET', url, undefined, opcoes),
-    POST: (url, corpo, opcoes) => requisitar('POST', url, corpo, opcoes)
+    POST: (url, corpo, opcoes) => requisitar('POST', url, corpo, opcoes),
+    PATCH: (url, corpo, opcoes) => requisitar('PATCH', url, corpo, opcoes)
 };
 
 export default API;

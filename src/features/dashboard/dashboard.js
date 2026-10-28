@@ -19,6 +19,7 @@ import {
     formatDateTime
 } from '../../shared/formatters.js';
 import { createBarChart, createDoughnutChart, CORES } from '../../shared/charts.js';
+import { prepararProducaoMateriais } from '../materials/materials-report.js';
 
 const COR_STATUS_LOTE = {
     'Recebido': CORES.info,
@@ -133,11 +134,13 @@ function cardIndicador(classe, titulo, valor, grupo = 'material') {
     return col;
 }
 
-function prepararIndicadores(lotes, producao, alertas) {
+function prepararIndicadores(lotes, producao, alertas, materiais) {
+    // Os pesos por material vêm dos itens de cada ciclo, com o tipo do catálogo.
+    const composicao = prepararProducaoMateriais(producao, materiais);
     return () => {
-        const porMaterial = totalPorMaterial(producao, MATERIAIS);
+        const porMaterial = totalPorMaterial(composicao.registros, MATERIAIS);
         const ativos = alertasAtivos(alertas).length;
-        const detalhado = producao.length === 0 || producao.every((r) => r.tipo_material);
+        const detalhado = composicao.pendencias.length === 0 && composicao.descartados === 0;
         const pesoMaterial = (material) => detalhado ? formatKg(porMaterial[material]) : 'Não informado';
         const cards = [
             cardIndicador('ind-azul', 'Total recebido', formatKg(totalRecebido(lotes)), 'resumo'),
@@ -172,8 +175,8 @@ function prepararConsolidado(dados, periodo) {
     );
 }
 
-function prepararCo2(producao) {
-    const { total, porMaterial } = co2Evitado(producao);
+function prepararCo2(producao, materiais) {
+    const { total, porMaterial } = co2Evitado(prepararProducaoMateriais(producao, materiais).registros);
     if (total === 0) {
         return null;
     }
@@ -281,14 +284,14 @@ function prepararAlertas(alertas) {
 /* ---------- Carga da página ---------- */
 
 const BLOCOS = {
-    'bloco-indicadores': { fontes: ['/lotes', '/producao', '/alertas'], preparar: prepararIndicadores },
+    'bloco-indicadores': { fontes: ['/lotes', '/producao', '/alertas', '/materiais'], preparar: prepararIndicadores },
     'bloco-diaria': { fontes: ['/producao/dashboard-diario'], preparar: (d) => prepararConsolidado(d, 'diaria') },
     'bloco-mensal': { fontes: ['/producao/dashboard-mensal'], preparar: (d) => prepararConsolidado(d, 'mensal') },
     'bloco-trimestral': { fontes: ['/producao/dashboard-trimestral'], preparar: (d) => prepararConsolidado(d, 'trimestral') },
-    'bloco-co2': { fontes: ['/producao'], preparar: prepararCo2 },
+    'bloco-co2': { fontes: ['/producao', '/materiais'], preparar: prepararCo2 },
     'bloco-fornecedores': { fontes: ['/lotes', '/fornecedores'], preparar: prepararFornecedores },
     'bloco-status-lotes': { fontes: ['/lotes'], preparar: prepararStatusLotes },
-    'bloco-esteira': { fontes: ['/equipamentos'], preparar: prepararEsteira },
+    'bloco-esteira': { fontes: ['/esteiras'], preparar: prepararEsteira },
     'bloco-alertas': { fontes: ['/alertas'], preparar: prepararAlertas }
 };
 const pendentes = new Map();

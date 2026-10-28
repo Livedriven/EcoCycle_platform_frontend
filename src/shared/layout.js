@@ -137,9 +137,11 @@ function criarItens(itens, nivel, perfil) {
         .flatMap((item) => (item.filhos ? criarGrupo(item, nivel, perfil) : [criarLink(item, nivel)]));
 }
 
-/** "administrador" -> "Administrador" */
+const NOMES_PERFIL = { tecnico: 'Técnico' };
+
+/** "administrador" -> "Administrador"; "tecnico" -> "Técnico" */
 function nomeDoPerfil(perfil) {
-    return perfil.charAt(0).toUpperCase() + perfil.slice(1);
+    return NOMES_PERFIL[perfil] ?? perfil.charAt(0).toUpperCase() + perfil.slice(1);
 }
 
 /**

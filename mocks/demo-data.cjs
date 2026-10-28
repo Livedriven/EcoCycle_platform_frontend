@@ -15,7 +15,21 @@ function prepararDadosDemo(seed, hoje = new Date().toLocaleDateString('en-CA', {
             }
         }
     }
-    dados.materiais ??= ['Plástico', 'Metal', 'Alumínio', 'Rejeito'].map((tipo_material, i) => ({ id_material: i + 1, tipo_material }));
+    dados.materiais ??= ['plastico', 'metal', 'aluminio'].map((tipo_material, i) => ({ id_material: i + 1, tipo_material }));
+    // Expõe a mesma composição aninhada da API real, sem tipo_material no ciclo.
+    for (const producao of dados.producao) {
+        if (Array.isArray(producao.itens)) continue;
+        const tipo = String(producao.tipo_material ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const material = dados.materiais.find((m) => String(m.tipo_material).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === tipo);
+        producao.itens = material ? [{
+            id_item_producao: producao.id_producao ?? producao.id,
+            id_producao: producao.id_producao ?? producao.id,
+            id_material: material.id_material ?? material.id,
+            peso_kg: producao.quantidade_saida_kg ?? producao.peso_kg,
+            data_hora: producao.data_inicio ?? producao.data_hora,
+        }] : [];
+        delete producao.tipo_material;
+    }
     return dados;
 }
 

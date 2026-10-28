@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearSession, saveSession, requireLogin, LOGIN_URL, FORBIDDEN_URL } from '../../shared/session.js';
 import API from '../../shared/api.js';
 
-vi.mock('../../shared/api.js', () => ({ default: { GET: vi.fn(), POST: vi.fn() } }));
+vi.mock('../../shared/api.js', () => ({ default: { GET: vi.fn(), POST: vi.fn(), PATCH: vi.fn() } }));
 vi.mock('../../shared/layout.js', () => ({
     montarLayout: ({ acao }) => requireLogin(acao)
 }));
@@ -59,9 +59,10 @@ beforeEach(() => {
     API.GET.mockReset().mockImplementation(async (rota) => ({
         '/lotes': [{ id: 1, status: 'Recebido', pesoentrada_kg: 10 }],
         '/fornecedores': [],
-        '/equipamentos': [{ id: 2, nome_esteira: 'Esteira 2', status_esteira: 'LIGADA' }]
+        '/esteiras': [{ id: 2, nome_esteira: 'Esteira 2', status_esteira: 'LIGADA' }]
     })[rota]);
     API.POST.mockReset().mockResolvedValue({ id: 3 });
+    API.PATCH.mockReset().mockResolvedValue({ id: 1, status: 'Em processamento' });
     clearSession();
 });
 
@@ -82,7 +83,7 @@ describe('acesso a iniciar produção', () => {
     it.each(['administrador', 'gerente', 'operador'])('%s consegue carregar e iniciar produção', async (perfil) => {
         entrar(perfil);
         await abrir();
-        expect(API.GET).toHaveBeenCalledWith('/equipamentos');
+        expect(API.GET).toHaveBeenCalledWith('/esteiras');
         expect(elementos.get('esteira').options).toHaveLength(2);
         await enviar();
         expect(location.replace).not.toHaveBeenCalled();
@@ -90,6 +91,19 @@ describe('acesso a iniciar produção', () => {
             id_lote: 1, id_esteira: 2, id_usuario: 7, turno: 'Manhã',
             status_producao: 'Em processamento', quantidade_entrada_kg: 10, quantidade_saida_kg: 0, rejeito_kg: 0, itens: []
         }));
+        expect(API.POST.mock.calls[0][1].data_inicio).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+        expect(API.PATCH).toHaveBeenCalledExactlyOnceWith('/lotes/1', { status_lote: 'Em processamento' });
+        expect(elementos.get('aviso-envio').className).toBe('alert alert-success');
+    });
+
+    it('mantém a produção criada e avisa quando o status do lote não é atualizado', async () => {
+        entrar('operador');
+        await abrir();
+        API.PATCH.mockRejectedValue(new Error('HTTP 403'));
+        await enviar();
+        expect(API.POST).toHaveBeenCalledTimes(1);
+        expect(elementos.get('aviso-envio').className).toBe('alert alert-warning');
+        expect(elementos.get('aviso-envio').textContent).toContain('HTTP 403');
     });
 
     it('não envia produção com sub não numérico, pois o schema exige id_usuario inteiro', async () => {

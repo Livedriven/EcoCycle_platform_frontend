@@ -264,7 +264,7 @@ async function carregar({ silencioso = false } = {}) {
     if (!esteirasAtuais.length) document.getElementById('estado-visao-geral').textContent = 'Carregando esteiras...';
 
     try {
-        const esteiras = await API.GET("/equipamentos", { erroLocal: true });
+        const esteiras = await API.GET("/esteiras", { erroLocal: true });
 
         if (requisicao !== numeroRequisicao) return;
 

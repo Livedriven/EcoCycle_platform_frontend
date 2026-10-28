@@ -1,5 +1,6 @@
 // Contrato conferido nos routers e schemas do backend EcoCycle.
 // Caminhos relativos a VITE_API_URL (o backend local usa o prefixo /api).
+// `:id` representa um identificador numérico positivo no caminho.
 export const ROTAS_API = {
     '/login': ['POST'],
     '/logout': ['POST'],
@@ -7,19 +8,32 @@ export const ROTAS_API = {
     '/materiais': ['GET', 'POST'],
     '/fornecedores': ['GET', 'POST'],
     '/lotes': ['GET', 'POST'],
-    '/equipamentos': ['GET'],
-    '/equipamentos/status': ['POST'],
+    '/lotes/:id': ['PATCH'],
+    '/esteiras': ['GET', 'POST'],
+    '/esteiras/status': ['POST'],
+    '/esteiras/:id': ['GET', 'PATCH'],
     '/producao': ['GET', 'POST'],
+    '/producao/:id': ['PATCH'],
     '/producao/dashboard-diario': ['GET'],
     '/producao/dashboard-mensal': ['GET'],
     '/producao/dashboard-trimestral': ['GET'],
+    '/producao/materiais': ['GET'],
     '/telemetria': ['POST'],
     '/telemetria/historico': ['GET'],
     '/alertas': ['GET'],
+    '/alertas/:id': ['PATCH'],
 };
 
 export function caminhoApi(url) {
     return url.split('?')[0];
+}
+
+/** Rota do contrato que atende o caminho: fixa primeiro, depois com `:id`. Sem correspondência, null. */
+export function rotaApi(url) {
+    const caminho = caminhoApi(url);
+    if (Object.hasOwn(ROTAS_API, caminho)) return caminho;
+    return Object.keys(ROTAS_API).find((rota) => rota.endsWith('/:id')
+        && new RegExp('^' + rota.slice(0, -4) + '/[1-9]\\d{0,9}$').test(caminho)) ?? null;
 }
 
 export function rotaPublica(url) {
@@ -30,10 +44,10 @@ const COLECOES = {
     '/materiais': ['materiais', 'material', 'id_material'],
     '/fornecedores': ['fornecedores', 'fornecedor', 'id_fornecedor'],
     '/lotes': ['lotes', 'lote', 'id_lote'],
-    '/equipamentos': ['equipamentos', null, 'id_esteira'],
+    '/esteiras': ['esteiras', 'esteira', 'id_esteira'],
     '/producao': ['registros_producao', 'producao', 'id_producao'],
     '/telemetria/historico': ['historico', null, 'id_leitura_sensor'],
-    '/alertas': ['alertas', null, 'id_alerta'],
+    '/alertas': ['alertas', 'alerta', 'id_alerta'],
 };
 
 function normalizarRegistro(caminho, registro, chaveId) {
@@ -65,12 +79,14 @@ function normalizarRegistro(caminho, registro, chaveId) {
 
 // Preserva o modelo usado pelas telas e aceita listas diretas de contratos legados.
 // Dashboards e comandos mantêm sua resposta específica, sem virar listas vazias.
+// Rotas com `:id` (consulta ou atualização) devolvem a entidade adaptada da coleção.
 export function normalizarResposta(metodo, url, resposta) {
-    const caminho = caminhoApi(url);
+    const rota = rotaApi(url) ?? caminhoApi(url);
+    const caminho = rota.replace(/\/:id$/, '');
     const contrato = COLECOES[caminho];
     if (!contrato) return resposta;
     const [colecao, entidade, chaveId] = contrato;
-    if (metodo === 'GET') {
+    if (metodo === 'GET' && rota === caminho) {
         const registros = Array.isArray(resposta) ? resposta : resposta?.[colecao];
         if (!Array.isArray(registros)) throw new Error(`Resposta inválida da API em ${caminho}: esperado ${colecao}.`);
         return registros.map((r) => normalizarRegistro(caminho, r, chaveId));
