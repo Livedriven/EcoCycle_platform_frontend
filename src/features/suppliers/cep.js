@@ -20,7 +20,7 @@ export function validarCep(cep) {
         : { valido: false, mensagem: 'Informe um CEP com 8 dígitos.' };
 }
 
-// Formato do mock: "Rua das Acácias - Distrito Industrial, Contagem/MG".
+// Formato do endereço: "Rua das Acácias - Distrito Industrial, Contagem/MG".
 // Número e complemento ficam para a pessoa completar.
 export function montarEndereco(dados) {
     const logradouro = String(dados.logradouro ?? '').trim();
