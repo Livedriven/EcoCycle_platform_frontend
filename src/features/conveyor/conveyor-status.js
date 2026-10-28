@@ -264,7 +264,7 @@ async function carregar({ silencioso = false } = {}) {
     if (!esteirasAtuais.length) document.getElementById('estado-visao-geral').textContent = 'Carregando esteiras...';
 
     try {
-        const esteiras = await API.GET("/esteiras", { erroLocal: true });
+        const esteiras = await API.GET("/equipamentos", { erroLocal: true });
 
         if (requisicao !== numeroRequisicao) return;
 
@@ -299,7 +299,7 @@ async function carregar({ silencioso = false } = {}) {
 
         // O alerta não guarda o id da esteira: ele aponta para uma leitura, que aponta para a esteira.
         const [leiturasDaApi, todosAlertas] = await Promise.all([
-            API.GET("/leituras_sensor?id_esteira=" + encodeURIComponent(esteiraId), { erroLocal: true }),
+            API.GET("/telemetria/historico", { erroLocal: true }),
             API.GET("/alertas", { erroLocal: true })
         ]);
 
