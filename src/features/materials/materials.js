@@ -120,6 +120,16 @@ if (SESSAO) {
         try {
             const resposta = await API.GET('/producao', { erroLocal: true });
             if (!requireLogin()) return;
+            if (resposta.length && resposta.every((r) => !r.tipo_material)) {
+                registros = [];
+                dadosCarregados = false;
+                assinaturaDados = undefined;
+                grafico?.destroy();
+                grafico = null;
+                mostrarEstado('A API de produção ainda não disponibiliza os pesos separados por material. O catálogo /materiais não contém esses pesos.');
+                textoAtualizacao.textContent = '';
+                return;
+            }
             const dados = prepararMateriais(resposta);
             textoAtualizacao.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
             const assinatura = JSON.stringify(dados.registros);
