@@ -1,10 +1,12 @@
 // features/login/login.js (RF01)
-// Login simulado com os usuários de teste. Na integração com a API real,
-// só a função autenticar() muda (POST em API.POST) e o mock-users.js é removido.
+// Login pela API configurada em VITE_API_URL.
 import "../../shared/setup.js";
 import './login.css';
 import { saveSession, isLoggedIn, HOME_URL } from "../../shared/session.js";
 import API from "../../shared/api.js";
+
+const usuariosDemo = document.getElementById('usuarios-demo');
+if (usuariosDemo) usuariosDemo.hidden = import.meta.env.MODE !== 'demo';
 
 // Já logado? Vai direto ao dashboard.
 if (isLoggedIn()) location.replace(HOME_URL);
@@ -46,9 +48,9 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   caixaErro.classList.add("d-none");
 
-  const login = campoUsuario.value.trim();
+  const usuario = campoUsuario.value.trim();
   const senha = campoSenha.value;
-  if (!login || !senha) {
+  if (!usuario || !senha) {
     mostrarErro("Informe usuário e senha.");
     return;
   }
@@ -56,10 +58,11 @@ form.addEventListener("submit", async (e) => {
   botao.disabled = true;
   botao.textContent = "Entrando...";
   try {
-    const { token } = await API.POST("/login", { login, senha });
-    saveSession(token); // lança erro se o token for ilegível ou sem nome/perfil válidos
-    // Token vencido (operador1) é aceito aqui, mas o guard do dashboard o barra e
-    // devolve ao login com ?motivo=expirada: é o jeito de testar a queda de sessão.
+    const credenciais = { usuario, senha };
+    const resposta = await API.POST("/login", credenciais, {
+      erroLocal: true,
+    });
+    saveSession(resposta);
     location.replace(HOME_URL);
   } catch (erro) {
     if (erro.message === "HTTP 401") {
