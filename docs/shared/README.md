@@ -5,6 +5,7 @@ Código reaproveitado por todas as telas. Antes de escrever algo numa tela, conf
 | Módulo | Para que serve | Documento |
 |---|---|---|
 | `layout.js` | Topo, menu lateral e rodapé das telas protegidas; também protege a página | [layout.md](layout.md) |
+| `api-contract.js` | Rotas, acesso público, envelopes e campos do backend | [api.md](api.md) |
 | `api.js` | Toda chamada à API (token, timeout e mensagens de erro) | [api.md](api.md) |
 | `session.js` | Sessão do usuário (JWT), matriz de permissões, guarda de página e logout | [session.md](session.md) |
 | `permissions.js` | Visibilidade de elementos com `data-permissao`, usando a matriz existente | [permissions.md](permissions.md) |
@@ -52,9 +53,6 @@ Login e páginas de erro não usam o layout: importam só `'../../shared/setup.j
 | `aplicarPermissoes(raiz = document)` | permissions | Mostra/esconde elementos com `data-permissao`. O layout aplica automaticamente; reaplique para conteúdo dinâmico. |
 | `API.GET(url)` | api | Busca dados. |
 | `API.POST(url, corpo)` | api | Cria um registro. |
-| `API.PUT(url, corpo)` | api | Substitui um registro. |
-| `API.PATCH(url, corpo)` | api | Altera alguns campos. |
-| `API.DELETE(url)` | api | Remove um registro. |
 | `requireLogin(acao?)` | session | Protege a página: sem sessão vai ao login, sem permissão vai à página 403 (o `montarLayout` já chama). |
 | `can(acao, perfil?)` | session | Se o perfil (padrão: o logado) pode executar a ação. |
 | `PERMISSOES` | session | Matriz de permissões do MVP: ação → perfis. |
