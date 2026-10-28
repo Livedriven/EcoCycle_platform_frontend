@@ -197,8 +197,8 @@ if (SESSAO) {
         try {
             const [listaAlertas, leituras, esteiras] = await Promise.all([
                 API.GET('/alertas', { erroLocal: true }),
-                API.GET('/leituras_sensor', { erroLocal: true }),
-                API.GET('/esteiras', { erroLocal: true })
+                API.GET('/telemetria/historico', { erroLocal: true }),
+                API.GET('/equipamentos', { erroLocal: true })
             ]);
 
             // Ignora respostas de uma consulta que já foi substituída.
