@@ -3,91 +3,108 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <title>Dashboard | EcoCycle</title>
 </head>
 <body>
-  <!-- topo, menu lateral e rodapé são preenchidos pelo layout.js -->
-  <div id="app-topo"></div>
-  <div class="app-corpo">
-    <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
-    <main class="conteudo-pagina">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 m-0">Dashboard</h1>
+<div id="app-topo"></div>
+<div class="app-corpo">
+  <nav id="app-menu" class="menu" aria-label="Menu principal"></nav>
+  <main class="conteudo-pagina">
+    <h1 class="h4 mb-3">Dashboard</h1>
+    <div class="card shadow-sm mb-4"><div class="card-body">
+      <div class="d-flex flex-wrap align-items-center gap-3">
+        <label for="periodo-dashboard" class="form-label mb-0 fw-semibold">Período dos indicadores</label>
+        <select id="periodo-dashboard" class="form-select seletor-periodo" aria-describedby="periodo-ajuda">
+          <option value="diario">Hoje</option><option value="mensal" selected>Mês atual</option><option value="trimestral">Trimestre atual</option>
+        </select>
+        <span id="periodo-descricao" role="status" aria-live="polite"></span>
       </div>
-
-      <!-- Cards de indicadores. Todo bloco tem .estado (carregando/erro/vazio) e .conteudo (dados) -->
-      <section id="bloco-indicadores" class="mb-4">
-        <div class="estado"></div><div class="conteudo indicadores-grid d-none"></div>
-      </section>
-
-      <!-- Gráficos de produção diária e mensal, lado a lado -->
-      <div class="row g-3 mb-4">
-        <div class="col-lg-6"><div class="card h-100 shadow-sm" id="bloco-diaria">
-          <div class="card-header">Produção diária (hoje)</div>
-          <div class="card-body"><div class="estado"></div>
-            <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-diaria"></canvas></div></div></div>
-        </div></div>
-        <div class="col-lg-6"><div class="card h-100 shadow-sm" id="bloco-mensal">
-          <div class="card-header">Produção mensal (mês atual)</div>
-          <div class="card-body"><div class="estado"></div>
-            <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-mensal"></canvas></div></div></div>
-        </div></div>
-      </div>
-
-      <div class="card shadow-sm mb-4" id="bloco-trimestral">
-        <div class="card-header">Produção trimestral (trimestre atual)</div>
-        <div class="card-body"><div class="estado"></div>
-          <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-trimestral"></canvas></div></div>
-        </div>
-      </div>
-
-      <!-- CO₂ evitado: total à esquerda e gráfico por material à direita -->
-      <div class="card shadow-sm mb-4" id="bloco-co2">
-        <div class="card-header">CO₂ evitado (estimativa)</div>
-        <div class="card-body"><div class="estado"></div>
-          <div class="conteudo d-none"><div class="row align-items-center g-3">
-            <div class="col-md-4 text-center">
-              <div class="valor-grande" id="co2-total"></div>
-              <div style="color:var(--eco-texto-suave)">toneladas de CO₂e evitadas</div>
-              <div class="small mt-2" style="color:var(--eco-texto-suave)">Cálculo com fatores provisórios por material.</div>
-            </div>
-            <div class="col-md-8"><div class="grafico"><canvas id="grafico-co2"></canvas></div></div>
-          </div></div></div>
-      </div>
-
-      <!-- Recebimento por fornecedor e lotes por status -->
-      <div class="row g-3 mb-4">
-        <div class="col-lg-7"><div class="card h-100 shadow-sm" id="bloco-fornecedores">
-          <div class="card-header">Recebimento por fornecedor (kg)</div>
-          <div class="card-body"><div class="estado"></div>
-            <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-fornecedores"></canvas></div></div></div>
-        </div></div>
-        <div class="col-lg-5"><div class="card h-100 shadow-sm" id="bloco-status-lotes">
-          <div class="card-header">Lotes por status</div>
-          <div class="card-body"><div class="estado"></div>
-            <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-status-lotes"></canvas></div></div></div>
-        </div></div>
-      </div>
-
-      <!-- Status da esteira e lista de alertas ativos -->
-      <div class="row g-3">
-        <div class="col-lg-5"><div class="card h-100 shadow-sm" id="bloco-esteira">
-          <div class="card-header">Status da esteira</div>
-          <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
-        </div></div>
-        <div class="col-lg-7"><div class="card h-100 shadow-sm" id="bloco-alertas">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            Alertas ativos <span id="contador-alertas" class="badge b-suave">–</span></div>
-          <div class="card-body"><div class="estado"></div><div class="conteudo d-none"></div></div>
-          <div class="card-footer text-end">
-            <a href="../alerts/alerts.html" class="btn btn-eco btn-sm">Ver alertas</a>
-          </div>
-        </div></div>
-      </div>
-
-    </main>
-  </div>
-  <script type="module" src="dashboard.js"></script>
+      <p id="periodo-ajuda" class="small text-body-secondary mt-3 mb-1">O período filtra o resumo, a composição, o CO₂ e o recebimento por fornecedor. Os três gráficos de produção e a situação atual têm períodos próprios.</p>
+      <p class="small text-body-secondary mb-0">Recebimentos seguem a data de entrada; produção e rejeito, o início do ciclo; materiais, a data do item. A composição registrada pode diferir da saída produzida.</p>
+    </div></div>
+    <div class="row g-3 mb-4"><div class="col-xl-3"><section id="bloco-recebimento" class="card shadow-sm h-100" aria-label="Recebimento no período">
+      <div class="card-header">Recebimento no período</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div><div class="col-xl-9"><section id="bloco-producao" class="card shadow-sm h-100" aria-label="Produção no período">
+      <div class="card-header">Produção no período</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div></div>
+    <div class="mb-4"><section id="bloco-materiais" class="card shadow-sm h-100" aria-label="Composição registrada">
+      <div class="card-header">Composição registrada</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"><p><span class="periodo-selecionado small text-body-secondary"></span></p>
+    <div id="cards-materiais" class="indicadores-grid materiais-grid mb-4"></div>
+    <div id="area-grafico-materiais"><div class="grafico"><canvas id="grafico-materiais" role="img" aria-label="Distribuição dos pesos registrados por material e rejeito"></canvas></div></div>
+    <p id="materiais-vazio" class="text-body-secondary d-none">Sem materiais registrados no período.</p></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div>
+    <div class="row g-3 mb-4">
+      <div class="col-lg-6"><section id="bloco-diaria" class="card shadow-sm h-100" aria-label="Produção diária (hoje)">
+      <div class="card-header">Produção diária (hoje)</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-diaria" role="img" aria-label="Entrada, saída produzida e rejeitos de hoje em kg"></canvas></div></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div>
+      <div class="col-lg-6"><section id="bloco-mensal" class="card shadow-sm h-100" aria-label="Produção mensal (mês atual)">
+      <div class="card-header">Produção mensal (mês atual)</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-mensal" role="img" aria-label="Entrada, saída produzida e rejeitos do mês atual em kg"></canvas></div></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div>
+    </div>
+    <div class="mb-4"><section id="bloco-trimestral" class="card shadow-sm h-100" aria-label="Produção trimestral (trimestre atual)">
+      <div class="card-header">Produção trimestral (trimestre atual)</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-trimestral" role="img" aria-label="Entrada, saída produzida e rejeitos do trimestre atual em kg"></canvas></div></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div>
+    <div class="mb-4"><section id="bloco-co2" class="card shadow-sm h-100" aria-label="CO₂ evitado (estimativa)">
+      <div class="card-header">CO₂ evitado (estimativa)</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"><p><span class="periodo-selecionado small text-body-secondary"></span></p><div class="row align-items-center g-3">
+    <div class="col-md-4 text-center"><div class="valor-grande" id="co2-total"></div>
+    <div class="text-body-secondary">toneladas de CO₂e evitadas</div></div>
+    <div class="col-md-8"><div id="area-grafico-co2"><div class="grafico"><canvas id="grafico-co2" role="img" aria-label="Estimativa de CO₂ evitado por plástico e metal em toneladas"></canvas></div></div>
+    <p id="co2-vazio" class="text-body-secondary d-none">Sem plástico ou metal registrado no período.</p></div></div>
+    <p class="small text-body-secondary mt-3 mb-0">Estimativa calculada com fatores provisórios: plástico 1,5 e metal 4 kg de CO₂e por kg reciclado. Alumínio e rejeito não entram no cálculo.</p></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div>
+    <div class="mb-4"><section id="bloco-fornecedores" class="card shadow-sm h-100" aria-label="Recebimento por fornecedor (kg)">
+      <div class="card-header">Recebimento por fornecedor (kg)</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"><p><span class="periodo-selecionado small text-body-secondary"></span></p>
+    <p id="aviso-fornecedores" class="small text-warning-emphasis"></p>
+    <div id="area-grafico-fornecedores"><div class="grafico"><canvas id="grafico-fornecedores" role="img" aria-label="Peso recebido por fornecedor no período em kg"></canvas></div></div>
+    <p id="fornecedores-vazio" class="text-body-secondary d-none">Sem recebimentos no período.</p></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div>
+    <h2 class="h5 mb-3">Situação atual</h2>
+    <div class="mb-4"><section id="bloco-status-lotes" class="card shadow-sm h-100" aria-label="Lotes por status — situação atual">
+      <div class="card-header">Lotes por status — situação atual</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"><div class="grafico"><canvas id="grafico-status-lotes" role="img" aria-label="Quantidade atual de lotes por status"></canvas></div></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div>
+    <div class="row g-3 mb-4"><div class="col-lg-5"><section id="bloco-esteira" class="card shadow-sm h-100" aria-label="Status das esteiras — situação atual">
+      <div class="card-header">Status das esteiras — situação atual</div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section></div><div class="col-lg-7"><section id="bloco-alertas" class="card shadow-sm h-100" aria-label="Alertas ativos — situação atual">
+      <div class="card-header">Alertas ativos — situação atual <span id="contador-alertas" class="badge b-suave">–</span></div>
+      <div class="card-body"><div class="estado" role="status" aria-live="polite"></div>
+        <div class="conteudo d-none"></div>
+        <div class="aviso-atualizacao small mt-2" role="status"></div>
+      </div></section>
+      <div class="text-end mt-2"><a href="../alerts/alerts.html" class="btn btn-eco btn-sm">Ver alertas</a></div>
+    </div></div>
+  </main>
+</div>
+<script type="module" src="dashboard.js"></script>
 </body>
 </html>

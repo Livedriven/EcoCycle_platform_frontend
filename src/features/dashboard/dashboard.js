@@ -3,339 +3,265 @@ import { criarElemento, criarSpinner } from '../../shared/dom.js';
 import './dashboard.css';
 import API from '../../shared/api.js';
 import { classeStatus, classeAlerta, classeContadorAlertas } from '../../shared/ui.js';
-import {
-    MATERIAIS_RELATORIO as MATERIAIS,
-    totalRecebido,
-    totalProduzido,
-    totalPorMaterial,
-    recebidoPorFornecedor,
-    lotesPorStatus,
-    alertasAtivos,
-    co2Evitado
-} from '../../shared/calculations.js';
-import {
-    formatNumber,
-    formatKg,
-    formatDateTime
-} from '../../shared/formatters.js';
+import { lotesPorStatus, alertasAtivos } from '../../shared/calculations.js';
+import { formatNumber, formatKg, formatDate, formatDateTime } from '../../shared/formatters.js';
 import { createBarChart, createDoughnutChart, CORES } from '../../shared/charts.js';
-import { prepararProducaoMateriais } from '../materials/materials-report.js';
+import { criarContexto, lerConsolidado, lerMateriais, estimarCo2, filtrarRecebimentos, agruparFornecedores } from './dashboard-data.js';
 
-const COR_STATUS_LOTE = {
-    'Recebido': CORES.info,
-    'Em processamento': CORES.aviso,
-    'Finalizado': CORES.Metal
-};
-
-// Página protegida: sem sessão válida, montarLayout() já redireciona ao login.
 const SESSAO = montarLayout();
 const INTERVALO_ATUALIZACAO_MS = 5000;
-let carregando = false;
+const COR_STATUS_LOTE = { Recebido: CORES.info, 'Em processamento': CORES.aviso, Finalizado: CORES.Metal };
+const exibidos = new Map();
+const pendentes = new Map();
+const requisicoes = new Map();
+let atualizacao, chaveCarga;
+let periodo = 'mensal';
 
-/* ---------- Busca de dados ---------- */
-
-function buscar(caminho) {
-    return API.GET(caminho, { erroLocal: true }).then((dados) => {
-        if (caminho.startsWith('/producao/dashboard-')) return dados;
-        if (dados == null) return [];
-        if (!Array.isArray(dados)) throw new Error('Resposta inválida da API.');
-        return dados;
-    });
-}
-
-/* ---------- Estados de cada bloco (carregando, erro, vazio, pronto) ---------- */
-
-function partesDoBloco(id) {
+function partes(id) {
     const bloco = document.getElementById(id);
-    return {
-        estado: bloco.querySelector('.estado'),
-        conteudo: bloco.querySelector('.conteudo')
-    };
+    return { bloco, estado: bloco.querySelector('.estado'), conteudo: bloco.querySelector('.conteudo'), aviso: bloco.querySelector('.aviso-atualizacao') };
 }
 
-function mostrarCarregando(id) {
-    const { estado, conteudo } = partesDoBloco(id);
+function mostrarMensagem(id, mensagem, erro = false) {
+    const { estado, conteudo } = partes(id);
     conteudo.classList.add('d-none');
-    estado.replaceChildren(criarSpinner(undefined, 'spinner-border spinner-border-sm'), criarElemento('span', '', 'Carregando...'));
-    document.getElementById(id).setAttribute('aria-busy', 'true');
-    estado.setAttribute('role', 'status');
-}
-
-function mostrarMensagem(id, texto, icone) {
-    const { estado, conteudo } = partesDoBloco(id);
-    conteudo.classList.add('d-none');
-    estado.replaceChildren();
-    const i = document.createElement('i');
-    i.className = 'bi bi-' + icone + ' fs-3' + (icone === 'exclamation-triangle' ? ' text-danger' : '');
-    const p = document.createElement('span');
-    p.textContent = texto;
-    estado.append(i, p);
-    estado.setAttribute('role', icone === 'exclamation-triangle' ? 'alert' : 'status');
+    estado.replaceChildren(criarElemento('span', erro ? 'text-danger' : '', mensagem));
+    estado.setAttribute('role', erro ? 'alert' : 'status');
 }
 
 function mostrarConteudo(id) {
-    const { estado, conteudo } = partesDoBloco(id);
+    const { estado, conteudo } = partes(id);
     estado.replaceChildren();
     conteudo.classList.remove('d-none');
 }
 
-/**
- * Carrega um bloco: espera os dados, pede a "preparar" para validar/calcular
- * e, só se houver o que mostrar, exibe o bloco e executa o que ela devolveu (desenhar).
- * preparar(...dados) devolve uma função de desenho, ou null quando não há dados.
- */
-const dadosExibidos = new Map();
-async function montarBloco(id, fontes, preparar) {
-    if (!dadosExibidos.has(id)) mostrarCarregando(id);
-    try {
-        const resultados = await Promise.allSettled(fontes);
-        const falha = resultados.find((resultado) => resultado.status === 'rejected');
-        if (falha) throw falha.reason;
-        const dados = resultados.map((resultado) => resultado.value);
-        const assinatura = JSON.stringify(dados);
-        if (dadosExibidos.get(id) === assinatura) return;
-        const desenhar = preparar(...dados);
-        if (!desenhar) {
-            mostrarMensagem(id, 'Sem dados no período', 'inbox');
-            dadosExibidos.set(id, assinatura);
-            return;
-        }
-        // Mostra o bloco antes de desenhar: o Chart.js mede o canvas, que não pode estar escondido.
-        mostrarConteudo(id);
-        desenhar();
-        dadosExibidos.set(id, assinatura);
-    } catch {
-        if (dadosExibidos.has(id)) return;
-        mostrarMensagem(id, 'Não foi possível carregar este bloco.', 'exclamation-triangle');
-        const botao = document.createElement('button');
-        botao.type = 'button';
-        botao.className = 'btn btn-outline-primary btn-sm';
-        botao.textContent = 'Tentar novamente';
-        botao.addEventListener('click', () => carregarBloco(id));
-        partesDoBloco(id).estado.append(botao);
-        if (id === 'bloco-alertas') document.getElementById('contador-alertas').textContent = '–';
-    } finally {
-        document.getElementById(id).setAttribute('aria-busy', 'false');
+function buscar(url) {
+    if (!requisicoes.has(url)) {
+        const carga = Promise.resolve().then(() => API.GET(url, { erroLocal: true })).then((dados) => {
+            if (!url.startsWith('/producao/') && !Array.isArray(dados)) throw new Error('Lista inválida da API.');
+            return dados;
+        }).finally(() => requisicoes.delete(url));
+        requisicoes.set(url, carga);
     }
+    return requisicoes.get(url);
 }
 
-/* ---------- Blocos ---------- */
+/** Cada bloco tem identidade de período e de carga: respostas antigas não alteram a tela. */
+function carregarBloco(id, contexto, cache = new Map()) {
+    const config = BLOCOS[id];
+    const chave = config.chave(contexto);
+    if (pendentes.get(id)?.chave === chave) return pendentes.get(id).carga;
+    const token = { chave };
+    pendentes.set(id, token);
+    const anterior = exibidos.get(id);
+    const { bloco, estado, aviso } = partes(id);
+    if (anterior?.chave !== chave) {
+        mostrarMensagem(id, 'Carregando...');
+        estado.prepend(criarSpinner(undefined, 'spinner-border spinner-border-sm'));
+        aviso.textContent = '';
+    }
+    bloco.setAttribute('aria-busy', 'true');
+    const fontes = config.fontes(contexto).map((url) => {
+        if (!cache.has(url)) cache.set(url, buscar(url));
+        return cache.get(url);
+    });
+    token.carga = (async () => {
+        try {
+            const resultados = await Promise.allSettled(fontes);
+            if (pendentes.get(id) !== token) return;
+            const falha = resultados.find((r) => r.status === 'rejected');
+            if (falha) throw falha.reason;
+            const dados = resultados.map((r) => r.value);
+            const assinatura = JSON.stringify(dados);
+            const ultimo = exibidos.get(id);
+            let vazio = ultimo?.vazio;
+            if (ultimo?.chave !== chave || ultimo.assinatura !== assinatura) {
+                const desenhar = config.preparar(...dados, contexto);
+                vazio = !desenhar;
+                if (!vazio) { mostrarConteudo(id); desenhar(); }
+            }
+            if (vazio) mostrarMensagem(id, config.mensagemVazio ?? 'Sem dados no período');
+            else mostrarConteudo(id);
+            const horario = new Date().toLocaleTimeString('pt-BR');
+            exibidos.set(id, { chave, assinatura, vazio, horario });
+            aviso.className = 'aviso-atualizacao small text-body-secondary mt-2';
+            aviso.setAttribute('role', 'status');
+            aviso.textContent = 'Atualizado às ' + horario;
+        } catch {
+            if (pendentes.get(id) !== token) return;
+            const ultimo = exibidos.get(id);
+            if (ultimo?.chave === chave) {
+                aviso.className = 'aviso-atualizacao small text-warning-emphasis mt-2';
+                aviso.setAttribute('role', 'alert');
+                aviso.textContent = 'Não foi possível atualizar. Dados da última atualização às ' + ultimo.horario + '.';
+            } else {
+                mostrarMensagem(id, 'Não foi possível carregar este bloco.', true);
+                if (id === 'bloco-alertas') document.getElementById('contador-alertas').textContent = '–';
+            }
+            const botao = criarElemento('button', 'btn btn-outline-primary btn-sm ms-2', 'Tentar novamente');
+            botao.type = 'button';
+            botao.addEventListener('click', () => carregarBloco(id, criarContexto(periodo)));
+            (ultimo?.chave === chave ? aviso : estado).append(botao);
+        } finally {
+            if (pendentes.get(id) === token) {
+                pendentes.delete(id);
+                bloco.setAttribute('aria-busy', 'false');
+            }
+        }
+    })();
+    return token.carga;
+}
 
-function cardIndicador(classe, titulo, valor, grupo = 'material') {
-    const col = document.createElement('div');
-    col.className = 'indicador indicador-' + grupo;
-    const card = criarElemento('div', 'card card-ind shadow-sm h-100 ' + classe);
+function card(titulo, valor, cor = 'ind-info') {
+    const caixa = criarElemento('div', 'indicador');
     const corpo = criarElemento('div', 'card-body');
-    const rotulo = criarElemento('div', 'small', titulo);
-    rotulo.style.color = 'var(--eco-texto-suave)';
-    corpo.append(rotulo, criarElemento('div', 'valor', valor));
-    card.append(corpo);
-    col.append(card);
-    return col;
+    corpo.append(criarElemento('div', 'small text-body-secondary', titulo), criarElemento('div', 'valor', valor));
+    const painel = criarElemento('div', 'card card-ind shadow-sm h-100 ' + cor);
+    painel.append(corpo);
+    caixa.append(painel);
+    return caixa;
 }
 
-function prepararIndicadores(lotes, producao, alertas, materiais) {
-    // Os pesos por material vêm dos itens de cada ciclo, com o tipo do catálogo.
-    const composicao = prepararProducaoMateriais(producao, materiais);
-    return () => {
-        const porMaterial = totalPorMaterial(composicao.registros, MATERIAIS);
-        const ativos = alertasAtivos(alertas).length;
-        const detalhado = composicao.pendencias.length === 0 && composicao.descartados === 0;
-        const pesoMaterial = (material) => detalhado ? formatKg(porMaterial[material]) : 'Não informado';
-        const cards = [
-            cardIndicador('ind-azul', 'Total recebido', formatKg(totalRecebido(lotes)), 'resumo'),
-            cardIndicador('ind-info', 'Total processado', formatKg(totalProduzido(producao)), 'resumo'),
-            cardIndicador(ativos > 0 ? 'ind-perigo' : 'ind-sucesso', 'Alertas ativos', String(ativos), 'resumo'),
-            cardIndicador('ind-azul', 'Plástico', pesoMaterial('Plástico')),
-            cardIndicador('ind-verde', 'Metal', pesoMaterial('Metal')),
-            cardIndicador('ind-info', 'Alumínio', pesoMaterial('Alumínio')),
-            cardIndicador('ind-info', 'Rejeito', pesoMaterial('Rejeito'))
-        ];
-        document.querySelector('#bloco-indicadores .conteudo').replaceChildren(...cards);
-        if (lotes.length === 0 && producao.length === 0 && alertas.length === 0) {
-            mostrarMensagem('bloco-indicadores', 'Sem dados no período', 'inbox');
-            partesDoBloco('bloco-indicadores').conteudo.classList.remove('d-none');
-        }
-    };
-}
-
-function prepararConsolidado(dados, periodo) {
-    if (Array.isArray(dados) && dados.length === 0) return null;
-    const massas = dados?.balanco_massas_kg;
-    const valores = [massas?.total_material_entrada, massas?.total_produzido_saida, massas?.total_rejeitos_perdas];
-    if (valores.some((v) => v == null || !Number.isFinite(Number(v)) || Number(v) < 0)) {
-        throw new Error('Resposta inválida do dashboard de produção.');
-    }
-    if (valores.every((v) => Number(v) === 0)) return null;
-    return () => createBarChart(
-        document.getElementById('grafico-' + periodo),
-        ['Entrada', 'Saída produzida', 'Rejeitos e perdas'],
-        [{ label: 'Peso (kg)', data: valores.map(Number), cor: CORES.info }],
-        { rotuloY: 'kg', formatarValor: formatNumber }
+function prepararResumo(resposta, contexto) {
+    const d = lerConsolidado(resposta, contexto.tipo);
+    return () => partes('bloco-producao').conteudo.replaceChildren(
+        card('Entrada na produção', formatKg(d.entrada)), card('Saída produzida', formatKg(d.saida), 'ind-verde'),
+        card('Rejeito registrado', formatKg(d.rejeito)), card('Aproveitamento', formatNumber(d.aproveitamento) + '%', 'ind-verde')
     );
 }
 
-function prepararCo2(producao, materiais) {
-    const { total, porMaterial } = co2Evitado(prepararProducaoMateriais(producao, materiais).registros);
-    if (total === 0) {
-        return null;
-    }
+function avisoRecebimentos(dados) {
+    return dados.descartados ? `${dados.descartados} registro(s) com data ou peso inválido desconsiderado(s).` : '';
+}
+
+function prepararRecebido(lotes, contexto) {
+    const dados = filtrarRecebimentos(lotes, contexto);
+    return () => partes('bloco-recebimento').conteudo.replaceChildren(
+        card('Recebido', formatKg(dados.total), 'ind-azul'),
+        criarElemento('p', 'small text-warning-emphasis mt-2 mb-0', avisoRecebimentos(dados))
+    );
+}
+
+function prepararMateriais(resposta) {
+    const totais = lerMateriais(resposta);
+    return () => {
+        document.getElementById('cards-materiais').replaceChildren(...Object.entries(totais).map(([nome, peso]) => card(nome, formatKg(peso))));
+        const temPeso = Object.values(totais).some((n) => n > 0);
+        document.getElementById('area-grafico-materiais').classList.toggle('d-none', !temPeso);
+        document.getElementById('materiais-vazio').classList.toggle('d-none', temPeso);
+        if (temPeso) createDoughnutChart(document.getElementById('grafico-materiais'), Object.entries(totais).map(([nome, peso]) => ({ rotulo: nome, valor: peso, cor: CORES[nome] })));
+    };
+}
+
+function prepararConsolidado(resposta, tipo, canvas) {
+    const d = lerConsolidado(resposta, tipo);
+    const valores = [d.entrada, d.saida, d.rejeito];
+    if (valores.every((n) => n === 0)) return null;
+    return () => createBarChart(document.getElementById(canvas), ['Entrada', 'Saída produzida', 'Rejeitos e perdas'],
+        [{ label: 'Peso (kg)', data: valores, cor: CORES.info }], { rotuloY: 'kg', formatarValor: formatNumber });
+}
+
+function prepararCo2(resposta) {
+    const totais = lerMateriais(resposta);
+    const { total, porMaterial } = estimarCo2(totais);
     return () => {
         document.getElementById('co2-total').textContent = formatNumber(total);
-        createBarChart(
-            document.getElementById('grafico-co2'),
-            Object.keys(porMaterial),
-            [{ label: 'CO₂e evitado (t)', data: Object.values(porMaterial), cor: Object.keys(porMaterial).map((m) => CORES[m]) }],
-            { rotuloY: 't CO₂e', formatarValor: formatNumber }
-        );
+        const temPeso = totais['Plástico'] > 0 || totais.Metal > 0;
+        document.getElementById('area-grafico-co2').classList.toggle('d-none', !temPeso);
+        document.getElementById('co2-vazio').classList.toggle('d-none', temPeso);
+        if (temPeso) createBarChart(document.getElementById('grafico-co2'), Object.keys(porMaterial),
+            [{ label: 'CO₂e evitado (t)', data: Object.values(porMaterial), cor: Object.keys(porMaterial).map((nome) => CORES[nome]) }],
+            { rotuloY: 't CO₂e', formatarValor: formatNumber });
     };
 }
 
-function prepararFornecedores(lotes, fornecedores) {
-    const dados = recebidoPorFornecedor(lotes, fornecedores);
-    if (dados.length === 0) {
-        return null;
-    }
-    return () => createBarChart(
-        document.getElementById('grafico-fornecedores'),
-        dados.map((d) => d.nome),
-        [{ label: 'Recebido (kg)', data: dados.map((d) => d.total), cor: CORES['Plástico'] }],
-        { horizontal: true, formatarValor: formatNumber }
-    );
+function prepararFornecedores(lotes, fornecedores, contexto) {
+    const recebimentos = filtrarRecebimentos(lotes, contexto);
+    const grupos = agruparFornecedores(recebimentos.registros, fornecedores);
+    return () => {
+        document.getElementById('aviso-fornecedores').textContent = avisoRecebimentos(recebimentos);
+        document.getElementById('area-grafico-fornecedores').classList.toggle('d-none', !grupos.length);
+        document.getElementById('fornecedores-vazio').classList.toggle('d-none', Boolean(grupos.length));
+        if (grupos.length) createBarChart(document.getElementById('grafico-fornecedores'), grupos.map((d) => d.nome),
+            [{ label: 'Recebido (kg)', data: grupos.map((d) => d.total), cor: CORES['Plástico'] }], { horizontal: true, formatarValor: formatNumber });
+    };
 }
 
 function prepararStatusLotes(lotes) {
     const dados = lotesPorStatus(lotes);
-    if (dados.length === 0) {
-        return null;
-    }
-    return () => createDoughnutChart(
-        document.getElementById('grafico-status-lotes'),
-        dados.map((d) => ({
-            rotulo: d.status + ' (' + d.quantidade + ')',
-            valor: d.quantidade,
-            cor: COR_STATUS_LOTE[d.status] ?? CORES.cinza
-        }))
-    );
+    if (!dados.length) return null;
+    return () => createDoughnutChart(document.getElementById('grafico-status-lotes'), dados.map((d) => ({
+        rotulo: `${d.status} (${d.quantidade})`, valor: d.quantidade, cor: COR_STATUS_LOTE[d.status] ?? CORES.cinza,
+    })));
 }
 
-function linhaEsteira(esteira) {
-    const linha = document.createElement('div');
-    linha.className = 'esteira-item';
-
-    const topo = document.createElement('div');
-    topo.className = 'd-flex justify-content-between align-items-center';
-    const nome = document.createElement('strong');
-    nome.textContent = esteira.nome_esteira;
-    const badge = document.createElement('span');
-    badge.className = 'badge ' + classeStatus(esteira.status_esteira);
-    badge.textContent = esteira.status_esteira;
-    topo.append(nome, badge);
-
-    const detalhes = document.createElement('div');
-    detalhes.className = 'small';
-    detalhes.style.color = 'var(--eco-texto-suave)';
-    detalhes.textContent =
-        'Velocidade: ' + formatNumber(esteira.velocidade_esteira_kmh, 1) + ' km/h · ' +
-        'Temperatura: ' + formatNumber(esteira.temperatura_esteira_c, 1) + ' °C';
-
-    linha.append(topo, detalhes);
-    return linha;
-}
-
-function prepararEsteira(esteiras) {
-    if (esteiras.length === 0) {
-        return null;
-    }
-    return () => document.querySelector('#bloco-esteira .conteudo').replaceChildren(...esteiras.map(linhaEsteira));
-}
-
-function linhaAlerta(alerta) {
-    const linha = document.createElement('li');
-    linha.className = 'list-group-item d-flex justify-content-between align-items-start gap-2';
-    const tipo = document.createElement('span');
-    tipo.className = 'badge badge-alerta ' + classeAlerta(alerta.tipo_alerta);
-    tipo.textContent = alerta.tipo_alerta;
-    const data = document.createElement('small');
-    data.className = 'text-nowrap';
-    data.style.color = 'var(--eco-texto-suave)';
-    data.textContent = formatDateTime(alerta.datahora_alerta);
-    linha.append(tipo, data);
-    return linha;
+function prepararEsteiras(esteiras) {
+    if (!esteiras.length) return null;
+    return () => partes('bloco-esteira').conteudo.replaceChildren(...esteiras.map((e) => {
+        const linha = criarElemento('div', 'esteira-item');
+        const topo = criarElemento('div', 'd-flex justify-content-between align-items-center');
+        topo.append(criarElemento('strong', '', e.nome_esteira), criarElemento('span', 'badge ' + classeStatus(e.status_esteira), e.status_esteira));
+        linha.append(topo, criarElemento('div', 'small text-body-secondary', `Velocidade: ${formatNumber(e.velocidade_esteira_kmh, 1)} km/h · Temperatura: ${formatNumber(e.temperatura_esteira_c, 1)} °C`));
+        return linha;
+    }));
 }
 
 function prepararAlertas(alertas) {
-    const ativos = alertasAtivos(alertas)
-        .sort((a, b) => String(b.datahora_alerta).localeCompare(String(a.datahora_alerta)));
-    const contador = document.getElementById('contador-alertas');
-    contador.textContent = String(ativos.length);
-    contador.className = 'badge ' + classeContadorAlertas(ativos.length);
-    if (ativos.length === 0) {
-        return null;
-    }
+    const ativos = alertasAtivos(alertas).sort((a, b) => String(b.datahora_alerta).localeCompare(String(a.datahora_alerta)));
     return () => {
-        const lista = document.createElement('ul');
-        lista.className = 'list-group list-group-flush';
-        lista.append(...ativos.map(linhaAlerta));
-        document.querySelector('#bloco-alertas .conteudo').replaceChildren(lista);
+        const contador = document.getElementById('contador-alertas');
+        contador.textContent = String(ativos.length);
+        contador.className = 'badge ' + classeContadorAlertas(ativos.length);
+        const lista = criarElemento('ul', 'list-group list-group-flush');
+        for (const alerta of ativos) {
+            const linha = criarElemento('li', 'list-group-item d-flex justify-content-between align-items-start gap-2');
+            linha.append(criarElemento('span', 'badge badge-alerta ' + classeAlerta(alerta.tipo_alerta), alerta.tipo_alerta),
+                criarElemento('small', 'text-body-secondary text-nowrap', formatDateTime(alerta.datahora_alerta)));
+            lista.append(linha);
+        }
+        partes('bloco-alertas').conteudo.replaceChildren(ativos.length ? lista : criarElemento('p', 'text-body-secondary mb-0', 'Nenhum alerta ativo.'));
     };
 }
 
-/* ---------- Carga da página ---------- */
-
+const filtrado = (c) => c.chave;
+const atual = () => 'atual';
 const BLOCOS = {
-    'bloco-indicadores': { fontes: ['/lotes', '/producao', '/alertas', '/materiais'], preparar: prepararIndicadores },
-    'bloco-diaria': { fontes: ['/producao/dashboard-diario'], preparar: (d) => prepararConsolidado(d, 'diaria') },
-    'bloco-mensal': { fontes: ['/producao/dashboard-mensal'], preparar: (d) => prepararConsolidado(d, 'mensal') },
-    'bloco-trimestral': { fontes: ['/producao/dashboard-trimestral'], preparar: (d) => prepararConsolidado(d, 'trimestral') },
-    'bloco-co2': { fontes: ['/producao', '/materiais'], preparar: prepararCo2 },
-    'bloco-fornecedores': { fontes: ['/lotes', '/fornecedores'], preparar: prepararFornecedores },
-    'bloco-status-lotes': { fontes: ['/lotes'], preparar: prepararStatusLotes },
-    'bloco-esteira': { fontes: ['/esteiras'], preparar: prepararEsteira },
-    'bloco-alertas': { fontes: ['/alertas'], preparar: prepararAlertas }
+    'bloco-recebimento': { chave: filtrado, fontes: () => ['/lotes'], preparar: prepararRecebido },
+    'bloco-producao': { chave: filtrado, fontes: (c) => [c.rotas[c.tipo]], preparar: prepararResumo },
+    'bloco-materiais': { chave: filtrado, fontes: (c) => [c.materiais], preparar: prepararMateriais },
+    'bloco-co2': { chave: filtrado, fontes: (c) => [c.materiais], preparar: prepararCo2 },
+    'bloco-fornecedores': { chave: filtrado, fontes: () => ['/lotes', '/fornecedores'], preparar: prepararFornecedores },
+    'bloco-status-lotes': { mensagemVazio: 'Nenhum lote disponível.', chave: atual, fontes: () => ['/lotes'], preparar: prepararStatusLotes },
+    'bloco-esteira': { mensagemVazio: 'Nenhuma esteira disponível.', chave: atual, fontes: () => ['/esteiras'], preparar: prepararEsteiras },
+    'bloco-alertas': { chave: atual, fontes: () => ['/alertas'], preparar: prepararAlertas },
 };
-const pendentes = new Map();
-
-function rotaDoPeriodo(caminho) {
-    const hoje = new Date();
-    if (caminho.endsWith('/dashboard-diario')) {
-        const data = [hoje.getDate(), hoje.getMonth() + 1, hoje.getFullYear()].map((v) => String(v).padStart(2, '0')).join('/');
-        return caminho + '?' + new URLSearchParams({ data });
-    }
-    if (caminho.endsWith('/dashboard-mensal')) return caminho + '?' + new URLSearchParams({ mes: hoje.getMonth() + 1, ano: hoje.getFullYear() });
-    if (caminho.endsWith('/dashboard-trimestral')) return caminho + '?' + new URLSearchParams({ trimestre: Math.floor(hoje.getMonth() / 3) + 1, ano: hoje.getFullYear() });
-    return caminho;
+for (const [tipo, nome] of Object.entries({ diario: 'diaria', mensal: 'mensal', trimestral: 'trimestral' })) {
+    BLOCOS['bloco-' + nome] = { chave: (c) => c.rotas[tipo], fontes: (c) => [c.rotas[tipo]], preparar: (d) => prepararConsolidado(d, tipo, 'grafico-' + nome) };
 }
 
-function carregarBloco(id, cache = new Map()) {
-    if (pendentes.has(id)) return pendentes.get(id);
-    const { fontes, preparar } = BLOCOS[id];
-    const requisicoes = fontes.map((fonte) => {
-        const caminho = rotaDoPeriodo(fonte);
-        const chave = caminho;
-        if (!cache.has(chave)) cache.set(chave, Promise.resolve().then(() => buscar(caminho)));
-        return cache.get(chave);
-    });
-    const carga = montarBloco(id, requisicoes, preparar).finally(() => pendentes.delete(id));
-    pendentes.set(id, carga);
+function carregarDashboard() {
+    const contexto = criarContexto(periodo);
+    const identidade = contexto.chave + contexto.rotas.diario;
+    if (atualizacao && chaveCarga === identidade) return atualizacao;
+    chaveCarga = identidade;
+    const descricao = `${formatDate(contexto.inicio)} a ${formatDate(contexto.fim)}`;
+    document.getElementById('periodo-descricao').textContent = descricao;
+    document.querySelectorAll('.periodo-selecionado').forEach((el) => { el.textContent = descricao; });
+    const cache = new Map();
+    const carga = Promise.allSettled(Object.keys(BLOCOS).map((id) => carregarBloco(id, contexto, cache)));
+    atualizacao = carga;
+    carga.finally(() => { if (atualizacao === carga) atualizacao = null; });
     return carga;
 }
 
-async function carregarDashboard() {
-    if (carregando) return;
-    carregando = true;
-    try {
-        // Busca cada endpoint uma vez por atualização, sem bloquear blocos independentes.
-        const cache = new Map();
-        await Promise.allSettled(Object.keys(BLOCOS).map((id) => carregarBloco(id, cache)));
-    } finally {
-        carregando = false;
-    }
-}
-
 if (SESSAO) {
+    const seletor = document.getElementById('periodo-dashboard');
+    seletor.value = periodo;
+    seletor.addEventListener('change', () => {
+        if (!['diario', 'mensal', 'trimestral'].includes(seletor.value)) return;
+        periodo = seletor.value;
+        carregarDashboard();
+    });
     carregarDashboard();
-    setInterval(() => {
-        if (!document.hidden) carregarDashboard();
-    }, INTERVALO_ATUALIZACAO_MS);
+    setInterval(() => { if (!document.hidden) carregarDashboard(); }, INTERVALO_ATUALIZACAO_MS);
 }

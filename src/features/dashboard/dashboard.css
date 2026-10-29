@@ -7,19 +7,14 @@
 .indicador .card-body { padding: 1.25rem 1.5rem; }
 .indicador .valor { margin-top: .5rem; overflow-wrap: anywhere; }
 
+.seletor-periodo { width: auto; max-width: 100%; }
+#bloco-producao .conteudo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 @media (min-width: 576px) {
-    .indicadores-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .indicador-resumo:nth-child(3) { grid-column: 1 / -1; }
+    .materiais-grid, #bloco-producao .conteudo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
-/* Resumo na primeira linha; os quatro materiais ficam juntos na segunda. */
 @media (min-width: 1200px) {
-    .indicadores-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 1.5rem; }
-    .indicador-resumo,
-    .indicador-resumo:nth-child(3) { grid-column: span 4; }
-    .indicador-material { grid-column: span 3; }
+    .materiais-grid, #bloco-producao .conteudo { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-
 /* Cards de indicador com faixa de cor no topo */
 /* a faixa usa a variável --faixa, definida em cada variante (ind-azul, ind-verde...) */
 .card-ind { border-top: 4px solid var(--faixa); }

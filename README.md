@@ -27,7 +27,7 @@ Simulador do chão de fábrica (E4) ──┘
 | Tela | O que mostra |
 |---|---|
 | **Login** | Entrada com usuário e senha; a sessão usa um token JWT. |
-| **Dashboard** | Indicadores (total recebido, processado, plástico, metal, alertas ativos), balanço de massas diário, mensal e trimestral, CO₂ evitado, recebimento por fornecedor, lotes por status, status das esteiras e alertas ativos. |
+| **Dashboard** | Períodos Hoje/Mês atual/Trimestre atual (padrão: mês), recebido, entrada e saída da produção, rejeito e aproveitamento; composição registrada via `/producao/materiais`; balanços diário, mensal e trimestral; CO₂ estimado no frontend; fornecedores por período e situação atual de lotes, esteiras e alertas. |
 | **Produção do dia** | Registros de produção com filtro por data. |
 | **Materiais produzidos** | Pesos dos itens de produção por material, lote e dia, com rejeito contado por ciclo e aviso de composição incompleta. |
 | **Alertas** | Alertas gerados pelas leituras dos sensores. |
