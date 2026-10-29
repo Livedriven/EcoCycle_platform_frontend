@@ -63,14 +63,51 @@ function camposValidos(dados, obrigatorios, opcionais = []) {
         && Object.keys(dados).every((c) => [...obrigatorios, ...opcionais].includes(c));
 }
 
+function filtrarData(valor, query) {
+    const dia = String(valor ?? '').slice(0, 10);
+    const [ano, mes] = dia.split('-').map(Number);
+    return (!query.data || dia === query.data.split('/').reverse().join('-'))
+        && (!query.mes || mes === Number(query.mes)) && (!query.ano || ano === Number(query.ano))
+        && (!query.trimestre || Math.ceil(mes / 3) === Number(query.trimestre));
+}
+
+function periodoValido(query) {
+    for (const [campo, max] of [['mes', 12], ['ano', 9999], ['trimestre', 4]]) {
+        if (query[campo] !== undefined && (typeof query[campo] !== 'string' || !/^\d+$/.test(query[campo])
+            || Number(query[campo]) < 1 || Number(query[campo]) > max)) return false;
+    }
+    if (query.data !== undefined) {
+        if (typeof query.data !== 'string' || !/^\d{2}\/\d{2}\/\d{4}$/.test(query.data)) return false;
+        const iso = query.data.split('/').reverse().join('-');
+        const data = new Date(iso + 'T00:00:00Z');
+        if (!Number.isFinite(data.getTime()) || data.toISOString().slice(0, 10) !== iso || iso.startsWith('0000')) return false;
+    }
+    return true;
+}
+
+function relatorioMateriais(producoes, materiais, query) {
+    const catalogo = new Map(materiais.map((m) => [Number(m.id_material), m.tipo_material]));
+    const totais = { plastico: 0, metal: 0, aluminio: 0, rejeito: 0 };
+    const itens = [];
+    for (const ciclo of producoes) {
+        if (filtrarData(ciclo.data_inicio, query)) totais.rejeito += Number(ciclo.rejeito_kg ?? 0);
+        for (const item of ciclo.itens ?? []) {
+            const tipo = catalogo.get(Number(item.id_material));
+            if (!tipo || !filtrarData(item.data_hora, query)) continue;
+            itens.push({ id_item_producao: item.id_item_producao, id_producao: ciclo.id_producao,
+                id_lote: ciclo.id_lote, id_esteira: ciclo.id_esteira, id_material: item.id_material,
+                tipo_material: tipo, peso_kg: item.peso_kg, data_hora: item.data_hora });
+            totais[tipo] = (totais[tipo] ?? 0) + Number(item.peso_kg);
+        }
+    }
+    itens.sort((a, b) => String(a.data_hora).localeCompare(String(b.data_hora)) || a.id_item_producao - b.id_item_producao);
+    return { indicador: 'Relatório de materiais produzidos - EcoCycle', total_registros: itens.length,
+        totais_por_material_kg: Object.fromEntries(Object.entries(totais).map(([tipo, peso]) => [tipo, Math.round(peso * 100) / 100])),
+        materiais_produzidos: itens };
+}
+
 function consolidar(registros, query, periodo) {
-    const filtrados = registros.filter((r) => {
-        const dia = String(r.data_inicio ?? '').slice(0, 10);
-        const [ano, mes] = dia.split('-').map(Number);
-        return (!query.data || dia === query.data.split('/').reverse().join('-'))
-            && (!query.mes || mes === Number(query.mes)) && (!query.ano || ano === Number(query.ano))
-            && (!query.trimestre || Math.ceil(mes / 3) === Number(query.trimestre));
-    });
+    const filtrados = registros.filter((r) => filtrarData(r.data_inicio, query));
     const soma = (campo) => Math.round(filtrados.reduce((total, r) => total + Number(r[campo] ?? 0), 0) * 100) / 100;
     const entrada = soma('quantidade_entrada_kg'), saida = soma('quantidade_saida_kg');
     return {
@@ -86,6 +123,10 @@ module.exports = (req, res) => {
     const listar = (rota) => (db.get(COLECOES[rota][0]).value() ?? []).map((r) => registroApi(rota, r));
     const salvar = (colecao, registro) => { db.get(colecao).push(registro).write(); return registro; };
     const novoId = (rota) => Math.max(0, ...listar(rota).map((r) => Number(r[COLECOES[rota][3]]) || 0)) + 1;
+    if (req.method === 'GET' && caminho === '/producao/materiais') {
+        if (!periodoValido(req.query)) return res.status(422).json({ detail: 'Período inválido.' });
+        return res.json(relatorioMateriais(listar('/producao'), listar('/materiais'), req.query));
+    }
     if (req.method === 'GET' && /^\/producao\/dashboard-(diario|mensal|trimestral)$/.test(caminho)) {
         return res.json(consolidar(listar('/producao'), req.query, caminho.split('-').at(-1)));
     }

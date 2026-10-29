@@ -1,7 +1,7 @@
 // Somente rotas públicas do contrato, com as permissões de operação do portal.
 const LEITURAS = new Set([
     '/lotes', '/fornecedores', '/materiais', '/producao', '/esteiras', '/alertas',
-    '/telemetria/historico', '/producao/dashboard-diario', '/producao/dashboard-mensal', '/producao/dashboard-trimestral',
+    '/telemetria/historico', '/producao/materiais', '/producao/dashboard-diario', '/producao/dashboard-mensal', '/producao/dashboard-trimestral',
 ]);
 const CADASTROS = {
     '/fornecedores': ['administrador', 'gerente'],
