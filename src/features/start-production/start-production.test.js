@@ -90,16 +90,16 @@ describe('acesso a iniciar produção', () => {
         expect(API.POST).toHaveBeenCalledExactlyOnceWith('/producao', expect.objectContaining({
             id_lote: 1, id_esteira: 2, id_usuario: 7, turno: 'Manhã',
             status_producao: 'Em processamento', quantidade_entrada_kg: 10, quantidade_saida_kg: 0, rejeito_kg: 0, itens: []
-        }));
+        }), { aposConfirmar: [{ metodo: 'PATCH', url: '/lotes/1', corpo: { status_lote: 'Em processamento' } }] });
         expect(API.POST.mock.calls[0][1].data_inicio).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
-        expect(API.PATCH).toHaveBeenCalledExactlyOnceWith('/lotes/1', { status_lote: 'Em processamento' });
+        expect(API.PATCH).not.toHaveBeenCalled();
         expect(elementos.get('aviso-envio').className).toBe('alert alert-success');
     });
 
     it('mantém a produção criada e avisa quando o status do lote não é atualizado', async () => {
         entrar('operador');
         await abrir();
-        API.PATCH.mockRejectedValue(new Error('HTTP 403'));
+        API.POST.mockRejectedValue(Object.assign(new Error('HTTP 403'), { parcial: true }));
         await enviar();
         expect(API.POST).toHaveBeenCalledTimes(1);
         expect(elementos.get('aviso-envio').className).toBe('alert alert-warning');

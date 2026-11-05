@@ -219,22 +219,22 @@ function iniciarTela() {
                 data_fim: formatIsoLocal(),
                 quantidade_saida_kg: validacao.saida,
                 rejeito_kg: validacao.rejeito
-            }, { erroLocal: true });
+            }, {
+                erroLocal: true,
+                aposConfirmar: [{ metodo: 'PATCH', url: `/lotes/${atual.id_lote}`, corpo: { status_lote: STATUS_FINALIZADO } }],
+            });
+            fecharFinalizacao();
+            mostrarAvisoFinalizar('success', 'Produção finalizada.');
         } catch (erro) {
-            mostrarAvisoFinalizar('danger', 'Não foi possível finalizar a produção: ' + erro.message);
+            if (erro.parcial) fecharFinalizacao();
+            if (erro.incerto) mostrarAvisoFinalizar('warning', erro.message);
+            else if (erro.parcial) mostrarAvisoFinalizar('warning', 'Produção finalizada, mas o status do lote não foi atualizado: ' + erro.message);
+            else mostrarAvisoFinalizar('danger', 'Não foi possível finalizar a produção: ' + erro.message);
             return;
         } finally {
             finalizando = false;
             botao.disabled = false;
             botao.textContent = 'Confirmar finalização';
-        }
-        fecharFinalizacao();
-        try {
-            // O status do lote é o que as listas de lotes e de produção exibem.
-            await API.PATCH(`/lotes/${atual.id_lote}`, { status_lote: STATUS_FINALIZADO }, { erroLocal: true });
-            mostrarAvisoFinalizar('success', 'Produção finalizada.');
-        } catch (erro) {
-            mostrarAvisoFinalizar('warning', 'Produção finalizada, mas o status do lote não foi atualizado: ' + erro.message);
         }
         await carregar();
     }

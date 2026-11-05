@@ -13,6 +13,11 @@ import 'gridjs/dist/theme/mermaid.min.css';
 // 6. Seu CSS por último, para sobrescrever o Bootstrap
 import './styles/style.css';
 
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+    // O IndexedDB continua disponível nas páginas abertas mesmo se o worker não instalar.
+    void navigator.serviceWorker.register('/offline-sw.js').catch(() => {});
+}
+
 if (import.meta.env.MODE === 'demo') {
     const aviso = document.createElement('aside');
     aviso.className = 'alert alert-warning text-center rounded-0 mb-0';

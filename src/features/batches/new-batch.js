@@ -93,6 +93,7 @@ function iniciarTela() {
 
     async function enviar(evento) {
         evento.preventDefault();
+        if (btnSalvar.disabled) return;
         esconderAviso();
 
         // Valores crus; a conversão para o payload acontece depois da validação.
@@ -130,7 +131,7 @@ function iniciarTela() {
                 mostrarErros({ codigo_lote: 'Já existe um lote com este código.' });
             } else {
                 // TODO(E2): combinar a mensagem para data ou peso recusados (hoje o api.js mostra só "HTTP 400").
-                mostrarAviso('danger', erro.message);
+                mostrarAviso(erro.incerto ? 'warning' : 'danger', erro.message);
             }
         } finally {
             btnSalvar.disabled = false;

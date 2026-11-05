@@ -86,11 +86,23 @@ O histórico de telemetria não declara filtro por equipamento: o portal busca `
 
 ## Falhas
 
-401 com JWT encerra a sessão; 403 abre acesso negado. Falhas 404, de servidor, rede e timeout abrem as páginas de erro, exceto com `{ erroLocal: true }`, quando a tela mostra a falha localmente. Outros erros, como 409 e 422, ficam no formulário. O erro original é preservado em `cause`.
+Nas chamadas diretas, 401 com JWT encerra a sessão e 403 abre acesso negado. Falhas 404, de servidor, rede e timeout abrem as páginas de erro, exceto com `{ erroLocal: true }`, quando a tela mostra a falha localmente. Consultas protegidas podem usar o cache em falhas de rede. Outros erros, como 409 e 422, ficam no formulário. O erro original é preservado em `cause`.
 
 Use a API real configurada em `VITE_API_URL` também durante o desenvolvimento.
 
 `api-contract.test.js` verifica os adaptadores e as rotas usadas pelo código.
+
+## Consultas e envios com conexão instável
+
+As consultas autenticadas tentam a rede primeiro. Na falta de conexão ou em timeout, o IndexedDB pode devolver a última resposta válida (até 24 horas e até 100 consultas por usuário), separada por API, usuário, perfil e URL completa. A tela indica que está exibindo dados salvos. A cópia não substitui respostas de acesso negado. No build de produção, o service worker guarda somente os arquivos estáticos do portal, permitindo reabrir telas offline depois que ele terminar de instalar em uma visita online.
+
+Os cadastros de fornecedor, lote, produção, material e esteira, e as atualizações de lote, produção e alerta, usam uma fila separada. O frontend bloqueia um novo envio se o navegador estiver offline ou se `GET /health/database` falhar. O formulário mantém os campos preenchidos. Se a API estiver acessível no início, o frontend confirma a gravação local antes de enviar. Uma queda detectada antes da requisição deixa os dados na fila até a conexão voltar. Login, logout, telemetria e comandos de esteira ficam fora da fila.
+
+A fila retoma as etapas ainda não tentadas em uma página protegida aberta ou quando o mesmo usuário volta ao portal com sessão válida. As credenciais ficam fora do IndexedDB. O frontend registra a tentativa localmente imediatamente antes de chamar a API. Depois disso, sucesso, erro HTTP ou ausência de resposta encerram o envio e substituem o payload por um aviso. Em 401, o aviso é salvo antes de encerrar a sessão. Na produção, o status do lote é atualizado após a confirmação da primeira etapa. Sem armazenamento local disponível, os envios protegidos são bloqueados.
+
+Cada etapa mantém um identificador na URL (`idempotency_key`). Se houver timeout ou a aba fechar depois de gravar a tentativa, o resultado fica sem confirmação e o frontend encerra o envio sem repeti-lo. Isso evita duplicação por reenvio automático do portal. Como o navegador pode perder a conexão antes de o servidor receber a requisição, o usuário precisa consultar o registro antes de decidir se envia novamente.
+
+`offline-sync.test.js` cobre o bloqueio offline, a retomada antes da tentativa, a reabertura após uma tentativa e a ausência de reenvio após timeout. Para testar no navegador, use a API de demonstração, deixe a requisição de cadastro começar e interrompa a rede antes da resposta. O painel deve indicar que o resultado ficou sem confirmação. Ao restabelecer a rede, o portal deve manter o aviso e realizar apenas as operações que ainda aguardavam a primeira tentativa.
 
 ## Modo de demonstração
 

@@ -148,19 +148,21 @@ function iniciarTela() {
         btnIniciar.disabled = true;
         btnIniciar.textContent = 'Iniciando...';
         try {
-            await API.POST('/producao', payload);
+            await API.POST('/producao', payload, {
+                aposConfirmar: [{ metodo: 'PATCH', url: `/lotes/${payload.id_lote}`, corpo: { status_lote: STATUS_LOTE_EM_PROCESSAMENTO } }],
+            });
             if (!validarAcesso()) return;
-            try {
-                await API.PATCH(`/lotes/${payload.id_lote}`, { status_lote: STATUS_LOTE_EM_PROCESSAMENTO });
-                mostrarAviso('success', 'Produção cadastrada com sucesso.');
-            } catch (erro) {
-                // A produção já existe: avisa sem desfazê-la.
-                mostrarAviso('warning', 'Produção cadastrada, mas o status do lote não foi atualizado: ' + erro.message);
-            }
+            mostrarAviso('success', 'Produção cadastrada com sucesso.');
             form.reset();
             campos.id_lote.querySelector('option[value="' + payload.id_lote + '"]')?.remove();
         } catch (erro) {
-            mostrarAviso('danger', erro.message);
+            mostrarAviso(erro.parcial || erro.incerto ? 'warning' : 'danger', erro.parcial && !erro.incerto
+                ? 'Produção cadastrada, mas o status do lote não foi atualizado: ' + erro.message
+                : erro.message);
+            if (erro.parcial) {
+                form.reset();
+                campos.id_lote.querySelector('option[value="' + payload.id_lote + '"]')?.remove();
+            }
         } finally {
             enviando = false;
             btnIniciar.disabled = false;

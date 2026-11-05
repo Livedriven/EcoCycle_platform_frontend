@@ -28,6 +28,7 @@
     "@eslint/js": "^10.0.1",
     "bcryptjs": "^3.0.3",
     "eslint": "^10.13.0",
+    "fake-indexeddb": "^6.2.7",
     "globals": "^17.13.0",
     "json-server": "^0.17.4",
     "jsonwebtoken": "^9.0.3",

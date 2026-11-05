@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./config', () => ({ API_URL: 'https://api.example.test', API_TIMEOUT: 1500 }));
+// Estes testes isolam HTTP; a integração real com IndexedDB está em offline-sync.test.js.
+vi.mock('./offline-sync.js', () => ({
+    envioProtegido: () => false,
+    contextoAtual: () => null,
+    criarSincronizador: () => ({ cache: async () => null, guardarCache: async () => {} }),
+}));
 
 let API;
 beforeEach(async () => {

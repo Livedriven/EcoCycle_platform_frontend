@@ -69,6 +69,7 @@ function iniciarTela() {
 
     async function enviar(evento) {
         evento.preventDefault();
+        if (btnSalvar.disabled) return;
         esconderAviso();
 
         // Valores crus: o validador aceita CNPJ e telefone com ou sem máscara.
@@ -93,7 +94,7 @@ function iniciarTela() {
             enderecoDoCep = '';
             campos.nome_fornecedor.focus();
         } catch (erro) {
-            mostrarAviso('danger', traduzirErro(erro));
+            mostrarAviso(erro.incerto ? 'warning' : 'danger', traduzirErro(erro));
         } finally {
             btnSalvar.disabled = false;
             btnSalvar.textContent = 'Salvar fornecedor';
