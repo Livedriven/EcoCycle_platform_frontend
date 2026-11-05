@@ -59,7 +59,10 @@ beforeEach(() => {
     API.GET.mockReset().mockImplementation(async (rota) => ({
         '/lotes': [{ id: 1, status: 'Recebido', pesoentrada_kg: 10 }],
         '/fornecedores': [],
-        '/esteiras': [{ id: 2, nome_esteira: 'Esteira 2', status_esteira: 'LIGADA' }]
+        '/esteiras': [
+            { id: 2, nome_esteira: 'Esteira 2', status_esteira: 'OPERANDO' },
+            { id: 3, nome_esteira: 'Esteira 3', status_esteira: 'ESTEIRA DESLIGADA' }
+        ]
     })[rota]);
     API.POST.mockReset().mockResolvedValue({ id: 3 });
     API.PATCH.mockReset().mockResolvedValue({ id: 1, status: 'Em processamento' });
@@ -84,7 +87,7 @@ describe('acesso a iniciar produção', () => {
         entrar(perfil);
         await abrir();
         expect(API.GET).toHaveBeenCalledWith('/esteiras');
-        expect(elementos.get('esteira').options).toHaveLength(2);
+        expect(elementos.get('esteira').options.map((opcao) => opcao.value)).toEqual(['', 2]);
         await enviar();
         expect(location.replace).not.toHaveBeenCalled();
         expect(API.POST).toHaveBeenCalledExactlyOnceWith('/producao', expect.objectContaining({

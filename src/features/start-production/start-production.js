@@ -12,8 +12,8 @@ const SESSAO = montarLayout({ acao: ACAO });
 const STATUS_LOTE_DISPONIVEL = 'Recebido';
 // Ao iniciar, o lote sai da lista de disponíveis (cada lote tem uma única produção).
 const STATUS_LOTE_EM_PROCESSAMENTO = 'Em processamento';
-// O backend registra LIGADA; fixtures antigos usam Ativa.
-const STATUS_ESTEIRA_ATIVA = ['ATIVA', 'LIGADA'];
+// A esteira pode estar OPERANDO no cadastro ou LIGADA após receber telemetria.
+const STATUS_ESTEIRA_ATIVA = ['ATIVA', 'LIGADA', 'OPERANDO'];
 // Opções oferecidas pelo portal; o payload envia o campo turno.
 const TURNOS = ['Manhã', 'Tarde', 'Noite'];
 
