@@ -87,13 +87,12 @@ describe('controlador do relatório de materiais', () => {
         expect(elementos.get('total-plastico').textContent).toBe('50 kg');
         expect(elementos.get('total-metal').textContent).toBe('30 kg');
         expect(elementos.get('total-rejeito').textContent).toBe('20,25 kg');
-        expect(elementos.get('aviso-materiais').textContent).toBe('');
         expect(mocks.grafico.mock.calls[0][1].map((fatia) => fatia.valor)).toEqual([50, 30, 0, 20.25]);
         expect(mocks.criarTabela.mock.calls[0][2]).toEqual([
             { id_lote: '2', data: '2026-10-20', plastico: 50, metal: 30, aluminio: 0, rejeito: 20.25 },
         ]);
     });
-    it('preserva rejeito de ciclos sem itens e filtra o aviso com lote e período', async () => {
+    it('preserva rejeito de ciclos sem itens e filtra por lote e período', async () => {
         const ciclos = [
             { id_lote: 1, data_inicio: '2026-10-20', quantidade_saida_kg: 80, rejeito_kg: 20, itens: [] },
             { id_lote: 2, data_inicio: '2026-10-21', quantidade_saida_kg: 0, rejeito_kg: 0, itens: [] },
@@ -101,26 +100,25 @@ describe('controlador do relatório de materiais', () => {
         mocks.get.mockImplementation(async (url) => url === '/materiais' ? [] : ciclos);
         await iniciar();
         expect(elementos.get('total-rejeito').textContent).toBe('20 kg');
-        expect(elementos.get('aviso-materiais').textContent).toContain('2 ciclo(s)');
+        expect(elementos.get('filtro-lote').children.map((opcao) => opcao.value)).toEqual(['', '1', '2']);
         elementos.get('filtro-lote').value = '2';
         elementos.get('filtro-lote').disparar('change');
         expect(elementos.get('total-rejeito').textContent).toBe('0 kg');
-        expect(elementos.get('aviso-materiais').textContent).toContain('1 ciclo(s)');
+        expect(elementos.get('tabela-vazia').classList.contains('d-none')).toBe(true);
         elementos.get('data-final').value = '2026-10-20';
         elementos.get('data-final').disparar('change');
-        expect(elementos.get('aviso-materiais').textContent).toBe('');
+        expect(elementos.get('tabela-vazia').classList.contains('d-none')).toBe(false);
     });
     it('atualiza um ciclo sem composição quando os itens passam a estar disponíveis', async () => {
         const ciclo = { id_lote: 1, data_inicio: '2026-10-20', quantidade_saida_kg: 50, rejeito_kg: 5, itens: [] };
         mocks.get.mockImplementation(async (url) => url === '/materiais'
             ? [{ id_material: 7, tipo_material: 'plastico' }] : [ciclo]);
         await iniciar();
-        expect(elementos.get('aviso-materiais').textContent).toContain('1 ciclo(s)');
+        expect(elementos.get('total-plastico').textContent).toBe('0 kg');
         ciclo.itens.push({ id_material: 7, peso_kg: 50 });
         intervalo();
         await vi.dynamicImportSettled();
         expect(elementos.get('total-plastico').textContent).toBe('50 kg');
-        expect(elementos.get('aviso-materiais').textContent).toBe('');
     });
     it('preserva os dados anteriores quando a consulta do catálogo falha', async () => {
         await iniciar();
@@ -133,10 +131,10 @@ describe('controlador do relatório de materiais', () => {
         expect(elementos.get('total-plastico').textContent).toBe('12,5 kg');
         expect(elementos.get('ultima-atualizacao').textContent).toContain('Falha');
     });
-    it('sinaliza dados parciais quando ciclos antigos não disponibilizam itens', async () => {
+    it('mantém ciclos antigos sem itens disponíveis no filtro de lote', async () => {
         mocks.get.mockResolvedValue([{ id: 1, id_lote: 1, peso_kg: 12, data_hora: '2026-10-27' }]);
         await iniciar();
-        expect(elementos.get('aviso-materiais').textContent).toContain('sem composição completa');
+        expect(elementos.get('filtro-lote').children.map((opcao) => opcao.value)).toEqual(['', '1']);
         expect(elementos.get('data-inicial').disabled).toBe(false);
         expect(mocks.grafico).not.toHaveBeenCalled();
         expect(mocks.criarTabela).not.toHaveBeenCalled();
@@ -205,10 +203,9 @@ describe('controlador do relatório de materiais', () => {
         expect(mocks.criarTabela).not.toHaveBeenCalled();
         expect(mocks.grafico).not.toHaveBeenCalled();
     });
-    it('desconsidera dados inválidos sem exibir aviso no relatório', async () => {
+    it('desconsidera pesos inválidos no relatório', async () => {
         mocks.get.mockResolvedValue([...producao, { ...producao[0], peso_kg: -1 }]);
         await iniciar();
-        expect(elementos.get('aviso-materiais').textContent).toBe('');
         expect(elementos.get('total-plastico').textContent).toBe('12,5 kg');
     });
     it('trata histórico vazio com totais zero e mensagens no lugar de tabela e gráfico', async () => {

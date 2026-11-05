@@ -23,7 +23,6 @@ if (SESSAO) {
     const textoAtualizacao = document.getElementById('ultima-atualizacao');
     const canvas = document.getElementById('grafico-materiais');
     let registros = [];
-    let pendencias = [];
     let tabela;
     let grafico;
     let carregando = false;
@@ -56,12 +55,6 @@ if (SESSAO) {
         }
 
         const filtrados = filtrarMateriais(registros, filtros);
-        const ciclosPendentes = filtrarMateriais(pendencias, filtros).length;
-        const aviso = document.getElementById('aviso-materiais');
-        aviso.classList.toggle('d-none', !ciclosPendentes);
-        aviso.textContent = ciclosPendentes
-            ? `${formatNumber(ciclosPendentes, 0)} ciclo(s) sem composição completa por material. Os totais incluem apenas os pesos informados. A saída total desses ciclos não foi distribuída entre os materiais.`
-            : '';
         const totais = totalPorMaterial(filtrados, MATERIAIS_RELATORIO);
         const linhas = materiaisPorLoteDia(filtrados);
         document.getElementById('total-plastico').textContent = formatKg(totais['Plástico']);
@@ -135,10 +128,9 @@ if (SESSAO) {
             const assinatura = JSON.stringify([dados.registros, dados.pendencias]);
             if (assinatura === assinaturaDados) return;
             registros = dados.registros;
-            pendencias = dados.pendencias;
             const selecionado = lote.value;
             lote.replaceChildren(new Option('Todos os lotes', ''));
-            const lotes = [...new Set([...registros, ...pendencias].map((registro) => registro[CAMPOS.idLoteProducao]))]
+            const lotes = [...new Set([...registros, ...dados.pendencias].map((registro) => registro[CAMPOS.idLoteProducao]))]
                 .sort((a, b) => Number(a) - Number(b));
             for (const id of lotes) lote.add(new Option('Lote ' + id, id));
             lote.value = lotes.includes(selecionado) ? selecionado : '';

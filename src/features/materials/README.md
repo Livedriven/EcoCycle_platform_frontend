@@ -9,7 +9,7 @@ Relatório de **Plástico, Metal, Alumínio e Rejeito** por lote e dia. Consulta
 - `rejeito_kg` é somado uma vez por ciclo. Rejeito não é um material do catálogo nem um peso a replicar em cada item.
 - O dia do material é o dia de `item.data_hora`, com fallback para `data_inicio` do ciclo quando a data do item é nula. O rejeito usa o dia de `data_inicio`.
 - Os filtros por lote e período são inclusivos e alimentam os mesmos registros usados pelos cartões, gráfico e tabela. Todos os turnos e esteiras de um lote/dia são somados; paginação e ordenação da tabela não afetam os totais.
-- Ciclos sem itens, com itens inválidos/desconhecidos ou cuja soma difere da saída por mais de 0,005 kg geram um aviso de composição incompleta, filtrado pela data de início e lote. Os demais pesos informados, inclusive rejeito, permanecem disponíveis. Zero indica ausência de peso registrado, não uma composição estimada.
+- Ciclos com composição incompleta continuam disponíveis no filtro de lote. Os totais consideram os pesos válidos registrados, inclusive o rejeito.
 
 `prepararProducaoMateriais` adapta os ciclos e catálogo antes de chamar `prepararMateriais`. A validação exige peso numérico finito não negativo, ID de lote inteiro positivo seguro e dia existente no calendário. Textos externos usam `textContent` e `Option`. Registros planos antigos permanecem compatíveis; ciclos com `itens` sempre usam os itens como fonte.
 
@@ -23,4 +23,4 @@ O endpoint deve devolver todo o histórico acessível ao usuário. Se houver pag
 
 ## Verificação
 
-`materials-report.test.js` cobre o contrato real normalizado, catálogo, agrupamento, datas, pesos parciais, rejeito sem duplicação, validação e filtros. `materials.test.js` cobre o controlador, consultas, sessão, falhas, atualização e aviso filtrado. As funções de cálculo compartilhadas permanecem testadas em `calculations.test.js`.
+`materials-report.test.js` cobre o contrato real normalizado, catálogo, agrupamento, datas, pesos parciais, rejeito sem duplicação, validação e filtros. `materials.test.js` cobre o controlador, consultas, sessão, falhas e atualização. As funções de cálculo compartilhadas permanecem testadas em `calculations.test.js`.
