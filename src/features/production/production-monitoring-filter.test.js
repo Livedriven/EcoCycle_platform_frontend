@@ -40,6 +40,16 @@ describe('montarLinhas', () => {
     it('mantém só produções com status Recebido ou Disponível (do lote), em qualquer caixa', () => {
         expect(ids(LINHAS)).toEqual([11, 12, 2]);
     });
+    it('exibe produções em processamento e pausadas que ainda não foram encerradas', () => {
+        const abertas = [
+            { id: 20, id_lote: 8, status: 'Em processamento', data_fim: null },
+            { id: 21, id_lote: 9, status: 'EM_ANDAMENTO' },
+            { id: 22, id_lote: 10, status: 'Pausada' },
+            { id: 23, id_lote: 8, status: 'Em processamento', data_fim: '2026-11-05T10:00:00' },
+            { id: 24, id_lote: 8, status: 'Finalizado' }
+        ];
+        expect(ids(montarLinhas(abertas, LOTES, ESTEIRAS))).toEqual([20, 21, 22]);
+    });
     it('o status da produção, se existir, prevalece sobre o do lote', () => {
         expect(ids(montarLinhas(PRODUCOES, LOTES, ESTEIRAS))).not.toContain(4);
     });

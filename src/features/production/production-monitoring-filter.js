@@ -6,26 +6,33 @@ export function normalizarTexto(valor) {
     return String(valor ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
-// Status exibidos, comparados sem acento nem caixa: "RECEBIDO", "Recebido", "DISPONIVEL" e
-// "Disponível" valem igual. TODO(E2): confirmar os valores exatos devolvidos pelo backend.
-export const STATUS_EXIBIDOS = ['recebido', 'disponivel'];
-const ROTULOS = { recebido: 'Recebido', disponivel: 'Disponível' };
+const ROTULOS = {
+    recebido: 'Recebido',
+    disponivel: 'Disponível',
+    'aguardando triagem': 'Aguardando triagem',
+    'em processamento': 'Em processamento',
+    'em andamento': 'Em andamento',
+    'em triagem': 'Em triagem',
+    pausado: 'Pausado',
+    pausada: 'Pausada'
+};
+export const STATUS_EXIBIDOS = Object.keys(ROTULOS);
 
 export function chaveDoStatus(status) {
-    return normalizarTexto(status);
+    return normalizarTexto(status).replace(/[_\s-]+/g, ' ').trim();
 }
 
 export function rotuloDoStatus(status) {
     return ROTULOS[chaveDoStatus(status)] ?? String(status ?? '');
 }
 
-// Uma linha por produção cujo status esteja em STATUS_EXIBIDOS. A produção não tem status
-// próprio no mock: usa o do lote, como a tela de produção diária (producao.status || lote.status).
+// Exibe ciclos abertos. Dados legados sem status da produção usam o status do lote.
 export function montarLinhas(producoes, lotes, esteiras) {
     const lotesPorId = new Map(lotes.map((lote) => [String(lote.id), lote]));
     const esteirasPorId = new Map(esteiras.map((esteira) => [String(esteira.id), esteira]));
 
     return producoes
+        .filter((producao) => producao.data_fim == null)
         .map((producao) => {
             const lote = lotesPorId.get(String(producao.id_lote));
             const status = producao.status ?? lote?.status ?? '';
