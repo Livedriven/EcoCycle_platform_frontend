@@ -135,7 +135,7 @@ async function requisitar(metodo, url, corpo, opcoes = {}) {
         throw new Error(`Operação não disponível na API: ${metodo} ${url}`);
     }
     if (envioProtegido(metodo, url)) return sincronizacao.executar(metodo, url, corpo, opcoes);
-    if (metodo !== 'GET' || rotaPublica(url)) return requisitarRede(metodo, url, corpo, opcoes);
+    if (metodo !== 'GET' || rotaPublica(url) || opcoes.tempoReal) return requisitarRede(metodo, url, corpo, opcoes);
     const contexto = contextoAtual();
 
     if (globalThis.navigator?.onLine === false) {

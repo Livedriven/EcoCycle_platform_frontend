@@ -39,10 +39,10 @@ if (montarLayout()) {
         try {
             const atualizada = await desligarEsteira(esteira);
             if (!atualizada) return;
-            mostrarAviso('success', 'Esteira desligada.');
+            mostrarAviso('success', 'Status de desligamento registrado.');
             await carregar();
         } catch (erro) {
-            mostrarAviso('danger', 'Não foi possível desligar a esteira: ' + erro.message);
+            mostrarAviso('danger', 'Não foi possível registrar o status. ' + erro.message);
         } finally {
             desligando = false;
             botaoDesligar.disabled = false;
@@ -118,7 +118,7 @@ if (montarLayout()) {
         lista.setAttribute('aria-busy', 'true');
         if (!carregou) mensagem('Carregando esteiras...');
         try {
-            const dados = await API.GET('/esteiras', { erroLocal: true });
+            const dados = await API.GET('/esteiras', { erroLocal: true, tempoReal: true });
             if (!Array.isArray(dados)) throw new Error('Resposta inválida ao consultar esteiras.');
             const novaAssinatura = JSON.stringify(dados);
             const mudou = assinatura !== novaAssinatura;
@@ -126,7 +126,7 @@ if (montarLayout()) {
             if (!carregou || mudou) desenhar();
             carregou = true;
             assinatura = novaAssinatura;
-            atualizacao.textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
+            atualizacao.textContent = 'Status consultado às ' + new Date().toLocaleTimeString('pt-BR');
             if (selecionada !== null && mudou) {
                 const atual = esteiras.find((item) => String(item.id) === selecionada);
                 if (atual) preencherDetalhes(atual);

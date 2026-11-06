@@ -5,7 +5,7 @@
 
 const TIMEOUT_PADRAO = 8000; // milissegundos
 
-const urlDoEnv = import.meta.env.VITE_API_URL?.trim() || "http://localhost:8000/api";
+const urlDoEnv = import.meta.env.VITE_API_URL?.trim() || "http://localhost:8001/api";
 
 // Tira a "/" do final para que API_URL + "/lotes" nunca vire "//lotes".
 export const API_URL = urlDoEnv.replace(/\/+$/, "");

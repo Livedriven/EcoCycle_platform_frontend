@@ -13,7 +13,7 @@ O front-end é organizado **por funcionalidades**:
 
 O portal é a interface de monitoramento da **E1** (dashboard, leituras e alertas). As outras equipes cuidam da API (E2), do banco (E3), do simulador do chão de fábrica (E4), do ERP e da tela de operação (E5) e do PWA de consulta (E6).
 
-O front-end conversa **somente com a API** (E2), por padrão em `http://localhost:8000/api`.
+O front-end conversa **somente com a API** (E2), por padrão em `http://localhost:8001/api`.
 
 A API entrega os **registros**; o **front-end calcula os totais** (dashboard, produção e materiais), sempre pelo `shared/calculations.js`.
 

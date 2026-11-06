@@ -9,9 +9,10 @@ function normalizar(valor) {
     return String(valor ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 }
 
-/** "DESLIGADA" (manual) e "ESTEIRA DESLIGADA" (regra de segurança) contam como desligada. */
+/** Estados em que a esteira já está parada ou indisponível. */
 export function estaDesligada(status) {
-    return ['desligada', 'esteira desligada', 'parada'].includes(normalizar(status));
+    return ['desligada', 'esteira desligada', 'esteira desligada/travada', 'parada',
+        'bloqueio termico', 'sem comunicacao'].includes(normalizar(status));
 }
 
 /** O botão só aparece para quem pode operar esteiras e quando a esteira não está desligada. */
@@ -25,6 +26,6 @@ export function podeDesligar(esteira, perfil) {
  */
 export async function desligarEsteira(esteira, confirmar = (texto) => globalThis.confirm(texto)) {
     const nome = esteira.nome_esteira || 'Esteira ' + esteira.id;
-    if (!confirmar('Desligar "' + nome + '"? A esteira fica parada até ser ligada novamente.')) return null;
+    if (!confirmar('Registrar "' + nome + '" como desligada? Para parar o motor, use o painel do middleware.')) return null;
     return API.PATCH(`/esteiras/${esteira.id}`, { status_esteira: STATUS_DESLIGADA }, { erroLocal: true });
 }

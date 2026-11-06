@@ -13,7 +13,7 @@ npm run dev:demo
 Entre com `admin`, `gerente1` ou `operador1`, usando a senha `ecocycle123`.
 O aviso “Modo demonstração — dados simulados” identifica todas as páginas.
 
-- `npm run dev` e `npm run build` continuam usando a API configurada no `.env`, com padrão `http://localhost:8000/api`.
+- `npm run dev` e `npm run build` continuam usando a API configurada no `.env`, com padrão `http://localhost:8001/api`.
 - `.env.demo` é carregado somente por `dev:demo` e `build:demo`; o `.env` da API real permanece intacto.
 - A porta 5174 separa a sessão do frontend normal, que usa a porta 5173. Feche a demonstração e volte ao frontend normal para retomar o backend real.
 - As falhas da API real seguem o tratamento de erro normal. A seleção do ambiente de demonstração é feita pelos comandos acima.

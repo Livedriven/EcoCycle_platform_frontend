@@ -6,7 +6,7 @@ import { createTable, updateTable, h } from "../../shared/table.js";
 import { criarElemento, criarIcone, criarSpinner } from '../../shared/dom.js';
 import { classeStatus, classeAlerta, classeContadorAlertas } from "../../shared/ui.js";
 import { formatNumber } from '../../shared/formatters.js';
-import { dadosDaEsteira, dataHora } from './conveyor-data.js';
+import { dadosDaEsteira, dataHora, numeroComUnidade } from './conveyor-data.js';
 import { criarCartaoEsteira } from './conveyor-cards.js';
 import { desligarEsteira, podeDesligar } from './conveyor-shutdown.js';
 import './conveyor.css';
@@ -45,10 +45,10 @@ async function desligarSelecionada() {
     botaoDesligar.disabled = true;
     try {
         if (!(await desligarEsteira(esteira))) return;
-        mostrarAviso('success', 'Esteira desligada.');
-        await carregar({ silencioso: true });
+        mostrarAviso('success', 'Status de desligamento registrado.');
+        await carregar({ silencioso: true, forcar: true });
     } catch (erro) {
-        mostrarAviso('danger', 'Não foi possível desligar a esteira: ' + erro.message);
+        mostrarAviso('danger', 'Não foi possível registrar o status. ' + erro.message);
     } finally {
         desligando = false;
         botaoDesligar.disabled = false;
@@ -174,17 +174,17 @@ function selecionarEsteira(id) {
     carregar();
 }
 
-function desenharIndicadores(esteira, alertasAtivos) {
+function desenharIndicadores(esteira, totalAlertas) {
     const corStatus = classeStatus(esteira.status_esteira);
-    const temAlerta = alertasAtivos.length > 0;
+    const corAlertas = totalAlertas === null ? 'text-body-secondary' : totalAlertas > 0 ? 'text-danger' : 'text-success';
 
     blocos.indicadores.querySelector(".conteudo").replaceChildren(
-        cartaoIndicador("activity", "Situação", badge(esteira.status_esteira, corStatus),
+        cartaoIndicador("activity", "Situação", badge(esteira.status_esteira || 'Não informado', corStatus),
             textoSuave('div', 'small text-truncate', esteira.nome_esteira ?? '')),
-        cartaoIndicador("speedometer2", "Velocidade", formatarNumero(esteira.velocidade_esteira_kmh) + " km/h"),
-        cartaoIndicador("thermometer-half", "Temperatura da esteira", formatarNumero(esteira.temperatura_esteira_c) + " °C"),
+        cartaoIndicador("speedometer2", "Velocidade", numeroComUnidade(esteira.velocidade_esteira_kmh, 'km/h')),
+        cartaoIndicador("thermometer-half", "Temperatura da esteira", numeroComUnidade(esteira.temperatura_esteira_c, '°C')),
         cartaoIndicador("bell", "Alertas ativos",
-            criarElemento('span', temAlerta ? 'text-danger' : 'text-success', alertasAtivos.length))
+            criarElemento('span', corAlertas, totalAlertas ?? '–'))
     );
 
     mostrarConteudo(blocos.indicadores);
@@ -217,7 +217,7 @@ function desenharAlertas(alertasAtivos, leituras) {
     contadorAlertas.className = "badge " + classeContadorAlertas(alertasAtivos.length);
 
     if (alertasAtivos.length === 0) {
-        mostrarEstado(blocos.alertas, "vazio", "Nenhum alerta ativo. A esteira está sem pendências.");
+        mostrarEstado(blocos.alertas, "vazio", "Nenhum alerta ativo registrado para esta esteira.");
         return;
     }
 
@@ -280,8 +280,8 @@ function desenharHistorico(leituras) {
 }
 
 // ---------- Carregamento dos dados ----------
-async function carregar({ silencioso = false } = {}) {
-    if (silencioso && carregando) return;
+async function carregar({ silencioso = false, forcar = false } = {}) {
+    if (silencioso && carregando && !forcar) return;
     carregando = true;
     const requisicao = ++numeroRequisicao;
 
@@ -293,7 +293,7 @@ async function carregar({ silencioso = false } = {}) {
     if (!esteirasAtuais.length) document.getElementById('estado-visao-geral').textContent = 'Carregando esteiras...';
 
     try {
-        const esteiras = await API.GET("/esteiras", { erroLocal: true });
+        const esteiras = await API.GET("/esteiras", { erroLocal: true, tempoReal: true });
 
         if (requisicao !== numeroRequisicao) return;
 
@@ -329,24 +329,38 @@ async function carregar({ silencioso = false } = {}) {
         document.getElementById('nome-esteira').textContent = esteira.nome_esteira || 'Esteira ' + esteira.id;
 
         // O alerta não guarda o id da esteira: ele aponta para uma leitura, que aponta para a esteira.
-        const [leiturasDaApi, todosAlertas] = await Promise.all([
-            API.GET("/telemetria/historico", { erroLocal: true }),
-            API.GET("/alertas", { erroLocal: true })
+        const [historico, alertas] = await Promise.allSettled([
+            API.GET("/telemetria/historico", { erroLocal: true, tempoReal: true }),
+            API.GET("/alertas", { erroLocal: true, tempoReal: true })
         ]);
 
         // Se o usuário trocou de esteira, esta resposta já é velha.
         if (requisicao !== numeroRequisicao) return;
 
-        if (!Array.isArray(leiturasDaApi) || !Array.isArray(todosAlertas)) throw new Error('Resposta inválida ao consultar leituras e alertas.');
-        const { leituras, alertas: alertasAtivos } = dadosDaEsteira(esteiraId, leiturasDaApi, todosAlertas);
+        const temHistorico = Array.isArray(historico.value);
+        const temAlertas = temHistorico && Array.isArray(alertas.value);
+        const { leituras, alertas: alertasAtivos } = dadosDaEsteira(
+            esteiraId, temHistorico ? historico.value : [], temAlertas ? alertas.value : []
+        );
 
-        textoAtualizacao.textContent = "Atualizado às " + new Date().toLocaleTimeString("pt-BR");
-        const assinatura = JSON.stringify([esteiras, esteiraId, leituras, alertasAtivos]);
+        textoAtualizacao.textContent = "Status consultado às " + new Date().toLocaleTimeString("pt-BR");
+        const assinatura = JSON.stringify([esteira, leituras, alertasAtivos, temHistorico, temAlertas]);
         if (assinatura === assinaturaDados) return;
-        desenharIndicadores(esteira, alertasAtivos);
-        desenharUltimaLeitura(leituras);
-        desenharAlertas(alertasAtivos, leituras);
-        desenharHistorico(leituras);
+        desenharIndicadores(esteira, temAlertas ? alertasAtivos.length : null);
+        if (temHistorico) {
+            desenharUltimaLeitura(leituras);
+            desenharHistorico(leituras);
+        } else {
+            mostrarEstado(blocos.leitura, 'erro', 'Não foi possível consultar a última leitura.');
+            mostrarEstado(blocos.historico, 'erro', 'Não foi possível consultar o histórico.');
+        }
+        if (temAlertas) {
+            desenharAlertas(alertasAtivos, leituras);
+        } else {
+            contadorAlertas.textContent = '–';
+            contadorAlertas.className = 'badge b-suave';
+            mostrarEstado(blocos.alertas, 'erro', 'Não foi possível consultar os alertas desta esteira.');
+        }
         assinaturaDados = assinatura;
     } catch (erro) {
         if (requisicao !== numeroRequisicao) return;

@@ -2,7 +2,7 @@
 
 `src/shared/api.js` centraliza HTTP, JWT, timeout e erros. O contrato de métodos, rotas e respostas fica em `src/shared/api-contract.js`, conferido nos routers, repositories e schemas do backend local.
 
-Configure `VITE_API_URL=http://localhost:8000/api`. Os caminhos abaixo são relativos a essa base; não acrescente `/api` nas chamadas das telas.
+Configure `VITE_API_URL=http://localhost:8001/api`. Os caminhos abaixo são relativos a essa base; não acrescente `/api` nas chamadas das telas.
 
 | Método | Caminho | Acesso |
 |---|---|---|

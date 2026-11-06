@@ -6,6 +6,7 @@ import { classeStatus, classeAlerta, classeContadorAlertas } from '../../shared/
 import { lotesPorStatus, alertasAtivos } from '../../shared/calculations.js';
 import { formatNumber, formatKg, formatDate, formatDateTime } from '../../shared/formatters.js';
 import { createBarChart, createDoughnutChart, CORES } from '../../shared/charts.js';
+import { numeroComUnidade } from '../conveyor/conveyor-data.js';
 import { criarContexto, lerConsolidado, lerMateriais, estimarCo2, filtrarRecebimentos, agruparFornecedores } from './dashboard-data.js';
 
 const SESSAO = montarLayout();
@@ -37,7 +38,8 @@ function mostrarConteudo(id) {
 
 function buscar(url) {
     if (!requisicoes.has(url)) {
-        const carga = Promise.resolve().then(() => API.GET(url, { erroLocal: true })).then((dados) => {
+        const opcoes = url === '/esteiras' ? { erroLocal: true, tempoReal: true } : { erroLocal: true };
+        const carga = Promise.resolve().then(() => API.GET(url, opcoes)).then((dados) => {
             if (!url.startsWith('/producao/') && !Array.isArray(dados)) throw new Error('Lista inválida da API.');
             return dados;
         }).finally(() => requisicoes.delete(url));
@@ -200,8 +202,8 @@ function prepararEsteiras(esteiras) {
     return () => partes('bloco-esteira').conteudo.replaceChildren(...esteiras.map((e) => {
         const linha = criarElemento('div', 'esteira-item');
         const topo = criarElemento('div', 'd-flex justify-content-between align-items-center');
-        topo.append(criarElemento('strong', '', e.nome_esteira), criarElemento('span', 'badge ' + classeStatus(e.status_esteira), e.status_esteira));
-        linha.append(topo, criarElemento('div', 'small text-body-secondary', `Velocidade: ${formatNumber(e.velocidade_esteira_kmh, 1)} km/h · Temperatura: ${formatNumber(e.temperatura_esteira_c, 1)} °C`));
+        topo.append(criarElemento('strong', '', e.nome_esteira), criarElemento('span', 'badge ' + classeStatus(e.status_esteira), e.status_esteira || 'Não informado'));
+        linha.append(topo, criarElemento('div', 'small text-body-secondary', `Velocidade: ${numeroComUnidade(e.velocidade_esteira_kmh, 'km/h')} · Temperatura: ${numeroComUnidade(e.temperatura_esteira_c, '°C')}`));
         return linha;
     }));
 }

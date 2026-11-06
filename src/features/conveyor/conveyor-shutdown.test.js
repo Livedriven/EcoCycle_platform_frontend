@@ -12,7 +12,7 @@ beforeEach(() => {
 });
 
 describe('desligamento manual da esteira', () => {
-    it.each(['DESLIGADA', 'ESTEIRA DESLIGADA', ' desligada ', 'Parada'])('reconhece %s como desligada', (status) => {
+    it.each(['DESLIGADA', 'ESTEIRA DESLIGADA', ' desligada ', 'Parada', 'BLOQUEIO TERMICO', 'SEM COMUNICACAO'])('reconhece %s como indisponível para desligar', (status) => {
         expect(estaDesligada(status)).toBe(true);
     });
     it.each(['LIGADA', 'Ativa', 'MANUTENCAO', '', null])('não trata %s como desligada', (status) => {

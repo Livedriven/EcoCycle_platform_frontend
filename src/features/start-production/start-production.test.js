@@ -61,7 +61,10 @@ beforeEach(() => {
         '/fornecedores': [],
         '/esteiras': [
             { id: 2, nome_esteira: 'Esteira 2', status_esteira: 'OPERANDO' },
-            { id: 3, nome_esteira: 'Esteira 3', status_esteira: 'ESTEIRA DESLIGADA' }
+            { id: 3, nome_esteira: 'Esteira 3', status_esteira: 'ESTEIRA DESLIGADA' },
+            { id: 4, nome_esteira: 'Esteira 4', status_esteira: 'PARADA' },
+            { id: 5, nome_esteira: 'Esteira 5', status_esteira: 'SEM COMUNICACAO' },
+            { id: 6, nome_esteira: 'Esteira 6', status_esteira: 'BLOQUEIO TERMICO' }
         ]
     })[rota]);
     API.POST.mockReset().mockResolvedValue({ id: 3 });
@@ -87,7 +90,7 @@ describe('acesso a iniciar produção', () => {
         entrar(perfil);
         await abrir();
         expect(API.GET).toHaveBeenCalledWith('/esteiras');
-        expect(elementos.get('esteira').options.map((opcao) => opcao.value)).toEqual(['', 2]);
+        expect(elementos.get('esteira').options.map((opcao) => opcao.value)).toEqual(['', 2, 4]);
         await enviar();
         expect(location.replace).not.toHaveBeenCalled();
         expect(API.POST).toHaveBeenCalledExactlyOnceWith('/producao', expect.objectContaining({

@@ -7,6 +7,7 @@ const CLASSES_STATUS = new Map([
     ['normal', 'b-sucesso'], ['ativa', 'b-sucesso'], ['ligada', 'b-sucesso'], ['operando', 'b-sucesso'], ['finalizado', 'b-sucesso'],
     ['atencao', 'b-aviso'], ['manutencao', 'b-aviso'], ['em processamento', 'b-aviso'],
     ['critico', 'b-perigo'], ['parada', 'b-perigo'], ['desligada', 'b-perigo'], ['esteira desligada', 'b-perigo'],
+    ['bloqueio termico', 'b-perigo'], ['esteira desligada/travada', 'b-perigo'], ['sem comunicacao', 'b-aviso'],
     ['recebido', 'b-info']
 ]);
 

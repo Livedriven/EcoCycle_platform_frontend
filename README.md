@@ -74,13 +74,14 @@ Requer Node.js 22.12 ou mais recente (exigência do Vitest).
 
 ```bash
 npm install
-cp .env.example .env          # VITE_API_URL=http://localhost:8000/api e VITE_API_TIMEOUT=8000
+cp .env.example .env          # VITE_API_URL=http://localhost:8001/api e VITE_API_TIMEOUT=8000
 npm run dev                   # abre o portal no navegador (http://localhost:5173)
 ```
 
-O backend real deve estar rodando em `http://localhost:8000`, com as rotas em `/api` (base padrão mesmo sem `.env`). O `login.js` monta `{ usuario, senha }` e passa os dados para `API.POST`, que envia a requisição diretamente para `VITE_API_URL`. Reinicie o Vite após alterar a configuração. O contrato de rotas, envelopes e payloads está documentado em [API](docs/shared/api.md).
+O backend real deve estar rodando em `http://localhost:8001`, com as rotas em `/api` (base padrão mesmo sem `.env`). O `login.js` monta `{ usuario, senha }` e passa os dados para `API.POST`, que envia a requisição diretamente para `VITE_API_URL`. Reinicie o Vite após alterar a configuração. O contrato de rotas, envelopes e payloads está documentado em [API](docs/shared/api.md).
 
 As chamadas usam diretamente `VITE_API_URL` em desenvolvimento e produção; o backend deve permitir a origem do frontend via CORS.
+Ao usar o middleware, configure o portal com a mesma origem de `BACKEND_BASE_URL` e acrescente `/api` em `VITE_API_URL`.
 
 
 | Comando | O que faz |

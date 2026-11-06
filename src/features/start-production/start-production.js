@@ -12,8 +12,8 @@ const SESSAO = montarLayout({ acao: ACAO });
 const STATUS_LOTE_DISPONIVEL = 'Recebido';
 // Ao iniciar, o lote sai da lista de disponíveis (cada lote tem uma única produção).
 const STATUS_LOTE_EM_PROCESSAMENTO = 'Em processamento';
-// A esteira pode estar OPERANDO no cadastro ou LIGADA após receber telemetria.
-const STATUS_ESTEIRA_ATIVA = ['ATIVA', 'LIGADA', 'OPERANDO'];
+// Uma esteira parada pode receber o lote antes do início da triagem no middleware.
+const STATUS_ESTEIRA_DISPONIVEL = ['ATIVA', 'LIGADA', 'OPERANDO', 'PARADA'];
 // Opções oferecidas pelo portal; o payload envia o campo turno.
 const TURNOS = ['Manhã', 'Tarde', 'Noite'];
 
@@ -101,7 +101,7 @@ function iniciarTela() {
 
     function preencherEsteiras(esteiras) {
         esteiras
-            .filter((esteira) => STATUS_ESTEIRA_ATIVA.includes(String(esteira.status_esteira).trim().toUpperCase()))
+            .filter((esteira) => STATUS_ESTEIRA_DISPONIVEL.includes(String(esteira.status_esteira).trim().toUpperCase()))
             .forEach((esteira) => campos.id_esteira.add(new Option(esteira.nome_esteira, esteira.id)));
         if (campos.id_esteira.options.length === 1) {
             campos.id_esteira.options[0].textContent = 'Nenhuma esteira disponível';

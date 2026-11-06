@@ -66,7 +66,7 @@ function iniciarTela() {
             const [producoes, lotes, esteiras, leituras, alertas, materiais] = await Promise.all([
                 API.GET('/producao', { erroLocal: true }),
                 API.GET('/lotes', { erroLocal: true }),
-                API.GET('/esteiras', { erroLocal: true }),
+                API.GET('/esteiras', { erroLocal: true, tempoReal: true }),
                 API.GET('/telemetria/historico', { erroLocal: true }),
                 API.GET('/alertas', { erroLocal: true }),
                 API.GET('/materiais', { erroLocal: true })
