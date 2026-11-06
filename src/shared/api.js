@@ -92,6 +92,10 @@ async function requisitarRede(metodo, url, corpo, { erroLocal = false, sincroniz
             if (resp.status >= 500 && resp.status <= 599) {
                 throw new Error('O serviço está temporariamente indisponível. Tente novamente em alguns instantes.');
             }
+            if (resp.status === 422) {
+                const corpoErro = await Promise.resolve().then(() => resp.json()).catch(() => null);
+                if (typeof corpoErro?.detail === 'string') throw new Error(corpoErro.detail);
+            }
             throw new Error('HTTP ' + resp.status);
         }
 

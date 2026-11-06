@@ -120,7 +120,7 @@ describe('montarMonitoramento', () => {
     it('monta produção, lote, progresso, esteira, sensores e materiais', () => {
         expect(montarMonitoramento(DADOS, 11)).toEqual({
             producao: { id: 11, id_lote: 8, turno: 'Manhã', inicio: '2026-10-26T09:20:00',
-                status: '', entrada_kg: null, itens_kg: 0, encerrada: false },
+                status: '', entrada_kg: null, itens_kg: 0, rejeito_confirmado_kg: 0, encerrada: false, finalizavel: false },
             lote: { id: 8, codigo: 'LT-0008', pesoTotal: 640.35, status: 'Recebido' },
             progresso: { total: 640.35, processado: 160.5, restante: 479.85, percentual: 25, excedeu: false },
             esteira: { nome: 'Esteira 01 - Triagem', status: 'Ativa', velocidade_kmh: 2.4, temperatura_c: 38.5 },
@@ -179,20 +179,28 @@ describe('montarMonitoramento', () => {
         const lotes = [{ ...DADOS.lotes[0], status: 'finalizado ' }];
         expect(montarMonitoramento({ ...DADOS, lotes }, 11).producao.encerrada).toBe(true);
     });
+    it('só permite finalizar quando os itens confirmados cobrem exatamente o peso recebido', () => {
+        const ciclo = { ...DADOS.producoes[0], status: 'Em triagem', quantidade_saida_kg: 640.35, peso_kg: 640.35 };
+        for (const [itens, finalizavel] of [
+            [[], false], [[{ peso_kg: 640.34 }], false], [[{ peso_kg: 640.36 }], false], [[{ peso_kg: 640.35 }], true]
+        ]) {
+            const resultado = montarMonitoramento({ ...DADOS, producoes: [{ ...ciclo, itens }] }, 11);
+            expect(resultado.producao.finalizavel).toBe(finalizavel);
+        }
+    });
 });
 
 describe('validarFinalizacao', () => {
     it.each([
         [80, 20, 100, { erro: '', saida: 80, rejeito: 20 }],
-        ['79.995', '0', '100', { erro: '', saida: 80, rejeito: 0 }],
-        [80, 20, null, { erro: '', saida: 80, rejeito: 20 }],
+        ['79.995', '20', '100', { erro: '', saida: 80, rejeito: 20 }],
     ])('aceita saída %s e rejeito %s com entrada %s', (saida, rejeito, entrada, esperado) => {
         expect(validarFinalizacao(saida, rejeito, entrada)).toEqual(esperado);
     });
     it.each([['', 0], [10, ''], [-1, 0], [0, -1], ['abc', 0]])('recusa saída %s e rejeito %s', (saida, rejeito) => {
         expect(validarFinalizacao(saida, rejeito, 100).erro).toContain('maiores ou iguais a zero');
     });
-    it('recusa saída e rejeito acima da entrada do ciclo', () => {
-        expect(validarFinalizacao(90, 20, 100).erro).toContain('100 kg');
+    it.each([[90, 20, 100], [70, 20, 100], [80, 20, null]])('recusa o balanço %s + %s para lote de %s', (saida, rejeito, entrada) => {
+        expect(validarFinalizacao(saida, rejeito, entrada).erro).toContain('peso recebido do lote');
     });
 });

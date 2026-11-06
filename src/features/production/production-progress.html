@@ -68,14 +68,14 @@
                 <button type="button" id="btn-iniciar" class="btn btn-primary" disabled title="A produção já foi iniciada quando foi cadastrada.">
                   <i class="bi bi-play me-1" aria-hidden="true"></i>Iniciar produção
                 </button>
-                <button type="button" id="btn-finalizar" class="btn btn-outline-danger" aria-controls="form-finalizar" aria-expanded="false">
+                <button type="button" id="btn-finalizar" class="btn btn-outline-danger" aria-controls="form-finalizar" aria-expanded="false" disabled>
                   <i class="bi bi-stop-circle me-1" aria-hidden="true"></i>Finalizar produção
                 </button>
               </div>
               <div class="form-text" id="ajuda-acoes">Iniciar produção já foi feito no cadastro.</div>
 
               <form id="form-finalizar" class="border rounded p-3 mt-3 d-none" novalidate>
-                <p class="small text-body-secondary mb-3">Informe os pesos finais do ciclo. Saída e rejeito, somados, não podem passar da entrada.</p>
+                <p class="small text-body-secondary mb-3">Confirme os pesos finais. A soma da saída e do rejeito deve corresponder ao peso recebido do lote.</p>
                 <div class="row g-3">
                   <div class="col-sm-6">
                     <label for="saida-kg" class="form-label">Saída produzida (kg)</label>

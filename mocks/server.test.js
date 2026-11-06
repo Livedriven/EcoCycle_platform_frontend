@@ -119,16 +119,19 @@ describe('demonstração isolada da API EcoCycle', () => {
         const ciclo = (await (await chamar('/producao')).json()).registros_producao.at(-1);
         const excedente = { quantidade_saida_kg: Number(ciclo.quantidade_entrada_kg) + 1, rejeito_kg: 0 };
         expect((await chamar(`/producao/${ciclo.id_producao}`, { method: 'PATCH', body: excedente })).status).toBe(422);
-        const finalizada = await chamar(`/producao/${ciclo.id_producao}`, { method: 'PATCH', body: {
-            status_producao: 'Finalizado', data_fim: '2026-10-27T12:00:00', quantidade_saida_kg: 0, rejeito_kg: 0,
-            itens: [{ id_material: 1, peso_kg: 0 }],
-        } });
+        const url = `/producao/${ciclo.id_producao}`;
+        const peso = Number(ciclo.quantidade_entrada_kg);
+        const finalizacao = { status_producao: 'Finalizado', data_fim: new Date().toISOString(),
+            quantidade_saida_kg: peso, rejeito_kg: 0 };
+        expect((await chamar(url, { method: 'PATCH', body: finalizacao })).status).toBe(422);
+        expect((await chamar(url, { method: 'PATCH', body: { itens: [{ id_material: 1, peso_kg: peso }] } })).status).toBe(200);
+        const finalizada = await chamar(url, { method: 'PATCH', body: finalizacao });
         expect(finalizada.status).toBe(200);
         const producao = normalizarResposta('PATCH', `/producao/${ciclo.id_producao}`, await finalizada.json());
         expect(producao).toMatchObject({ id: ciclo.id_producao, status: 'Finalizado' });
         expect(producao.itens.at(-1)).toMatchObject({ id_producao: ciclo.id_producao, id_material: 1 });
-        const lote = await chamar(`/lotes/${ciclo.id_lote}`, { method: 'PATCH', body: { status_lote: 'Finalizado' } });
-        expect((await lote.json()).lote.status_lote).toBe('Finalizado');
+        const { lotes } = await (await chamar('/lotes')).json();
+        expect(lotes.find((lote) => lote.id_lote === ciclo.id_lote).status_lote).toBe('Finalizado');
 
         const alerta = (await (await chamar('/alertas')).json()).alertas[0];
         const resolvido = await chamar(`/alertas/${alerta.id_alerta}`, { method: 'PATCH', body: { resolvido: true } });

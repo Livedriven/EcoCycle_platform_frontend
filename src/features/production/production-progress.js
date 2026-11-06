@@ -32,8 +32,7 @@ function iniciarTela() {
         return;
     }
 
-    // Os botões só aparecem para quem pode operar produção. Iniciar fica desabilitado (já
-    // aconteceu no cadastro); finalizar envia PATCH /producao/:id e marca o lote como finalizado.
+    // O backend confirma a triagem e finaliza o ciclo e o lote em uma requisição.
     el('acoes-producao').classList.toggle('d-none', !can('producao.operar'));
 
     let assinatura; // undefined até a primeira carga com sucesso
@@ -42,6 +41,7 @@ function iniciarTela() {
     let encerrada = false;
     let ultimaAtualizacao = '';
     let atual = null; // produção exibida: base para a finalização
+    let pesoLote = null;
     let finalizando = false;
 
     const formFinalizar = el('form-finalizar');
@@ -137,11 +137,20 @@ function iniciarTela() {
         inicio = producao.inicio;
         encerrada = producao.encerrada;
         atual = producao;
-        el('btn-finalizar').disabled = encerrada;
-        el('ajuda-acoes').textContent = encerrada
-            ? 'Produção finalizada.'
-            : 'Iniciar produção já foi feito no cadastro.';
-        if (encerrada) fecharFinalizacao();
+        pesoLote = progresso?.total ?? null;
+        el('btn-finalizar').disabled = !producao.finalizavel;
+        if (encerrada) {
+            el('ajuda-acoes').textContent = 'Produção encerrada.';
+        } else if (progresso?.excedeu) {
+            el('ajuda-acoes').textContent = 'Confira a divergência entre o peso processado e o peso recebido.';
+        } else if (progresso?.restante > 0) {
+            el('ajuda-acoes').textContent = 'Aguardando a confirmação de ' + formatKg(progresso.restante) + ' da triagem.';
+        } else {
+            el('ajuda-acoes').textContent = producao.finalizavel
+                ? 'Todo o peso do lote foi confirmado na triagem.'
+                : 'A finalização exige uma produção em aberto com todo o peso confirmado.';
+        }
+        if (!producao.finalizavel) fecharFinalizacao();
         atualizarRelogio();
 
         // Esteira e sensores
@@ -177,13 +186,10 @@ function iniciarTela() {
         }));
     }
 
-    // Sugere a soma dos itens como saída e o restante da entrada como rejeito; o operador ajusta.
     function abrirFinalizacao() {
-        if (!atual || encerrada) return;
-        const entrada = Number(atual.entrada_kg);
-        const temEntrada = atual.entrada_kg !== null && Number.isFinite(entrada);
-        el('saida-kg').value = String(atual.itens_kg);
-        el('rejeito-kg').value = temEntrada ? String(Math.max(0, Math.round((entrada - atual.itens_kg) * 100) / 100)) : '0';
+        if (!atual?.finalizavel) return;
+        el('saida-kg').value = (atual.itens_kg - atual.rejeito_confirmado_kg).toFixed(2);
+        el('rejeito-kg').value = String(atual.rejeito_confirmado_kg);
         mostrarAvisoFinalizar('', '');
         formFinalizar.classList.remove('d-none');
         el('btn-finalizar').setAttribute('aria-expanded', 'true');
@@ -203,8 +209,8 @@ function iniciarTela() {
 
     async function finalizar(evento) {
         evento.preventDefault();
-        if (!atual || encerrada || finalizando) return;
-        const validacao = validarFinalizacao(el('saida-kg').value, el('rejeito-kg').value, atual.entrada_kg);
+        if (!atual?.finalizavel || finalizando) return;
+        const validacao = validarFinalizacao(el('saida-kg').value, el('rejeito-kg').value, pesoLote);
         if (validacao.erro) {
             mostrarAvisoFinalizar('danger', validacao.erro);
             return;
@@ -219,16 +225,11 @@ function iniciarTela() {
                 data_fim: formatIsoLocal(),
                 quantidade_saida_kg: validacao.saida,
                 rejeito_kg: validacao.rejeito
-            }, {
-                erroLocal: true,
-                aposConfirmar: [{ metodo: 'PATCH', url: `/lotes/${atual.id_lote}`, corpo: { status_lote: STATUS_FINALIZADO } }],
-            });
+            }, { erroLocal: true });
             fecharFinalizacao();
             mostrarAvisoFinalizar('success', 'Produção finalizada.');
         } catch (erro) {
-            if (erro.parcial) fecharFinalizacao();
             if (erro.incerto) mostrarAvisoFinalizar('warning', erro.message);
-            else if (erro.parcial) mostrarAvisoFinalizar('warning', 'Produção finalizada, mas o status do lote não foi atualizado: ' + erro.message);
             else mostrarAvisoFinalizar('danger', 'Não foi possível finalizar a produção: ' + erro.message);
             return;
         } finally {

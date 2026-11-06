@@ -5,25 +5,28 @@ import {
 } from '../../shared/calculations.js';
 import { prepararProducaoMateriais } from '../materials/materials-report.js';
 
-// TODO(E2): confirmar o valor de status que indica produção encerrada (aqui, "Finalizado").
 export const STATUS_FINALIZADO = 'Finalizado';
+const ESTADOS_ENCERRADOS = new Set(['finalizado', 'finalizada', 'concluido', 'concluida', 'encerrado',
+    'encerrada', 'cancelado', 'cancelada']);
+const ESTADOS_FINALIZAVEIS = new Set(['aguardando', 'aguardandotriagem', 'disponivel',
+    'emandamento', 'emprocessamento', 'emtriagem', 'pausado', 'pausada']);
 
-export function estaFinalizado(status) {
-    return String(status ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase() === 'finalizado';
+function chaveStatus(status) {
+    return String(status ?? '').normalize('NFKD').replace(/[\u0300-\u036f\s_-]/g, '').toLowerCase();
 }
 
 function numeroInformado(valor) {
     return valor !== null && valor !== undefined && String(valor).trim() !== '' && Number.isFinite(Number(valor));
 }
 
-/** Confere saída e rejeito antes de finalizar: não negativos e, juntos, até a entrada do ciclo. */
+/** Confere se saída e rejeito correspondem ao peso recebido do lote. */
 export function validarFinalizacao(saida, rejeito, entrada) {
     if (!numeroInformado(saida) || !numeroInformado(rejeito) || Number(saida) < 0 || Number(rejeito) < 0) {
         return { erro: 'Informe a saída e o rejeito em kg, com valores maiores ou iguais a zero.' };
     }
     const valores = { saida: arredondar(saida), rejeito: arredondar(rejeito) };
-    if (numeroInformado(entrada) && arredondar(valores.saida + valores.rejeito) > arredondar(entrada)) {
-        return { erro: 'Saída e rejeito somados não podem passar da entrada do ciclo (' + arredondar(entrada) + ' kg).' };
+    if (!numeroInformado(entrada) || arredondar(valores.saida + valores.rejeito) !== arredondar(entrada)) {
+        return { erro: 'Saída e rejeito somados devem corresponder ao peso recebido do lote.' };
     }
     return { erro: '', ...valores };
 }
@@ -103,8 +106,7 @@ export function contarAlertasAtivos(alertas, leituras, idEsteira) {
 }
 
 // Junta tudo o que a tela mostra. Devolve null se a produção não existir.
-// Peso processado = saída dos ciclos do mesmo lote. Com o catálogo de materiais, os pesos por
-// material vêm dos itens de cada ciclo; sem ele, de registros planos antigos com tipo_material.
+// O progresso usa itens confirmados. Registros antigos sem a lista preservam a exibição histórica.
 export function montarMonitoramento({ producoes, lotes, esteiras, leituras, alertas, materiais }, id) {
     const producao = (producoes ?? []).find((p) => String(p.id) === String(id));
     if (!producao) return null;
@@ -115,7 +117,16 @@ export function montarMonitoramento({ producoes, lotes, esteiras, leituras, aler
     const doLote = (producoes ?? []).filter((p) => String(p[CAMPOS.idLoteProducao]) === String(idLote));
     const registros = Array.isArray(materiais) ? prepararProducaoMateriais(doLote, materiais).registros : doLote;
     const totais = totalPorMaterial(registros, MATERIAIS_RELATORIO);
-    const itens = Array.isArray(producao.itens) ? producao.itens : [];
+    const temItensConfirmados = Array.isArray(producao.itens);
+    const itens = temItensConfirmados ? producao.itens : [];
+    const pesoConfirmado = totalProduzido(itens);
+    const progresso = lote ? calcularProgresso(lote[CAMPOS.pesoLote],
+        temItensConfirmados ? pesoConfirmado : totalProduzido(doLote)) : null;
+    const status = chaveStatus(producao.status);
+    const encerrada = Boolean(producao.data_fim) || ESTADOS_ENCERRADOS.has(status)
+        || ESTADOS_ENCERRADOS.has(chaveStatus(lote?.[CAMPOS.statusLote]));
+    const rejeitos = new Set((Array.isArray(materiais) ? materiais : []).filter((m) => chaveStatus(m?.tipo_material) === 'rejeito')
+        .map((m) => String(m.id_material ?? m.id)));
 
     return {
         producao: {
@@ -125,9 +136,11 @@ export function montarMonitoramento({ producoes, lotes, esteiras, leituras, aler
             inicio: producao[CAMPOS.dataProducao] ?? '',
             status: producao.status ?? '',
             entrada_kg: producao.quantidade_entrada_kg ?? null,
-            // Soma dos itens do ciclo: sugestão de saída ao finalizar.
-            itens_kg: arredondar(itens.reduce((total, item) => total + (Number(item?.peso_kg) || 0), 0)),
-            encerrada: estaFinalizado(producao.status) || estaFinalizado(lote?.[CAMPOS.statusLote])
+            itens_kg: pesoConfirmado,
+            rejeito_confirmado_kg: totalProduzido(itens.filter((item) => rejeitos.has(String(item?.id_material)))),
+            encerrada,
+            finalizavel: !encerrada && ESTADOS_FINALIZAVEIS.has(status) && temItensConfirmados
+                && Boolean(progresso && !progresso.excedeu && progresso.restante === 0)
         },
         lote: lote && {
             id: lote.id,
@@ -135,7 +148,7 @@ export function montarMonitoramento({ producoes, lotes, esteiras, leituras, aler
             pesoTotal: lote[CAMPOS.pesoLote],
             status: lote[CAMPOS.statusLote] ?? ''
         },
-        progresso: lote ? calcularProgresso(lote[CAMPOS.pesoLote], totalProduzido(doLote)) : null,
+        progresso,
         esteira: esteira && {
             nome: esteira.nome_esteira ?? '',
             status: esteira.status_esteira ?? '',

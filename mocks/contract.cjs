@@ -21,6 +21,10 @@ const OPCIONAIS = {
 };
 // Status que o portal envia ao cadastrar uma produção; o mock a guarda como "Disponível".
 const STATUS_PRODUCAO_INICIAL = ['em processamento', 'disponivel', 'disponível', 'recebido'];
+const STATUS_FINAL = new Set(['finalizado', 'finalizada', 'concluido', 'concluida', 'encerrado', 'encerrada']);
+function finalizado(status) {
+    return STATUS_FINAL.has(String(status ?? '').normalize('NFKD').replace(/[\u0300-\u036f\s_-]/g, '').toLowerCase());
+}
 // Campos aceitos pelo PATCH de cada rota com identificador (atualização parcial).
 const EDITAVEIS = {
     '/esteiras': ['nome_esteira', 'status_esteira', 'velocidade_esteira_kmh', 'temperatura_esteira_c'],
@@ -163,17 +167,33 @@ module.exports = (req, res) => {
         const dados = req.body;
         const campos = dados && typeof dados === 'object' && !Array.isArray(dados) ? Object.keys(dados) : [];
         if (!campos.length || !campos.every((c) => EDITAVEIS[rota].includes(c))
-            || (rota === '/alertas' && typeof dados.resolvido !== 'boolean')) {
+            || (rota === '/alertas' && typeof dados.resolvido !== 'boolean')
+            || (rota === '/producao' && 'itens' in dados && !Array.isArray(dados.itens))) {
             return res.status(422).json({ detail: 'Informe ao menos um campo válido para atualizar.' });
         }
         if (!registro) return res.status(404).json({ detail: 'Registro não encontrado.' });
         const atual = registroApi(rota, registro);
         const mudancas = rota === '/alertas' ? { resolvido: dados.resolvido ? 'SIM' : 'NAO' } : { ...dados };
+        let loteFinalizado;
+        if (rota === '/lotes' && finalizado(dados.status_lote) && !finalizado(atual.status_lote)) {
+            return res.status(422).json({ detail: 'Finalize o lote pela produção vinculada.' });
+        }
         if (rota === '/producao') {
             const saida = Number(dados.quantidade_saida_kg ?? atual.quantidade_saida_kg ?? 0);
             const rejeito = Number(dados.rejeito_kg ?? atual.rejeito_kg ?? 0);
             if (saida + rejeito > Number(atual.quantidade_entrada_kg) + 0.005) {
                 return res.status(422).json({ detail: 'Saída e rejeito somados não podem exceder a entrada do ciclo.' });
+            }
+            if (finalizado(dados.status_producao)) {
+                const lote = db.get('lotes').find((r) => Number(r.id_lote ?? r.id) === Number(atual.id_lote)).value();
+                const recebido = Number(lote?.peso_recebido_kg ?? lote?.pesoentrada_kg);
+                const processado = (atual.itens ?? []).reduce((total, item) => total + Number(item.peso_kg), 0);
+                const centesimos = (peso) => Math.round(peso * 100);
+                if (!(recebido > 0) || centesimos(processado) !== centesimos(recebido)
+                    || dados.itens?.length || !dados.data_fim || centesimos(saida + rejeito) !== centesimos(recebido)) {
+                    return res.status(422).json({ detail: 'A finalização exige a confirmação de todo o peso recebido do lote.' });
+                }
+                loteFinalizado = lote;
             }
             // Itens são acrescentados ao ciclo, como no backend.
             const todos = listar('/producao').flatMap((p) => p.itens ?? []);
@@ -184,6 +204,7 @@ module.exports = (req, res) => {
             }))];
         }
         Object.assign(registro, mudancas);
+        if (loteFinalizado) loteFinalizado.status_lote = 'Finalizado';
         return res.json({ mensagem: 'Atualização realizada com sucesso.', [entidade]: registroApi(rota, registro) });
     }
     if (req.method === 'POST' && ['/esteiras/status', '/telemetria'].includes(caminho)) {
